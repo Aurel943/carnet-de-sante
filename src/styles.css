@@ -697,3 +697,28 @@ label.btn.filebtn:not(.pri){color:var(--ink)}
 .cinote{margin:8px 0 0;font-size:15px;color:var(--mute);font-style:italic}
 #cibody .ci{gap:18px}
 #cibody textarea{background:transparent;padding:0;min-height:72px}
+
+/* ---------- états vides ---------- */
+.fig.nodata{min-height:0;display:grid;place-items:center;padding:26px 8px}
+.fig.nodata>svg{display:none}
+.fig.nodata::after{content:attr(data-empty);color:var(--mute);font-size:15px;text-align:center;line-height:1.4;max-width:34ch}
+.panel:has(> .fig.nodata) > .lg{display:none}
+.emptyv{display:grid;justify-items:center;text-align:center;gap:8px;background:var(--panel);border-radius:var(--r-card);padding:30px 22px 24px;margin:0 0 16px}
+.emptyv i{width:64px;height:64px;border-radius:50%;background:color-mix(in srgb,var(--c) 15%,transparent);display:grid;place-items:center;margin-bottom:6px}
+.emptyv svg{width:32px;height:32px;stroke:var(--c);fill:color-mix(in srgb,var(--c) 20%,transparent);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.emptyv h3{margin:0;font-size:22px;font-weight:700;letter-spacing:-.01em}
+.emptyv p{margin:0 0 6px;color:var(--mute);font-size:16px;max-width:42ch}
+.emptyv .row{justify-content:center}
+/* sans données Apple Santé : on n'affiche que ce qui a du sens */
+#v-sommeil.nohd>*,#v-recuperation.nohd>*{display:none!important}
+#v-aujourdhui.nohd #monmini,#v-aujourdhui.nohd .panel:has(#fday),#v-aujourdhui.nohd .panel:has(#g3),
+#v-aujourdhui.nohd .tile:is([data-k=stz],[data-k=hrv],[data-k=rhr],[data-k=st]){display:none}
+#v-aujourdhui.nohd .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+#v-effort.nohd .panel:is(:has(#gef),:has(#fer),:has(#z28),:has(#fl)){display:none}
+#v-effort.nohd.nosess>:not(#sesscard){display:none!important}
+/* « Afficher tout » */
+.mkrs:not(.all)>.mkr:nth-of-type(n+5){display:none}
+.mkrs .mall{grid-column:1/-1;justify-self:center}
+#recs:not(.all) tbody tr:nth-child(n+7){display:none}
+#recs .mall{margin-top:10px}
+.all .mall{display:none}
