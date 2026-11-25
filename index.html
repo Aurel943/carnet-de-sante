@@ -31,6 +31,7 @@
 <div id="sheet" hidden><div class="sh" role="dialog" aria-label="Noter"><h3>Noter</h3><button type="button" class="x shx" data-act="qa" data-q="close" aria-label="Fermer">×</button>
 <button class="qa" data-act="qa" data-q="mu" style="--c:var(--trn)"><i><svg viewBox="0 0 24 24"><path d="M3 10v4M6 8v8M18 8v8M21 10v4M6 12h12"/></svg></i>Séance de muscu</button><button class="qa" data-act="qa" data-q="sp" style="--c:var(--eff)"><i><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></i>Autre sport</button><button class="qa" data-act="qa" data-q="food" style="--c:var(--nut)"><i><svg viewBox="0 0 24 24"><path d="M4 11h16a8 8 0 0 1-16 0zM9 7c0-2 1.5-3 3-3s3 1 3 3"/></svg></i>Repas</button><button class="qa" data-act="qa" data-q="water" style="--c:var(--wat)"><i><svg viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg></i>Eau +25 cl</button><button class="qa" data-act="qa" data-q="bw" style="--c:var(--bod)"><i><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M9 9h6"/></svg></i>Poids du matin</button><button class="qa" data-act="qa" data-q="ci" style="--c:var(--mind)"><i><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 14s1.3 2 3.5 2 3.5-2 3.5-2M9 10h.01M15 10h.01"/></svg></i>Check-in</button><button class="qa" data-act="qa" data-q="med" style="--c:var(--hrt)"><i><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg></i>Rendez-vous</button><button class="qa" data-act="qa" data-q="apple" style="--c:var(--rec)"><i><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></i>Apple Santé</button>
 </div></div>
+<div class="navc" aria-hidden="true"><span id="navct"></span></div>
 <div class="wrap pop"><div id="timer" hidden><b id="tval">0:00</b><span class="small" id="tlab">Repos</span><button type="button" data-act="t30">+30 s</button><button type="button" data-act="tstop">Stop</button></div><div id="toast" role="status" aria-live="polite"></div></div>
 <div class="kbd dskonly"><b>←</b><b>→</b> changer de jour<br><b>1</b>–<b>7</b> onglets · <b>N</b> noter<br><b>Échap</b> fermer</div>
 </header>
@@ -88,6 +89,7 @@
 </section>
 
 <section id="v-nutrition" class="view" hidden>
+ <div class="vhead g12"><button type="button" class="btn small vback" data-go="plus">‹ Plus</button><h2 class="ltitle">Nutrition</h2></div>
  <div class="panel g7">
   <div class="grid2"><label>Jour<input id="nday" type="date"></label><label>Poids du matin (kg)<input id="bw" inputmode="decimal" placeholder="ex. 74,2"></label></div>
   <div class="meters" id="meters"></div><div id="macros"></div><p id="hday"></p>
@@ -100,6 +102,7 @@
 </section>
 
 <section id="v-tendances" class="view" hidden>
+ <div class="vhead g12"><button type="button" class="btn small vback" data-go="plus">‹ Plus</button><h2 class="ltitle">Tendances</h2></div>
  <div class="panel g12"><div class="ph"><h2>Bilan santé</h2><span class="mute small">30 derniers jours</span></div><div class="mkrs" id="mkrs"></div><p class="mute small">Repères issus des recommandations courantes (OMS pour l'activité, normes de VO2 max par âge et sexe, etc.), appliqués à tes données. Ce n'est pas un diagnostic : en cas de doute, parles-en à ton médecin.</p></div>
  <div class="panel g4"><h2>Rigueur du suivi</h2><div class="stats" id="rig"></div><p class="mute small">Sur les 14 derniers jours. Plus le suivi est complet, plus les scores et les analyses sont fiables.</p></div>
  <div class="panel g8"><div class="ph"><h2>Ta semaine</h2><span class="mute small" id="wkr"></span></div><div id="week" class="scroll"></div></div>
@@ -189,6 +192,7 @@
   <header class="ms-bar"><button type="button" class="ms-btn" id="msl" data-act="msclose">Annuler</button><h3 id="mstitle"></h3><span id="msr"></span></header>
   <div class="ms-body" data-k="seance"><div id="editor"></div></div>
   <div class="ms-body" data-k="metric" hidden><div id="mdet"></div></div>
+  <div class="ms-body" data-k="checkin" hidden><div id="cibody"></div></div>
   <div class="ms-body" data-k="food" hidden>
    <div class="panel">
     <form id="ff"><div class="addrow"><label>Aliment<input id="fn" autocomplete="off" placeholder="ex. Riz 200 g cuit"></label><label>Protéines (g)<input id="fp" inputmode="decimal" placeholder="0"></label><label>Glucides (g)<input id="fg" inputmode="decimal" placeholder="option"></label><label>Lipides (g)<input id="fl2" inputmode="decimal" placeholder="option"></label><label>Calories<input id="fk" inputmode="numeric" placeholder="auto"></label><label class="fmeal">Repas<select id="fm"></select></label></div>

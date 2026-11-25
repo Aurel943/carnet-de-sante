@@ -668,3 +668,32 @@ label.btn.filebtn:not(.pri){color:var(--ink)}
  :root.ms-open #timer{top:auto;bottom:calc(var(--sab) + 14px)}
  :root.ms-open #toast{top:auto;bottom:calc(var(--sab) + 74px)}
 }
+
+/* ---------- grands titres des écrans Nutrition et Tendances ---------- */
+.vhead{display:flex;flex-direction:column;align-items:flex-start;gap:2px;margin:6px 0 6px}
+.ltitle{margin:0;font:700 34px/1.12 var(--font);letter-spacing:.006em}
+.vback{background:var(--field);color:var(--ink);padding:5px 14px 5px 10px;min-height:32px;font-size:15px;font-weight:500;margin-bottom:6px}
+@media(min-width:801px){.vback{display:none}}
+/* ---------- barre de titre compacte (téléphone) ---------- */
+.navc{display:none}
+@media(max-width:800px){
+ .navc{display:flex;position:fixed;top:0;left:0;right:0;height:calc(var(--sat) + 44px);padding-top:var(--sat);align-items:center;justify-content:center;z-index:31;
+  background:var(--glass);-webkit-backdrop-filter:blur(20px) saturate(1.8);backdrop-filter:blur(20px) saturate(1.8);border-bottom:.5px solid var(--line);
+  opacity:0;transform:translateY(-6px);pointer-events:none;transition:opacity .2s,transform .2s}
+ .navc span{font:600 17px var(--font);letter-spacing:-.02em;max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .navc span::first-letter{text-transform:uppercase}
+ :root.scrolled .navc{opacity:1;transform:none}
+ :root.ms-open .navc{opacity:0}
+}
+/* ---------- check-in : résumé ---------- */
+.cisum{display:grid;gap:2px;margin:2px 0 8px}
+.cis{display:grid;grid-template-columns:minmax(0,1fr) auto 34px;gap:12px;align-items:center;min-height:40px;border-top:.5px solid var(--line);font-size:16px}
+.cis:first-child{border-top:0}
+.cis i{display:flex;gap:5px}
+.cis i b{width:16px;height:6px;border-radius:3px;background:color-mix(in srgb,var(--c) 18%,transparent)}
+.cis i b.on{background:var(--c)}
+.cis em{font:600 15px var(--round);font-style:normal;text-align:right;color:var(--mute)}
+.cit{margin:10px 0 4px}.cit .chip{cursor:default;min-height:30px;padding:4px 12px;font-size:14px}
+.cinote{margin:8px 0 0;font-size:15px;color:var(--mute);font-style:italic}
+#cibody .ci{gap:18px}
+#cibody textarea{background:transparent;padding:0;min-height:72px}

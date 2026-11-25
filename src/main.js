@@ -7,6 +7,8 @@ import {BASE_EX,SPORTS,MEALS,WT,MG,SCALES,MEAS,ZC,ZN,IC,DEF} from './constants.j
 import {readHealth} from './health-import.js';
 import {demoHealthXML,demoManual,DEMO_PROFILE} from './demo.js';
 import {hasHealthKit,authorizeHealth,readHealthKit,useHealthProvider} from './healthkit.js';
+import {Capacitor} from '@capacitor/core';
+import {Haptics,ImpactStyle,NotificationType} from '@capacitor/haptics';
 
 const S={set:clone(DEF),sessions:[],days:{},med:[],cur:null,health:{upd:'',d:{}},detail:{d:{}},day:today()};
 let mode='load',resumed=false,histN=15,sv,tt,startMode='mu',medFlt='Tout',psub='',sleepTrend='sl',sleepPer=30;
@@ -274,11 +276,15 @@ function actsHTML(d,T){T=T||dayTrain(d);const L=[];
  for(const s of T.sp){const w=T.att.find(x=>(WT[x.ty]||'')===s.type);L.push(`<div class="act" style="--c:var(--eff)"><div class="ic"><svg viewBox="0 0 24 24">${IC.run}</svg></div><div><div class="t">${esc(s.type)}</div><div class="m">${esc(s.min)} min${s.km?' · '+fx(s.km)+' km':''}${s.rpe?' · ressenti '+esc(s.rpe)+'/10':''}${w&&w.hr?' · '+w.hr+' bpm moy.':''}</div>${w?zbar(w.z)+zleg(w.z):''}</div><div class="e">${w&&w.tr?r0(100*(1-Math.exp(-w.tr/110))):''}<small>${w&&w.tr?'effort':''}</small></div></div>`)}
  for(const w of T.ap)L.push(`<div class="act" style="--c:${isStr(w)?'var(--trn)':'var(--eff)'}"><div class="ic"><svg viewBox="0 0 24 24">${isStr(w)?IC.lift:IC.run}</svg></div><div><div class="t">${esc(WT[w.ty]||w.ty)} <span class="mute small">· montre${has(w.st)?' · '+hm(w.st):''}</span></div><div class="m">${esc(w.min)} min${w.km?' · '+fx(w.km)+' km':''}${w.kcal?' · '+esc(w.kcal)+' kcal':''}${w.hr?' · '+esc(w.hr)+' bpm moy.':''}${w.mx?' · max '+esc(w.mx):''}</div>${zbar(w.z)}${zleg(w.z)}</div><div class="e">${w.tr?r0(100*(1-Math.exp(-w.tr/110))):''}<small>${w.tr?'effort':''}</small></div></div>`);
  return L.join('')}
-function renderCheckin(){const d=S.day,j=J(d);
- $('#checkin').innerHTML=`<div class="ph"><h2>Comment tu te sens ?</h2><span class="mute small">${j.mood||j.energy||j.stress||j.sore?'Enregistré':'20 secondes'}</span></div>
- <div class="ci">${SCALES.map(([k,l,lo,hi])=>`<div class="sc"><span>${l}</span><div class="seg">${[1,2,3,4,5].map(v=>`<button data-act="jset" data-k="${k}" data-v="${v}" class="${j[k]===v?'on':''}" aria-label="${l} ${v} sur 5">${v}</button>`).join('')}</div><small><span>${lo}</span><span>${hi}</span></small></div>`).join('')}</div>
- <h3>Étiquettes</h3><div class="chips">${S.set.tags.map(t=>`<button class="chip ${(j.tags||[]).includes(t)?'on':''}" data-act="jtag" data-t="${esc(t)}">${esc(t)}</button>`).join('')}</div>
- <h3>Note</h3><textarea id="jnote" rows="2" placeholder="Douleur, ressenti, événement…">${esc(j.note||'')}</textarea>`}
+const SCC={mood:'var(--mind)',energy:'var(--nut)',stress:'var(--bad)',sore:'var(--eff)'};
+function renderCheckin(){const d=S.day,j=J(d),done=!!(j.mood||j.energy||j.stress||j.sore||(j.tags||[]).length||j.note);
+ $('#checkin').innerHTML=`<div class="ph"><h2>Comment tu te sens ?</h2>${done?'<span class="mute small">Enregistré</span>':''}</div>`+(done?
+  `<div class="cisum">${SCALES.filter(([k])=>j[k]).map(([k,l])=>`<div class="cis"><span>${l}</span><i style="--c:${SCC[k]}">${[1,2,3,4,5].map(v=>`<b class="${v<=j[k]?'on':''}"></b>`).join('')}</i><em>${j[k]}/5</em></div>`).join('')}</div>${(j.tags||[]).length?`<div class="chips cit">${j.tags.map(t=>`<span class="chip on">${esc(t)}</span>`).join('')}</div>`:''}${j.note?`<p class="cinote">${esc(j.note)}</p>`:''}<div class="row"><button type="button" class="btn small" data-act="ciopen">Modifier</button></div>`
+  :`<p class="mute" style="margin:0 0 14px">Humeur, énergie, stress et courbatures en 20 secondes : le carnet les croise ensuite avec ton sommeil et ta récupération.</p><button type="button" class="btn pri" data-act="ciopen">Faire mon check-in</button>`);
+ if(document.activeElement&&document.activeElement.id==='jnote')return;
+ $('#cibody').innerHTML=`<div class="panel"><div class="ci">${SCALES.map(([k,l,lo,hi])=>`<div class="sc"><span>${l}</span><div class="seg">${[1,2,3,4,5].map(v=>`<button data-act="jset" data-k="${k}" data-v="${v}" class="${j[k]===v?'on':''}" aria-label="${l} ${v} sur 5">${v}</button>`).join('')}</div><small><span>${lo}</span><span>${hi}</span></small></div>`).join('')}</div>
+ </div><h3 class="ms-sec">Étiquettes</h3><div class="panel"><div class="chips">${S.set.tags.map(t=>`<button class="chip ${(j.tags||[]).includes(t)?'on':''}" data-act="jtag" data-t="${esc(t)}">${esc(t)}</button>`).join('')}</div></div>
+ <h3 class="ms-sec">Note</h3><div class="panel"><textarea id="jnote" rows="3" placeholder="Douleur, ressenti, événement…">${esc(j.note||'')}</textarea></div>`}
 function setJ(p){const d=S.day,o=getDay(d);o.j={...(o.j||{}),...p};put.day(d)}
 
 /* ---------- sommeil ---------- */
@@ -375,7 +381,7 @@ function renderStart(){const seen=new Set(),tpl=[];
  <button class="btn pri">Enregistrer</button></form>`)+`</div>`;
  const f=$('#spf');if(f)f.addEventListener('submit',ev=>{ev.preventDefault();const m=num($('#spm').value);if(!(m>0))return $('#spm').focus();
   const o={id:nid(),kind:'sport',type:$('#spt').value,date:$('#spd').value||today(),min:Math.round(m),rpe:num($('#spr').value)||'',km:num($('#spk').value)||'',note:$('#spn').value.trim(),t:Date.now()};
-  upsert(o);put.sess(o);renderStart();closeSheet();renderEffort();toast(o.type+' enregistré')})
+  upsert(o);put.sess(o);renderStart();closeSheet();renderEffort();buzz('ok');toast(o.type+' enregistré')})
  if(msKind==='seance')msBar()}
 function exHTML(e,i){return `<article class="ex" data-i="${i}"><div class="exh"><input class="exn" data-f="n" value="${esc(e.n)}" list="exlist" placeholder="Nom de l'exercice" aria-label="Exercice ${i+1}"><button class="x" data-act="delEx" aria-label="Supprimer l'exercice">×</button></div>
  <p class="hint" id="h${i}"></p>
@@ -402,7 +408,7 @@ function finish(){const c=S.cur;clearTimeout(sv);
  if(!ex.length){toast('Rien à enregistrer : note au moins une série avec ses reps.');return}
  const el=Math.round((Date.now()-(c.t||Date.now()))/6e4),dur=c.dur||(c.date===today()&&el>=10&&el<=240?el:'');
  const o={id:c.id,name:(c.name||'').trim()||'Séance',date:c.date||today(),ex,t:c.t||Date.now(),dur,rpe:num(c.rpe)||''};
- upsert(o);put.sess(o);S.cur=null;stopTimer();renderEditor();closeSheet();renderSoft();
+ upsert(o);put.sess(o);S.cur=null;stopTimer();renderEditor();closeSheet();renderSoft();buzz('ok');
  const prs=ex.filter(e=>{const b=bestE1(e.n,o.id);return b&&Math.max(...e.sets.map(x=>e1(x.w,x.r)))>b}).map(e=>e.n);
  toast('Séance enregistrée'+(dur?` (${dur} min)`:'')+(prs.length?` · record sur ${prs.join(', ')}`:''))}
 function discard(){const c=S.cur;clearTimeout(sv);S.cur=null;stopTimer();S.sessions=S.sessions.filter(s=>s.id!==c.id);put.delSess(c.id);renderEditor();closeSheet();renderSoft();
@@ -549,11 +555,11 @@ function quick(q){$('#sheet').hidden=true;setTimeout(()=>document.documentElemen
  else if(q==='food'){S.day=today();openFood(mealNow())}
  else if(q==='bw'){S.day=today();go('nutrition',()=>{$('#bw').scrollIntoView({behavior:'smooth',block:'center'});$('#bw').focus({preventScroll:true})})}
  else if(q==='water'){const o=getDay(today());o.w=num(o.w)+250;put.day(today());renderView(cur());toast(`Eau : ${fx(o.w/1000)} L aujourd'hui`)}
- else if(q==='ci'){S.day=today();go('aujourdhui',()=>$('#checkin').scrollIntoView({behavior:'smooth',block:'start'}))}
+ else if(q==='ci'){S.day=today();renderCheckin();openSheet('checkin')}
  else if(q==='med'){psub='dossier';go('plus',()=>{renderPlus();$('#mti').focus({preventScroll:true})})}
  else if(q==='apple'){if(HKN&&S.health.src==='hk'){hkSync();return}psub='apple';go('plus',renderPlus)}}
 
-function renderPlus(){$('#hub').hidden=!!psub;$('#subbar').hidden=!psub;$('#subt').textContent=SUBT[psub]||'';$$('[data-sub]').forEach(x=>x.hidden=x.dataset.sub!==psub);
+function renderPlus(){setTimeout(syncNav,0);$('#hub').hidden=!!psub;$('#subbar').hidden=!psub;$('#subt').textContent=SUBT[psub]||'';$$('[data-sub]').forEach(x=>x.hidden=x.dataset.sub!==psub);
  const L=hLast();$('#hubapple').textContent=S.set.demo?"Données de démo pour l'instant":HKN?(S.health.src==='hk'?'Connecté · '+syncWhen():'Connecter Apple Santé'):L?`Données jusqu'au ${dShort(L)}${today()>addD(L,3)?' : pense à réimporter':''}`:'Importer tes données (pas encore fait)';
  if(psub==='dossier')renderMed();else if(psub)renderSettings()}
 function renderMed(){const t=today(),L=S.med.slice().sort((a,b)=>b.date.localeCompare(a.date)),types=['Tout','Rendez-vous','Vaccin','Analyse','Blessure','Note'];
@@ -595,7 +601,7 @@ function resumeOnce(){if(resumed)return;resumed=true;const o=S.sessions.filter(s
 const views=['aujourdhui','sommeil','recuperation','effort','nutrition','tendances','plus'];
 const cur=()=>{const h=location.hash.slice(1);return views.includes(h)?h:'aujourdhui'};
 function markMore(){if(!matchMedia('(max-width:800px)').matches)return;requestAnimationFrame(()=>$$('.view:not([hidden]) :is(.panel>p.mute.small,.mkr p):not(.open)').forEach(p=>p.classList.toggle('more',p.scrollHeight>p.clientHeight+2)))}
-function renderView(v){setTimeout(markMore,0);renderDayNav();$('#demobar').hidden=!S.set.demo;try{({aujourdhui:renderToday,sommeil:renderSleep,recuperation:renderRec,effort:renderEffort,nutrition:renderNutri,tendances:renderTrends,plus:renderPlus})[v]()}catch(e){console.error(e)}}
+function renderView(v){setTimeout(markMore,0);setTimeout(syncNav,0);renderDayNav();$('#demobar').hidden=!S.set.demo;try{({aujourdhui:renderToday,sommeil:renderSleep,recuperation:renderRec,effort:renderEffort,nutrition:renderNutri,tendances:renderTrends,plus:renderPlus})[v]()}catch(e){console.error(e)}}
 function renderSoft(){updateDatalist();
  if(!S.cur&&!$('#editor').contains(document.activeElement))renderStart();
  if(S.cur)S.cur.ex.forEach((e,i)=>updateHint(i));
@@ -615,10 +621,11 @@ document.addEventListener('click',ev=>{unlockAudio();if(matchMedia('(max-width:8
  switch(act){
  case'sheet':{const sh=$('#sheet');sh.hidden=!sh.hidden;setTimeout(()=>{document.documentElement.style.setProperty('--hh',$('.top').offsetHeight+'px')},0);return}
  case'qa':return quick(b.dataset.q);
- case'dpick':S.day=b.dataset.d;return renderView(cur());
+ case'dpick':buzz();S.day=b.dataset.d;return renderView(cur());
  case'msclose':return closeSheet();
+ case'ciopen':renderCheckin();return openSheet('checkin');
  case'metric':return openMetric(b.dataset.k);
- case'mper':metP=+b.dataset.n;return renderMetric();
+ case'mper':buzz();metP=+b.dataset.n;return renderMetric();
  case'msopen':if(!S.cur){startMode=b.dataset.m||'mu';renderStart()}return openSheet('seance');
  case'foodadd':return openFood(b.dataset.m);
  case'foodsave':return $('#ff').requestSubmit();
@@ -636,12 +643,12 @@ document.addEventListener('click',ev=>{unlockAudio();if(matchMedia('(max-width:8
  case'psub':psub=b.dataset.s;scrollTo(0,0);if(cur()!=='plus'){ev.preventDefault();location.hash='plus';return}return renderPlus();
  case'slt':sleepTrend=b.dataset.k;return renderSleep();
  case'slper':sleepPer=+b.dataset.n;return renderSleep();
- case'jset':{const k=b.dataset.k,v=+b.dataset.v;setJ({[k]:J(S.day)[k]===v?undefined:v});return renderCheckin()}
- case'jtag':{const t=b.dataset.t,tg=(J(S.day).tags||[]).slice(),x=tg.indexOf(t);if(x<0)tg.push(t);else tg.splice(x,1);setJ({tags:tg});return renderCheckin()}
- case'water':{const d=S.day,o=getDay(d);o.w=Math.max(0,num(o.w)+ +b.dataset.v);put.day(d);return renderView(cur())}
+ case'jset':buzz();{const k=b.dataset.k,v=+b.dataset.v;setJ({[k]:J(S.day)[k]===v?undefined:v});return renderCheckin()}
+ case'jtag':buzz();{const t=b.dataset.t,tg=(J(S.day).tags||[]).slice(),x=tg.indexOf(t);if(x<0)tg.push(t);else tg.splice(x,1);setJ({tags:tg});return renderCheckin()}
+ case'water':{buzz('light');const d=S.day,o=getDay(d);o.w=Math.max(0,num(o.w)+ +b.dataset.v);put.day(d);return renderView(cur())}
  case'sup':{const d=S.day,o=getDay(d),s=b.dataset.s,l=(o.sup||[]).slice(),x=l.indexOf(s);if(x<0)l.push(s);else l.splice(x,1);o.sup=l;put.day(d);return renderNutri()}
  case'copyY':{const d=S.day,y=dayIt(addD(d,-1));if(!y.length)return toast('Rien de noté la veille.');getDay(d).items.push(...clone(y));put.day(d);renderNutri();return toast(y.length+' aliments copiés depuis la veille')}
- case'smode':startMode=b.dataset.m;return renderStart();
+ case'smode':buzz();startMode=b.dataset.m;return renderStart();
  case'start':return startSession();
  case'tpl':return startSession(b.dataset.id);
  case'tstart':return startTimer();
@@ -670,7 +677,7 @@ document.addEventListener('click',ev=>{unlockAudio();if(matchMedia('(max-width:8
 document.addEventListener('change',ev=>{if(ev.target.id==='jnote')setJ({note:ev.target.value.trim()})});
 $('#ff').addEventListener('submit',ev=>{ev.preventDefault();const n=$('#fn').value.trim(),p=num($('#fp').value),g=num($('#fg').value),l=num($('#fl2').value),k=num($('#fk').value);if(!n&&!p&&!k&&!g&&!l)return $('#fn').focus();
  const f={n:n||'Aliment',p,g,l,k:k||Math.round(p*4+g*4+l*9)};addFood(f);if($('#fsave').checked&&!S.set.foods.some(x=>norm(x.n)===norm(f.n))){S.set.foods.push(f);put.set()}
- const m=$('#fm').value;$('#ff').reset();$('#fm').value=m;renderNutri();if(msKind==='food'){closeSheet();toast(f.n+' ajouté · '+m)}else $('#fn').focus()});
+ const m=$('#fm').value;$('#ff').reset();$('#fm').value=m;renderNutri();buzz('ok');if(msKind==='food'){closeSheet();toast(f.n+' ajouté · '+m)}else $('#fn').focus()});
 $('#mf').addEventListener('submit',ev=>{ev.preventDefault();const d=$('#mdate').value||today(),m={};for(const [k] of MEAS){const v=num($('#m-'+k).value);if(v>0)m[k]=v}if(!Object.keys(m).length)return $('#m-taille').focus();getDay(d).m=m;put.day(d);$('#mf').reset();$('#mdate').value=today();renderBody();toast('Mensurations enregistrées')});
 $('#medf').addEventListener('submit',ev=>{ev.preventDefault();const o={id:nid(),type:$('#mt').value,date:$('#md').value||today(),title:$('#mti').value.trim(),who:$('#mw').value.trim(),next:$('#mn').value,note:$('#mno').value.trim()};if(!o.title)return $('#mti').focus();S.med.push(o);put.med(o);$('#medf').reset();$('#md').value=today();renderMed();toast('Ajouté au dossier')});
 $('#supf').addEventListener('submit',ev=>{ev.preventDefault();const v=$('#supn').value.trim();if(v&&!S.set.sups.includes(v)){S.set.sups.push(v);put.set()}$('#supn').value='';renderSettings()});
@@ -696,7 +703,7 @@ $('#hfile').addEventListener('change',async ev=>{const f=ev.target.files[0];ev.t
   msg.dataset.keep='1';msg.textContent=`Analyse terminée : ${n} jours, ${ns} nuits (dont ${nv} avec VFC nocturne, ${nrm} recalculées en RMSSD) et ${w} entraînements. ${R.chk?` Contrôle de lecture des battements : le SDNN recalculé vaut ${Math.round(R.chk.med*100)} % de la valeur Apple (sur ${R.chk.n} mesures).`:''} FC max. déduite : ${R.hmax} bpm.`}
  catch(e){console.error(e);msg.textContent="Impossible de lire ce fichier. Choisis le export.zip d'Apple Santé, ou le fichier .xml qu'il contient (pas celui qui contient « cda »)."}
  finally{bar.hidden=true;delete msg.dataset.busy;renderSoft()}});
-addEventListener('hashchange',()=>{$('#sheet').hidden=true;route();scrollTo(0,0)});
+addEventListener('hashchange',()=>{$('#sheet').hidden=true;buzz();route();scrollTo(0,0)});
 document.addEventListener('keydown',e=>{if(e.metaKey||e.ctrlKey||e.altKey)return;const t=e.target;if(t.closest&&t.closest('input,textarea,select,[contenteditable]'))return;
  const tabs=['aujourdhui','sommeil','recuperation','effort','nutrition','tendances','plus'];
  if(e.key==='Escape'){$('#sheet').hidden=true;closeSheet();return}
@@ -772,6 +779,7 @@ const mealNow=()=>{const hr=new Date().getHours();return hr<11?'Petit-déjeuner'
 function msBar(){const t=$('#mstitle'),l=$('#msl'),r=$('#msr');
  if(msKind==='seance'){t.textContent=S.cur?'Séance en cours':'Nouvelle séance';l.textContent=S.cur?'Fermer':'Annuler';r.innerHTML=S.cur?'<button type="button" class="ms-btn ms-done" data-act="finish">Terminer</button>':''}
  else if(msKind==='food'){t.textContent=foodMeal;l.textContent='Annuler';r.innerHTML='<button type="button" class="ms-btn ms-done" data-act="foodsave">Ajouter</button>'}
+ else if(msKind==='checkin'){t.textContent=S.day===today()?"Check-in du jour":'Check-in du '+dShort(S.day);l.textContent='';r.innerHTML='<button type="button" class="ms-btn ms-done" data-act="msclose">OK</button>'}
  else if(msKind==='metric'){t.textContent=(MET[metK]||{}).t||'';l.textContent='';r.innerHTML='<button type="button" class="ms-btn ms-done" data-act="msclose">OK</button>'}
  l.style.visibility=l.textContent?'':'hidden'}
 function openSheet(k){msKind=k;const m=$('#msheet');$$('#msheet .ms-body').forEach(b=>b.hidden=b.dataset.k!==k);msBar();m.hidden=false;document.documentElement.classList.add('ms-open');m.querySelector('.ms-body:not([hidden])').scrollTop=0}
@@ -821,6 +829,18 @@ function renderMetric(){const m=MET[metK];if(!m)return;const end=S.day,from=addD
   <h3 class="ms-sec">À propos</h3><div class="panel mabout">${note?`<p><b>${note}</b></p>`:''}<p>${m.about}</p><p class="mute small">Repères tirés des recommandations et de la recherche ; ils ne remplacent pas un avis médical.</p></div>`;
  setFig('#mfig',{series:[{name:m.t,pts,col:m.col,bars:!!m.bars,dots:!m.bars&&metP<=30,r:3,w:2,last:!m.bars}],unit:m.u,zero:!!m.bars,hline:goal||null,band:b?[b.m-b.s,b.m+b.s]:null,fmt:m.fmt,empty:'Pas de mesure sur cette période'});
  if(msKind==='metric')msBar()}
+
+/* ---------- retours haptiques (appli iOS uniquement) ---------- */
+function buzz(k='sel'){if(!Capacitor.isNativePlatform())return;try{
+ if(k==='ok')Haptics.notification({type:NotificationType.Success});
+ else if(k==='warn')Haptics.notification({type:NotificationType.Warning});
+ else if(k==='light')Haptics.impact({style:ImpactStyle.Light});
+ else Haptics.selectionChanged()}catch(e){}}
+
+/* ---------- barre de titre compacte : le grand titre se replie en défilant (comme iOS) ---------- */
+function navTitle(){const v=cur();return['aujourdhui','sommeil','recuperation','effort'].includes(v)?$('#dtitle').textContent:v==='nutrition'?'Nutrition':v==='tendances'?'Tendances':psub?(SUBT[psub]||'Plus'):'Plus'}
+function syncNav(){const t=navTitle();if($('#navct').textContent!==t)$('#navct').textContent=t}
+addEventListener('scroll',()=>{document.documentElement.classList.toggle('scrolled',scrollY>64)},{passive:true});
 
 /* ---------- premier lancement ---------- */
 const needOnb=()=>!S.set.onb&&!hKeys().length&&!S.sessions.length&&!Object.keys(S.days).length&&!S.med.length;
