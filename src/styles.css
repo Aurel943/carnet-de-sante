@@ -22,7 +22,9 @@
  --glass:light-dark(rgba(255,255,255,.72),rgba(36,36,38,.72));
  --glass-edge:light-dark(rgba(255,255,255,.9),rgba(255,255,255,.14));
  --thumb:light-dark(#fff,#636366);
- --tint:light-dark(#007aff,#0a84ff);
+ /* identité du Carnet : actions en graphite (noir en clair, blanc en sombre), pas le bleu système */
+ --tint:light-dark(#1c1c1e,#f2f2f7);
+ --on-tint:light-dark(#fff,#1c1c1e);
  /* couleurs système d'Apple, une par thème de l'appli */
  --eff:light-dark(#ff9500,#ff9f0a);   /* effort : orange */
  --rec:light-dark(#34c759,#30d158);   /* récupération : vert */
@@ -87,8 +89,8 @@ h3{font:600 17px/1.3 var(--font);margin:18px 0 8px;letter-spacing:-.02em}
 .tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding:10px 0}
 .tabs a{flex:none;display:flex;align-items:center;gap:7px;color:var(--ink);text-decoration:none;padding:8px 14px;min-height:40px;font-weight:500;font-size:15px;border-radius:99px}
 .tabs a svg{width:20px;height:20px;fill:none;stroke:var(--tint);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.tabs a[aria-current=page]{background:var(--tint);color:#fff}.tabs a[aria-current=page] svg{stroke:#fff}
-.tplus{flex:none;display:flex;align-items:center;gap:6px;border:0;border-radius:99px;background:var(--tint);color:#fff;font:600 15px var(--font);padding:8px 16px;min-height:40px;cursor:pointer;margin-left:auto}
+.tabs a[aria-current=page]{background:var(--tint);color:var(--on-tint)}.tabs a[aria-current=page] svg{stroke:#fff}
+.tplus{flex:none;display:flex;align-items:center;gap:6px;border:0;border-radius:99px;background:var(--tint);color:var(--on-tint);font:600 15px var(--font);padding:8px 16px;min-height:40px;cursor:pointer;margin-left:auto}
 .tplus .pi{font-size:21px;line-height:1;font-weight:400}
 .lb .ls{display:none}.dskonly{display:none}.tabs .tplus{order:99}
 
@@ -125,7 +127,7 @@ textarea{resize:vertical}#exp,#imp{font-size:13px;font-family:ui-monospace,'SF M
 /* ---------- boutons (capsules d'iOS 26) ---------- */
 .btn{font:600 16px var(--font);letter-spacing:-.02em;min-height:44px;padding:10px 20px;border-radius:99px;border:0;background:color-mix(in srgb,var(--tint) 13%,transparent);color:var(--tint);cursor:pointer;transition:transform .12s,opacity .12s}
 .btn:active{transform:scale(.97);opacity:.8}
-.btn.pri{background:var(--tint);color:#fff}
+.btn.pri{background:var(--tint);color:var(--on-tint)}
 .btn.ghost{background:none;color:var(--tint)}
 .btn.small{min-height:34px;padding:6px 14px;font-size:15px}
 .btn.icon{width:44px;padding:0;font-size:22px;line-height:1}
@@ -136,14 +138,14 @@ textarea{resize:vertical}#exp,#imp{font-size:13px;font-family:ui-monospace,'SF M
 .x{flex:none;width:32px;height:32px;border:0;border-radius:50%;background:var(--field);color:var(--mute);font-size:19px;line-height:1;cursor:pointer;display:grid;place-items:center;align-self:center;justify-self:end}
 @media(hover:hover){.x:hover{background:color-mix(in srgb,var(--bad) 15%,transparent);color:var(--bad)}.tabs a:not([aria-current=page]):hover{background:var(--field)}}
 label.filebtn{display:inline-flex;align-items:center;font-size:16px;cursor:pointer;position:relative;margin:4px 0 10px}
-label.filebtn.pri{color:#fff}label.btn.filebtn:not(.pri){color:var(--tint);margin:0}
+label.filebtn.pri{color:var(--on-tint)}label.btn.filebtn:not(.pri){color:var(--tint);margin:0}
 label.filebtn:focus-within{outline:3px solid color-mix(in srgb,var(--tint) 50%,transparent);outline-offset:2px}
 .lnk{color:var(--tint);font-weight:600;text-decoration:none}
 
 /* ---------- pastilles et contrôle segmenté ---------- */
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{display:inline-flex;gap:6px;align-items:baseline;min-height:36px;padding:7px 14px;border-radius:99px;border:0;background:var(--field);color:var(--ink);font:500 15px var(--font);letter-spacing:-.02em;cursor:pointer;text-align:left}
-.chip span{color:var(--mute);font-size:13px}.chip.on{background:var(--tint);color:#fff}.chip.on span{color:inherit;opacity:.75}
+.chip span{color:var(--mute);font-size:13px}.chip.on{background:var(--tint);color:var(--on-tint)}.chip.on span{color:inherit;opacity:.75}
 .seg{display:inline-flex;background:var(--field);border-radius:99px;padding:2px;margin-bottom:14px;flex-wrap:wrap;gap:0}
 .seg button{border:0;background:none;font:500 14px var(--font);letter-spacing:-.01em;color:var(--ink);padding:6px 16px;border-radius:99px;min-height:32px;cursor:pointer;transition:background .2s}
 .seg button.on{background:var(--thumb);font-weight:500;box-shadow:0 3px 8px rgba(0,0,0,.12),0 3px 1px rgba(0,0,0,.04)}
@@ -189,7 +191,7 @@ label.filebtn:focus-within{outline:3px solid color-mix(in srgb,var(--tint) 50%,t
 
 /* ---------- barres ---------- */
 .bar{position:relative;height:8px;background:var(--field);border-radius:99px;overflow:hidden;margin:8px 0 6px}
-.bar i{display:block;position:relative;height:100%;background:var(--c,var(--tint));border-radius:99px;transition:width .5s}
+.bar i{display:block;position:relative;height:100%;background:var(--c,var(--trn));border-radius:99px;transition:width .5s}
 .bar .band{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--ink) 9%,transparent)}
 .tg{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--ink);opacity:.45}
 .zb{display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--field);margin-top:6px}.zb i{display:block;height:100%}
@@ -327,7 +329,7 @@ td.num,th.num{text-align:right}
  #tabs{max-width:none;margin:0;padding:0}
  .tabs{flex-direction:column;align-items:stretch;gap:2px;overflow:visible;padding:0}
  .tabs a{width:100%;justify-content:flex-start;padding:9px 12px;border-radius:12px;font-size:16px;gap:12px;min-height:42px}
- .tabs a[aria-current=page]{background:var(--tint);color:#fff}
+ .tabs a[aria-current=page]{background:var(--tint);color:var(--on-tint)}
  .tabs .tplus{order:-1;width:100%;justify-content:center;margin:0 0 14px;padding:11px 14px;min-height:46px}
  .tabs .dsk{display:flex!important}
  .kbd{margin-top:auto;padding:12px 8px 0;border-top:.5px solid var(--line);font-size:12px;color:var(--mute);line-height:1.8}
@@ -393,7 +395,7 @@ td.num,th.num{text-align:right}
  .tabs a[aria-current=page],.tabs a.sub-on{background:color-mix(in srgb,var(--ink) 8%,transparent);color:var(--tint)}
  .tabs a[aria-current=page] svg,.tabs a.sub-on svg{stroke:currentColor;fill:color-mix(in srgb,currentColor 22%,transparent)}
  .tabs .tplus{color:var(--tint)}
- .tabs .tplus .pi{width:30px;height:30px;border-radius:50%;background:var(--tint);color:#fff;display:grid;place-items:center;font-size:23px;font-weight:400;line-height:1;flex:none}
+ .tabs .tplus .pi{width:30px;height:30px;border-radius:50%;background:var(--tint);color:var(--on-tint);display:grid;place-items:center;font-size:23px;font-weight:400;line-height:1;flex:none}
  .tabs .lb{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
  .lb .lf{display:none}.lb .ls{display:inline}
  .tabs .dsk{display:none!important}
@@ -547,7 +549,7 @@ a{text-decoration:none}
 .favp .chip:first-child{border-top:0}
 .favp .chip b{font-weight:400;flex:1}
 .favp .chip span{font-size:15px}
-.favp .chip::after{content:'+';width:26px;height:26px;border-radius:50%;background:var(--tint);color:#fff;display:grid;place-items:center;font-size:20px;line-height:1;flex:none}
+.favp .chip::after{content:'+';width:26px;height:26px;border-radius:50%;background:var(--tint);color:var(--on-tint);display:grid;place-items:center;font-size:20px;line-height:1;flex:none}
 .favp p{margin:8px 0}
 /* onglet Effort : carte d'entrée */
 .sessnew h2{margin-bottom:4px}
@@ -556,14 +558,14 @@ a{text-decoration:none}
 .sessnew .hr b,.sessnow .hr b{font-weight:500}
 .sessnow{padding-top:6px;padding-bottom:6px}
 .sessnow .hr{grid-template-columns:30px minmax(0,1fr) auto}
-.sessnow em.go{font-size:15px;font-weight:600;color:#fff;background:var(--tint);border-radius:99px;padding:7px 14px;line-height:1.2}
+.sessnow em.go{font-size:15px;font-weight:600;color:var(--on-tint);background:var(--tint);border-radius:99px;padding:7px 14px;line-height:1.2}
 .sessnow .hr i{animation:pulse 2s ease-in-out infinite}
 @keyframes pulse{50%{opacity:.6}}
 /* nutrition : repas en listes groupées */
 .mealt{margin:22px 0 2px}
 .flist.meal li.addf{display:block;padding:0;min-height:0}
 .addf button{width:100%;text-align:left;background:none;border:0;color:var(--tint);font:400 17px var(--font);letter-spacing:-.02em;padding:12px 0;min-height:48px;cursor:pointer;display:flex;align-items:center;gap:10px}
-.addf button::before{content:'+';width:22px;height:22px;border-radius:50%;background:var(--tint);color:#fff;display:grid;place-items:center;font-size:18px;line-height:1}
+.addf button::before{content:'+';width:22px;height:22px;border-radius:50%;background:var(--tint);color:var(--on-tint);display:grid;place-items:center;font-size:18px;line-height:1}
 
 /* ---------- tuiles : icônes façon SF Symbols ---------- */
 #tiles .tile .k i{width:16px;height:16px;border-radius:0;-webkit-mask:var(--ico) center/contain no-repeat;mask:var(--ico) center/contain no-repeat}
@@ -584,7 +586,7 @@ a{text-decoration:none}
 .wd.tod b{color:var(--tint);font-weight:600}
 .wd.on{background:var(--panel)}
 .wd.on b{background:var(--ink);color:var(--bg)}
-.wd.on.tod b{background:var(--tint);color:#fff}
+.wd.on.tod b{background:var(--tint);color:var(--on-tint)}
 .wd:disabled{cursor:default}.wd:disabled b,.wd:disabled span{color:var(--mute2)}
 @media(hover:hover){.wd:not(.on):not(:disabled):hover{background:color-mix(in srgb,var(--panel) 60%,transparent)}}
 @media(min-width:1100px){.wkstrip{max-width:560px}}
@@ -618,3 +620,51 @@ a{text-decoration:none}
 .mrow b{font:600 17px var(--round);font-variant-numeric:tabular-nums}.mrow b small{font:500 14px var(--round);color:var(--mute)}
 .mabout p{margin:0 0 12px;font-size:16px;line-height:1.5}.mabout p:last-child{margin-bottom:0}
 .mabout p b{font-weight:500}
+
+/* ---------- identité du Carnet : boutons et accents personnalisés ---------- */
+/* couleur de chaque section, reprise des anneaux du logo */
+.tabs a{--tc:var(--mute)}
+.tabs a[href="#aujourdhui"]{--tc:light-dark(#f5a300,#ffd60a)}
+.tabs a[href="#sommeil"]{--tc:var(--slp)}
+.tabs a[href="#recuperation"]{--tc:var(--rec)}
+.tabs a[href="#effort"]{--tc:var(--eff)}
+.tabs a[href="#nutrition"]{--tc:var(--nut)}
+.tabs a[href="#tendances"]{--tc:var(--trn)}
+.tabs a[href="#plus"]{--tc:var(--mute)}
+a{color:var(--ink)}
+:is(input,select,textarea,button,summary,a):focus-visible{outline:3px solid color-mix(in srgb,var(--ink) 30%,transparent)}
+/* boutons : secondaire gris doux, principal graphite, discret en gris */
+.btn{background:var(--field);color:var(--ink);font-weight:600}
+.btn.ghost{background:none;color:var(--mute);font-weight:500}
+.btn.wide{background:var(--field);color:var(--ink)}
+label.btn.filebtn:not(.pri){color:var(--ink)}
+.lnk{color:var(--ink);font-weight:600}
+.hvl summary,.adv summary{color:var(--ink);font-weight:500}
+.panel>p.mute.small.more:not(.open)::after,.mkr p.more:not(.open)::after{color:var(--ink);font-weight:600}
+#toast button{background:var(--field);color:var(--ink)}
+.daynav .btn.icon{color:var(--ink)}
+.subbar .btn{background:var(--field);color:var(--ink);padding:5px 14px 5px 10px;min-height:32px;font-size:15px;font-weight:500;margin-bottom:6px}
+.addf button{color:var(--ink);font-weight:500}
+#demobar .btn{color:var(--ink)}
+/* feuilles : « Annuler » en capsule grise, action en capsule graphite */
+.ms-btn{background:var(--field);color:var(--ink);font:500 15px var(--font);padding:7px 16px;min-height:34px;border-radius:99px}
+.ms-btn.ms-done{background:var(--tint);color:var(--on-tint);font-weight:600}
+/* frise : aujourd'hui marqué en gras, jour choisi en graphite */
+.wd.tod b{color:var(--ink);font-weight:700}
+.wd.tod span{color:var(--ink);font-weight:700}
+/* onglets : icône colorée selon la section */
+.tabs a svg{stroke:var(--tc)}
+.tabs a[aria-current=page]{background:var(--panel);color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.08),0 0 0 .5px var(--line)}
+.tabs a[aria-current=page] svg{stroke:var(--tc);fill:color-mix(in srgb,var(--tc) 25%,transparent)}
+@media(max-width:800px){
+ .tabs a,.tabs .tplus{color:var(--mute)}
+ .tabs a svg{stroke:var(--mute)}
+ .tabs a[aria-current=page],.tabs a.sub-on{background:color-mix(in srgb,var(--tc) 14%,transparent);color:var(--ink);box-shadow:none}
+ .tabs a[aria-current=page] svg,.tabs a.sub-on svg{stroke:var(--tc);fill:color-mix(in srgb,var(--tc) 30%,transparent)}
+ .tabs .tplus{color:var(--ink)}
+}
+/* feuille ouverte : minuteur de repos et notifications en bas, pour ne pas couvrir la barre de la feuille */
+@media(max-width:800px){
+ :root.ms-open #timer{top:auto;bottom:calc(var(--sab) + 14px)}
+ :root.ms-open #toast{top:auto;bottom:calc(var(--sab) + 74px)}
+}

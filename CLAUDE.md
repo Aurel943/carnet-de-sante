@@ -15,7 +15,9 @@ https://aurel943.github.io/carnet-de-sante/ : rien ne doit rester seulement en l
 ## Projet
 
 - Appli web sans framework (Vite), en français, emballée pour iOS avec Capacitor (`ios/`).
-- Design : langage visuel d'Apple (iOS 26) défini dans `src/styles.css` ; garder ce style.
+- Design : langage visuel d'Apple (iOS 26) défini dans `src/styles.css`, avec une identité propre :
+  pas de boutons ni de liens en bleu système. Actions principales en capsules graphite (`--tint`),
+  secondaires en capsules grises (`--field`), icônes d'onglets aux couleurs de chaque section.
 - Après une modification du code web destinée à l'appli iOS : `npx cap sync ios`.
 - Après une modification visuelle : régénérer les captures App Store (`npm run captures`).
 - Détails : `README.md` et `docs/APP_STORE.md`.
