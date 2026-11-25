@@ -5,7 +5,9 @@ Application web mobile de suivi santé et forme, en français : trois jauges du 
 journée, et une analyse détaillée par onglet. Les données viennent de l'export
 **Apple Santé** (analysé entièrement dans le navigateur) et de ce que tu notes à la main.
 
-Aucune donnée ne quitte l'appareil : tout est stocké dans le `localStorage` du navigateur.
+Aucune donnée ne quitte l'appareil : tout est stocké localement, sans compte ni serveur.
+L'appli fonctionne dans un navigateur, s'installe sur l'écran d'accueil (PWA) et est prête
+à être publiée sur l'App Store (voir [docs/APP_STORE.md](docs/APP_STORE.md)).
 
 ## Fonctionnalités
 
@@ -17,7 +19,11 @@ Aucune donnée ne quitte l'appareil : tout est stocké dans le `localStorage` du
 | **Effort** | Zones cardiaques, journal de séances de muscu (séries, minuteur de repos, progression suggérée), autres sports, charge d'entraînement (ratio 7 j / 28 j), volume par groupe musculaire, 1RM estimé, records |
 | **Nutrition** | Repas et macros, favoris, hydratation, compléments, dépense réelle estimée, 14 derniers jours |
 | **Tendances** | Bilan santé sur 30 jours, rigueur du suivi, semaine, corrélations observées, bien-être, poids, mensurations, masse grasse, VO2 max, activité quotidienne |
-| **Plus** | Dossier médical (rendez-vous, vaccins, analyses, blessures + rappels), import Apple Santé, réglages et objectifs, sauvegarde (export / import JSON) |
+| **Plus** | Dossier médical (rendez-vous, vaccins, analyses, blessures + rappels), import Apple Santé, réglages et objectifs, données et confidentialité (sauvegarde en fichier, restauration, suppression) |
+
+Au premier lancement, un accueil en trois écrans présente l'appli, demande le profil
+(facultatif) et propose d'importer Apple Santé, d'explorer **des données de démo** (deux mois
+d'un profil fictif) ou de commencer sans données.
 
 Raccourcis clavier sur ordinateur : `←` `→` changer de jour, `1`–`7` onglets, `N` noter, `Échap` fermer.
 
@@ -49,6 +55,31 @@ npm run preview   # sert dist/ localement
 npm run lint      # ESLint
 ```
 
+## Tester comme sur un iPhone
+
+```bash
+npm run sim
+```
+
+Ouvre le **simulateur iPhone** (`simulateur.html`) : l'appli dans un cadre d'iPhone 16,
+16 Pro Max, 13 mini ou SE, avec encoche, barre d'état, barre d'accueil et zones sûres.
+Le panneau de gauche change d'appareil, passe en clair ou sombre, saute d'un onglet à
+l'autre, charge les données de démo ou revient au premier lancement.
+Il est aussi en ligne : `https://<compte>.github.io/carnet-de-sante/simulateur.html`.
+
+## Appli iOS
+
+```bash
+npm run ios         # compile, copie dans ios/ et ouvre Xcode (sur Mac)
+```
+
+```bash
+npm run captures    # captures d'écran App Store (1320 × 2868) avec les données de démo
+```
+
+Tout le parcours de publication (compte développeur, Xcode, fiche App Store, points de
+vigilance de la revue d'Apple) est décrit dans [docs/APP_STORE.md](docs/APP_STORE.md).
+
 ## Importer ses données Apple Santé
 
 1. Sur l'iPhone : app **Santé** → photo de profil en haut à droite → **Exporter toutes les données de santé**.
@@ -67,16 +98,23 @@ src/
   utils.js              Utilitaires : DOM, dates, nombres, statistiques
   constants.js          Exercices, sports, repas, groupes musculaires, réglages par défaut
   health-import.js      Analyse de l'export Apple Santé (sommeil, FC, VFC/RMSSD, zones, stress…)
+  demo.js               Données de démo : faux export Apple Santé + saisies, sur 60 jours
   main.js               État, stockage, moteur d'interprétation (scores, coach), graphiques SVG,
-                        rendu des vues et gestion des événements
+                        rendu des vues, premier lancement, sauvegarde et gestion des événements
+simulateur.html         Simulateur iPhone pour tester sur ordinateur (outil de développement)
+confidentialite.html    Politique de confidentialité (exigée par l'App Store)
+ios/                    Projet Xcode généré par Capacitor
+scripts/                Génération des captures App Store
+docs/                   Guide de publication App Store et captures
 public/
   manifest.webmanifest  Installation sur l'écran d'accueil (PWA)
   sw.js                 Fonctionnement hors connexion
   icon*.png, icon.svg   Icônes
 ```
 
-Aucun framework : JavaScript natif, graphiques en SVG générés à la main. Seule dépendance
-d'exécution : [JSZip](https://stuk.github.io/jszip/), chargée à la demande pour ouvrir le `.zip`.
+Aucun framework : JavaScript natif, graphiques en SVG générés à la main. Dépendances
+d'exécution : [JSZip](https://stuk.github.io/jszip/) (chargée à la demande pour ouvrir le `.zip`),
+la police Plus Jakarta Sans intégrée à l'appli, et [Capacitor](https://capacitorjs.com/) pour iOS.
 
 ## Installer sur iPhone
 
@@ -92,9 +130,9 @@ Une seule fois : **Settings → Pages → Build and deployment → Source : GitH
 ## Données et sauvegarde
 
 - Stockage : `localStorage`, clé `carnet-muscu-v1`, propre à chaque navigateur et appareil.
-- **Plus → Sauvegarde** exporte séances, nutrition, journal, dossier et réglages en JSON, et
-  permet de les restaurer (ou de les transférer sur un autre appareil). Les données Apple
-  Santé se réimportent depuis l'iPhone.
+- **Plus → Données et confidentialité** enregistre une sauvegarde en fichier (séances, nutrition,
+  journal, dossier et réglages), la restaure (ou la transfère sur un autre appareil), et efface
+  toutes les données. Les données Apple Santé se réimportent depuis l'iPhone.
 
 ## Avertissement
 

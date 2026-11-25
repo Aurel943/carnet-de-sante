@@ -1,7 +1,13 @@
 /* Carnet de santé : logique de l'application (état, moteur d'interprétation, vues, import, événements). */
+// Police intégrée à l'appli (aucun appel à Google Fonts) : sous-ensemble latin, graisses utilisées
+import '@fontsource/plus-jakarta-sans/latin-500.css';
+import '@fontsource/plus-jakarta-sans/latin-600.css';
+import '@fontsource/plus-jakarta-sans/latin-700.css';
+import '@fontsource/plus-jakarta-sans/latin-800.css';
 import {$,$$,esc,clone,iso,today,addD,dShort,dLong,dWk,num,has,fx,f2,r0,sg,clamp,nid,norm,plain,e1,sortDesc,setTxt,fmtSl,hhmm,hm,avg,sdv} from './utils.js';
 import {BASE_EX,SPORTS,MEALS,WT,MG,SCALES,MEAS,ZC,ZN,IC,DEF} from './constants.js';
 import {readHealth} from './health-import.js';
+import {demoHealthXML,demoManual,DEMO_PROFILE} from './demo.js';
 
 const S={set:clone(DEF),sessions:[],days:{},med:[],cur:null,health:{upd:'',d:{}},detail:{d:{}},day:today()};
 let mode='load',resumed=false,histN=15,sv,tt,startMode='mu',medFlt='Tout',psub='',sleepTrend='sl',sleepPer=30;
@@ -9,7 +15,7 @@ const LS='carnet-muscu-v1',pend=[];
 
 /* ---------- stockage ---------- */
 function status(k){const m={load:'Chargement…',local:'Sauvegarde locale',err:'Problème de sauvegarde'};const e=$('#st');e.textContent=m[k];e.className='pill '+k}
-function lsSave(){try{localStorage.setItem(LS,JSON.stringify({set:S.set,sessions:S.sessions,days:S.days,health:S.health,med:S.med,detail:S.detail}));if(mode!=='load')status('local')}catch(e){console.warn(e);status('err');toast('Stockage plein : supprime des données anciennes ou exporte une sauvegarde.')}}
+function lsSave(){if(mode==='wiped')return;try{localStorage.setItem(LS,JSON.stringify({set:S.set,sessions:S.sessions,days:S.days,health:S.health,med:S.med,detail:S.detail}));if(mode!=='load')status('local')}catch(e){console.warn(e);status('err');toast('Stockage plein : supprime des données anciennes ou exporte une sauvegarde.')}}
 function lsLoad(){try{const d=JSON.parse(localStorage.getItem(LS)||'null');if(!d)return;if(d.health&&d.health.d)S.health=d.health;if(d.detail&&d.detail.d)S.detail=d.detail;if(Array.isArray(d.med))S.med=d.med;S.set={...clone(DEF),...d.set};const ids=new Set((d.sessions||[]).map(s=>s.id));S.sessions=[...(d.sessions||[]),...S.sessions.filter(s=>!ids.has(s.id))];S.days={...(d.days||{}),...S.days}}catch(e){}}
 let saveT=0;
 const P=fn=>{if(mode==='load')pend.push(fn);else fn()};
@@ -515,7 +521,7 @@ function renderBody(){const W=weights(),wk=Object.keys(W).sort(),L=hLast()||toda
  $('#ak').innerHTML=kk('st','pas / jour',r0)+kk('ac','kcal actives',r0)+kk('ex',"min d'exercice",r0)+kk('km','km / jour',fx)+kk('fl','étages',r0)}
 
 /* ---------- plus ---------- */
-const SUBT={dossier:'Dossier médical',reglages:'Réglages',apple:'Apple Santé',donnees:'Sauvegarde'};
+const SUBT={dossier:'Dossier médical',reglages:'Réglages',apple:'Apple Santé',donnees:'Données et confidentialité'};
 function quick(q){$('#sheet').hidden=true;setTimeout(()=>document.documentElement.style.setProperty('--hh',$('.top').offsetHeight+'px'),0);if(q==='close')return;const go=(h,fn)=>{if(location.hash!=='#'+h)location.hash=h;else route();setTimeout(fn||(()=>{}),150)};
  if(q==='mu'||q==='sp'){startMode=q;if(!S.cur)renderStart();go('effort',()=>{$('#editor').scrollIntoView({behavior:'smooth',block:'start'});const f=$(q==='mu'?'#nn':'#spm');if(f&&!S.cur)f.focus({preventScroll:true})})}
  else if(q==='food'){S.day=today();go('nutrition',()=>{$('#ff').scrollIntoView({behavior:'smooth',block:'center'});$('#fn').focus({preventScroll:true})})}
@@ -526,7 +532,7 @@ function quick(q){$('#sheet').hidden=true;setTimeout(()=>document.documentElemen
  else if(q==='apple'){psub='apple';go('plus',renderPlus)}}
 
 function renderPlus(){$('#hub').hidden=!!psub;$('#subbar').hidden=!psub;$('#subt').textContent=SUBT[psub]||'';$$('[data-sub]').forEach(x=>x.hidden=x.dataset.sub!==psub);
- const L=hLast();$('#hubapple').textContent=L?`Données jusqu'au ${dShort(L)}${today()>addD(L,3)?' : pense à réimporter':''}`:'Importer tes données (pas encore fait)';
+ const L=hLast();$('#hubapple').textContent=S.set.demo?"Données de démo pour l'instant":L?`Données jusqu'au ${dShort(L)}${today()>addD(L,3)?' : pense à réimporter':''}`:'Importer tes données (pas encore fait)';
  if(psub==='dossier')renderMed();else if(psub)renderSettings()}
 function renderMed(){const t=today(),L=S.med.slice().sort((a,b)=>b.date.localeCompare(a.date)),types=['Tout','Rendez-vous','Vaccin','Analyse','Blessure','Note'];
  if(!$('#md').value)$('#md').value=t;
@@ -542,12 +548,12 @@ function renderSettings(){const a=document.activeElement;
  const lst=(arr,act)=>arr.length?arr.map((t,k)=>`<li style="grid-template-columns:minmax(0,1fr) 44px"><span>${esc(t)}</span><button class="x" data-act="${act}" data-k="${k}" aria-label="Supprimer">×</button></li>`).join(''):'<li class="mute empty" style="display:block">Aucun.</li>';
  $('#suplist').innerHTML=lst(S.set.sups,'delSup');$('#taglist').innerHTML=lst(S.set.tags,'delTag');
  $('#favlist').innerHTML=S.set.foods.length?S.set.foods.map((f,k)=>`<li><span>${esc(f.n)}</span><span class="num">${fx(num(f.p))} g</span><span class="num">${r0(kcalOf(f))} kcal</span><button class="x" data-act="delFav" data-k="${k}" aria-label="Supprimer le favori">×</button></li>`).join(''):'<li class="mute empty">Aucun favori.</li>';
- $('#savenote').textContent="Tes données restent dans ce navigateur, sur cet appareil : rien n'est envoyé sur un serveur. Exporte régulièrement une sauvegarde pour la garder ailleurs ou la transférer sur un autre appareil.";
+ $('#savenote').textContent=S.set.bk?`Dernière sauvegarde enregistrée le ${dShort(S.set.bk)}/${S.set.bk.slice(0,4)}.`:"Aucune sauvegarde enregistrée pour l'instant : pense à en faire une de temps en temps.";
  const L=hLast();if(L&&!$('#hmsg').dataset.busy&&!$('#hmsg').dataset.keep)$('#hmsg').textContent=`Dernier import le ${dShort(S.health.upd)} · données jusqu'au ${dShort(L)} · ${hKeys().length} jours.`;
  const dk=Object.keys(S.detail.d||{}).length,nn=hKeys().filter(k=>H(k).nhv).length,nr=hKeys().filter(k=>H(k).nrm).length;
  $('#hstat').innerHTML=L?`<div class="stat"><b>${hKeys().length}</b><span>jours résumés</span></div><div class="stat"><b>${dk}</b><span>jours détaillés</span></div><div class="stat"><b>${nn}</b><span>nuits avec VFC nocturne</span></div><div class="stat"><b>${nr}</b><span>nuits avec RMSSD (battements)</span></div>${S.health.hrmax?`<div class="stat"><b>${S.health.hrmax} <small>bpm</small></b><span>FC max. déduite</span></div>`:''}`:'';
  if(a!==$('#exp'))$('#exp').value=JSON.stringify({v:4,set:S.set,sessions:done(),days:S.days,med:S.med})}
-function doImport(){const m=$('#impmsg');let d;try{d=JSON.parse($('#imp').value)}catch(e){m.textContent='Texte illisible : colle un export complet.';return}
+function doImport(txt=$('#imp').value,m=$('#impmsg')){let d;try{d=JSON.parse(txt)}catch(e){m.textContent='Texte illisible : colle un export complet.';return}
  if(!d||!Array.isArray(d.sessions)||typeof d.days!=='object'){m.textContent="Ce texte n'est pas un export du carnet.";return}
  const ok=/^[\w.~:@+-]+$/,str=v=>String(v??'');
  S.set={...clone(DEF),...(d.set||{})};
@@ -564,7 +570,7 @@ function updateDatalist(){const m=new Map();for(const x of exNames())m.set(norm(
 function resumeOnce(){if(resumed)return;resumed=true;const o=S.sessions.filter(s=>s.open).sort(sortDesc)[0];if(o&&!S.cur){S.cur=clone(o);renderEditor()}}
 const views=['aujourdhui','sommeil','recuperation','effort','nutrition','tendances','plus'];
 const cur=()=>{const h=location.hash.slice(1);return views.includes(h)?h:'aujourdhui'};
-function renderView(v){renderDayNav();try{({aujourdhui:renderToday,sommeil:renderSleep,recuperation:renderRec,effort:renderEffort,nutrition:renderNutri,tendances:renderTrends,plus:renderPlus})[v]()}catch(e){console.error(e)}}
+function renderView(v){renderDayNav();$('#demobar').hidden=!S.set.demo;try{({aujourdhui:renderToday,sommeil:renderSleep,recuperation:renderRec,effort:renderEffort,nutrition:renderNutri,tendances:renderTrends,plus:renderPlus})[v]()}catch(e){console.error(e)}}
 function renderSoft(){updateDatalist();
  if(!S.cur&&!$('#editor').contains(document.activeElement))renderStart();
  if(S.cur)S.cur.ex.forEach((e,i)=>updateHint(i));
@@ -579,11 +585,17 @@ $('#editor').addEventListener('change',ev=>{const t=ev.target,c=S.cur;if(!c)retu
  if(t.dataset.f==='r'&&num(t.value)>0&&S.set.auto!==false)startTimer();
  if(!t.classList.contains('exn'))return;const a=t.closest('.ex'),i=+a.dataset.i,e=c.ex[i];
  if(e.sets.every(s=>s.w===''&&s.r==='')&&suggest(e.n,c.id)){e.sets=prefill(e.n,c.id);a.outerHTML=exHTML(e,i);dirty()}updateHint(i)});
-document.addEventListener('click',ev=>{unlockAudio();if(matchMedia('(max-width:800px)').matches){const nt=ev.target.closest('.panel>p.mute.small');if(nt&&!ev.target.closest('a,button')){nt.classList.toggle('open');return}}const go=ev.target.closest('[data-go]');if(go){location.hash=go.dataset.go;return}
+document.addEventListener('click',ev=>{unlockAudio();if(matchMedia('(max-width:800px)').matches){const nt=ev.target.closest('.panel>p.mute.small');if(nt&&!ev.target.closest('a,button')){nt.classList.toggle('open');return}}if(ev.target.id==='sheet'){quick('close');return}const go=ev.target.closest('[data-go]');if(go){location.hash=go.dataset.go;return}
  const b=ev.target.closest('[data-act]');if(!b)return;const act=b.dataset.act,c=S.cur,a=b.closest('.ex'),i=a?+a.dataset.i:-1;
  switch(act){
  case'sheet':{const sh=$('#sheet');sh.hidden=!sh.hidden;setTimeout(()=>{document.documentElement.style.setProperty('--hh',$('.top').offsetHeight+'px')},0);return}
  case'qa':return quick(b.dataset.q);
+ case'onb':if(b.dataset.to==='2'&&!b.dataset.skip)saveProfile();return showOnb(+b.dataset.to);
+ case'onbGo':return onbGo(b.dataset.go2);
+ case'demoEnd':clearDemo();renderSoft();return showOnb(2);
+ case'bksave':return saveBackup();
+ case'bkok':{const t=pendingBk;pendingBk='';if(t)doImport(t,$('#bkmsg'));return}
+ case'wipe':{if(b.classList.contains('armed'))return resetAll();b.classList.add('armed');b.textContent='Confirmer : tout effacer définitivement';setTimeout(()=>{b.classList.remove('armed');b.textContent='Effacer toutes mes données'},6000);return}
  case'dprev':S.day=addD(S.day,-1);return renderView(cur());
  case'dnext':if(S.day<today())S.day=addD(S.day,1);return renderView(cur());
  case'dlast':S.day=hLast()||today();return renderView(cur());
@@ -631,6 +643,10 @@ $('#supf').addEventListener('submit',ev=>{ev.preventDefault();const v=$('#supn')
 $('#tagf').addEventListener('submit',ev=>{ev.preventDefault();const v=$('#tagn').value.trim();if(v&&!S.set.tags.includes(v)){S.set.tags.push(v);put.set()}$('#tagn').value='';renderSettings()});
 $('#nday').addEventListener('change',ev=>{if(ev.target.value){S.day=ev.target.value;renderNutri()}});
 $('#bw').addEventListener('change',ev=>{const d=S.day,v=ev.target.value.trim();getDay(d).bw=v===''?'':num(v);put.day(d);renderNutri()});
+$('#bkfile').addEventListener('change',async ev=>{const f=ev.target.files[0];ev.target.value='';if(!f)return;const m=$('#bkmsg');
+ let d;try{pendingBk=await f.text();d=JSON.parse(pendingBk)}catch(e){pendingBk='';m.textContent="Ce fichier n'est pas une sauvegarde lisible.";return}
+ if(!d||!Array.isArray(d.sessions)||typeof d.days!=='object'){pendingBk='';m.textContent="Ce fichier n'est pas une sauvegarde du carnet.";return}
+ m.innerHTML=`Sauvegarde trouvée : ${d.sessions.length} séances, ${Object.keys(d.days||{}).length} jours, ${(d.med||[]).length} entrées de dossier. Elle remplacera tes données actuelles. <button type="button" class="btn small danger armed" data-act="bkok">Restaurer</button>`});
 $('#pex').addEventListener('change',renderForce);$('#am').addEventListener('change',renderBody);$('#vtm').addEventListener('change',renderRec);
 $('#s-auto').addEventListener('change',ev=>{S.set.auto=ev.target.checked;put.set()});
 $('#s-sex').addEventListener('change',ev=>{S.set.sex=ev.target.value;put.set()});
@@ -641,17 +657,12 @@ $('#hfile').addEventListener('change',async ev=>{const f=ev.target.files[0];ev.t
  bar.hidden=false;bi.style.width='0';msg.dataset.busy='1';msg.textContent='Ouverture du fichier…';
  try{const R=await readHealth(f,prog,S.set.sex),r=R.d,n=Object.keys(r).length;
   if(!n){msg.textContent='Aucune donnée récente dans ce fichier.';return}
-  const all={...S.health.d,...r};let ks=Object.keys(all).sort().slice(-400),keep;
-  for(;;){keep={};ks.forEach(k=>keep[k]=all[k]);if(JSON.stringify(keep).length<235000||ks.length<=60)break;ks=ks.slice(20)}
-  S.health={upd:today(),last:R.last||S.health.last||'',hrmax:R.hmax,rm:R.rm||!!S.health.rm,chk:R.chk||S.health.chk||null,d:keep};put.health();
-  const det={...(S.detail.d||{}),...R.det},dk=Object.keys(det).sort().slice(-35);let dkeep;
-  for(let n2=dk.length;;n2-=3){dkeep={};dk.slice(-n2).forEach(k=>dkeep[k]=det[k]);if(JSON.stringify(dkeep).length<235000||n2<=6)break}
-  S.detail={d:dkeep};put.detail();
+  if(S.set.demo)clearDemo();applyHealth(R);
   const w=Object.values(r).reduce((a,o)=>a+(o.wk||[]).length,0),ns=Object.values(r).filter(o=>o.sl).length,nv=Object.values(r).filter(o=>o.nhv).length,nrm=Object.values(r).filter(o=>o.nrm).length;
   msg.dataset.keep='1';msg.textContent=`Analyse terminée : ${n} jours, ${ns} nuits (dont ${nv} avec VFC nocturne, ${nrm} recalculées en RMSSD) et ${w} entraînements. ${R.chk?` Contrôle de lecture des battements : le SDNN recalculé vaut ${Math.round(R.chk.med*100)} % de la valeur Apple (sur ${R.chk.n} mesures).`:''} FC max. déduite : ${R.hmax} bpm.`}
  catch(e){console.error(e);msg.textContent="Impossible de lire ce fichier. Choisis le export.zip d'Apple Santé, ou le fichier .xml qu'il contient (pas celui qui contient « cda »)."}
  finally{bar.hidden=true;delete msg.dataset.busy;renderSoft()}});
-addEventListener('hashchange',()=>{route();scrollTo(0,0)});
+addEventListener('hashchange',()=>{$('#sheet').hidden=true;route();scrollTo(0,0)});
 document.addEventListener('keydown',e=>{if(e.metaKey||e.ctrlKey||e.altKey)return;const t=e.target;if(t.closest&&t.closest('input,textarea,select,[contenteditable]'))return;
  const tabs=['aujourdhui','sommeil','recuperation','effort','nutrition','tendances','plus'];
  if(e.key==='Escape'){$('#sheet').hidden=true;return}
@@ -663,11 +674,70 @@ document.addEventListener('keydown',e=>{if(e.metaKey||e.ctrlKey||e.altKey)return
  document.addEventListener('pointerover',e=>{const t=e.target.closest&&e.target.closest('[data-tip]');if(!t){T.hidden=true;return}T.textContent=t.dataset.tip;T.hidden=false;place(e)});
  document.addEventListener('pointermove',e=>{if(!T.hidden)place(e)});const hideT=e=>{if(e.pointerType!=='mouse')T.hidden=true};document.addEventListener('pointerup',hideT);document.addEventListener('pointercancel',hideT);document.addEventListener('scroll',()=>{T.hidden=true;$$('.ov').forEach(o=>o.innerHTML='')},{passive:true,capture:true})}
 
+/* ---------- données Apple Santé : fusion d'un import ---------- */
+function applyHealth(R){
+ const all={...S.health.d,...R.d};let ks=Object.keys(all).sort().slice(-400),keep;
+ for(;;){keep={};ks.forEach(k=>keep[k]=all[k]);if(JSON.stringify(keep).length<235000||ks.length<=60)break;ks=ks.slice(20)}
+ S.health={upd:today(),last:R.last||S.health.last||'',hrmax:R.hmax,rm:R.rm||!!S.health.rm,chk:R.chk||S.health.chk||null,d:keep};put.health();
+ const det={...(S.detail.d||{}),...R.det},dk=Object.keys(det).sort().slice(-35);let dkeep;
+ for(let n2=dk.length;;n2-=3){dkeep={};dk.slice(-n2).forEach(k=>dkeep[k]=det[k]);if(JSON.stringify(dkeep).length<235000||n2<=6)break}
+ S.detail={d:dkeep};put.detail()}
+
+/* ---------- données de démo ---------- */
+const PROFILE_KEYS=['birth','sex','height','goalw','sups'];
+const hasRealData=()=>!S.set.demo&&!!(hKeys().length||S.sessions.length||Object.keys(S.days).length||S.med.length);
+async function loadDemo(){
+ if(S.set.demo)clearDemo();
+ toast('Préparation des données de démo…');await new Promise(r=>setTimeout(r,30));
+ const prev={};for(const k of PROFILE_KEYS)prev[k]=clone(S.set[k]??'');
+ for(const k of PROFILE_KEYS)if(k==='sups'||!has(S.set[k]))S.set[k]=clone(DEMO_PROFILE[k]);
+ const R=await readHealth(new File([demoHealthXML()],'export.xml',{type:'text/xml'}),()=>{},S.set.sex);
+ S.health={upd:'',d:{}};S.detail={d:{}};applyHealth(R);
+ const M=demoManual();S.cur=null;S.sessions=M.sessions;S.days=M.days;S.med=M.med;
+ S.set.demo={prev};S.set.onb=1;S.day=today();put.set();put.day(today());
+ hideOnb();renderEditor();if(location.hash!=='#aujourdhui')location.hash='aujourdhui';else renderSoft();
+ toast('Données de démo chargées : un profil fictif sur deux mois.')}
+function clearDemo(){
+ const prev=(S.set.demo&&S.set.demo.prev)||{};for(const k of PROFILE_KEYS)if(k in prev)S.set[k]=prev[k];
+ delete S.set.demo;S.health={upd:'',d:{}};S.detail={d:{}};S.sessions=[];S.days={};S.med=[];S.cur=null;
+ put.set();put.health();renderEditor()}
+
+/* ---------- premier lancement ---------- */
+const needOnb=()=>!S.set.onb&&!hKeys().length&&!S.sessions.length&&!Object.keys(S.days).length&&!S.med.length;
+function showOnb(step=0){const o=$('#onb');o.hidden=false;document.documentElement.style.overflow='hidden';
+ $$('#onb .ob').forEach(x=>x.hidden=+x.dataset.step!==step);$$('#onb .ob-dots i').forEach((x,i)=>x.classList.toggle('on',i===step));
+ if(step===1){$('#ob-birth').value=S.set.birth||'';$('#ob-sex').value=S.set.sex||'';$('#ob-height').value=S.set.height||'';$('#ob-sleep').value=String(S.set.sleep||450)}
+ o.scrollTop=0}
+function hideOnb(){$('#onb').hidden=true;document.documentElement.style.overflow=''}
+function saveProfile(){const y=new Date().getFullYear(),b=Math.round(num($('#ob-birth').value)),h=Math.round(num($('#ob-height').value)),sl=num($('#ob-sleep').value);
+ if(b>=y-110&&b<=y-10)S.set.birth=b;if(h>=100&&h<=250)S.set.height=h;S.set.sex=$('#ob-sex').value;if(sl>=300)S.set.sleep=sl;put.set()}
+function onbGo(to){S.set.onb=1;put.set();
+ if(to==='demo')return loadDemo();
+ hideOnb();
+ if(to==='apple'){psub='apple';if(location.hash!=='#plus')location.hash='plus';else renderPlus();return}
+ if(location.hash!=='#aujourdhui')location.hash='aujourdhui';else renderSoft();toast('Touche « Noter » pour ta première séance, ton repas ou ton check-in.')}
+
+/* ---------- sauvegarde en fichier, effacement ---------- */
+let pendingBk='';
+const backupText=()=>JSON.stringify({v:4,set:S.set,sessions:done(),days:S.days,med:S.med});
+async function saveBackup(){const name=`carnet-sante-${today()}.json`,file=new File([backupText()],name,{type:'application/json'});
+ const mark=()=>{S.set.bk=today();put.set();renderSettings()};
+ if(matchMedia('(pointer:coarse)').matches&&navigator.canShare&&navigator.canShare({files:[file]})){
+  try{await navigator.share({files:[file],title:'Sauvegarde Carnet de santé'});mark();return}catch(e){if(e&&e.name==='AbortError')return}}
+ const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();a.parentNode.removeChild(a);setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+ mark();toast('Sauvegarde enregistrée : '+name)}
+function resetAll(){mode='wiped';try{localStorage.removeItem(LS)}catch(e){}history.replaceState(null,'',location.pathname);location.reload()}
+
 function init(){
  route();renderEditor();status('load');
  mode='local';lsLoad();bump();pend.splice(0).forEach(f=>f());status('local');resumeOnce();renderSoft();
+ if(needOnb())showOnb(0);
+ $('#appver').textContent='version '+__APP_VERSION__;
+ /* Accès pour le simulateur iPhone (simulateur.html). */
+ window.carnet={loadDemo,resetAll,hasRealData};
  /* Autre onglet ouvert sur la même appli : on recharge les données qu'il vient d'écrire. */
- addEventListener('storage',e=>{if(e.key!==LS)return;S.sessions=[];S.days={};lsLoad();bump();renderSoft()});
- if('serviceWorker' in navigator&&import.meta.env.PROD)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+ addEventListener('storage',e=>{if(e.key!==LS)return;if(e.newValue==null)return location.reload();S.sessions=[];S.days={};lsLoad();bump();renderSoft()});
+ /* Hors connexion sur le web ; inutile dans l'appli iOS, qui embarque déjà ses fichiers. */
+ if('serviceWorker' in navigator&&import.meta.env.PROD&&!window.Capacitor?.isNativePlatform?.())navigator.serviceWorker.register('./sw.js').catch(()=>{});
 }
 init();

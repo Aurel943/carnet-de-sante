@@ -231,7 +231,7 @@ label.filebtn:focus-within{outline:3px solid color-mix(in srgb,var(--trn) 55%,tr
 }
 @media(max-width:800px){
  body{font-size:15px}.wrap{padding:0 12px}
- .tt{padding-top:calc(10px + env(safe-area-inset-top));padding-bottom:8px}h1{font-size:18px}.brand svg{width:26px;height:26px}
+ .tt{padding-top:calc(10px + var(--sat));padding-bottom:8px}h1{font-size:18px}.brand svg{width:26px;height:26px}
  .pill{font-size:0;padding:0;width:10px;height:10px;border:0;background:var(--mute)}.pill.db{background:var(--ok)}.pill.db::before{display:none}.pill.err{background:var(--bad)}.pill.local,.pill.slow{background:var(--str)}
  .tabs .dsk{display:none!important}.tabs a.sub-on{color:var(--ink)}.tabs a.sub-on svg{stroke:var(--eff)}
  main .wrap{padding-top:6px;padding-bottom:32px}
@@ -279,3 +279,63 @@ label.filebtn:focus-within{outline:3px solid color-mix(in srgb,var(--trn) 55%,tr
 @media(max-width:600px){.grid2,.grid3{grid-template-columns:minmax(0,1fr)}.grid5{grid-template-columns:repeat(2,minmax(0,1fr))}.edh{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.edh .tin{grid-column:1/-1}.addrow{grid-template-columns:repeat(2,minmax(0,1fr))}.jb{padding-left:4px}.je summary{grid-template-columns:44px 10px minmax(0,1fr)}.je .mt{grid-column:3;text-align:left;margin-top:-8px}.hrow{grid-template-columns:70px minmax(0,1fr) 84px;font-size:13px}.flist li{gap:8px}.gauge .gv{font-size:30px}.cr{grid-template-columns:96px minmax(0,1fr) 40px}h1{font-size:19px}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 .hvl{margin:10px 0}.hvl summary{cursor:pointer;font-weight:600;padding:8px 0}.hvl tr.insl td{background:color-mix(in srgb,var(--slp) 10%,transparent)}
+
+/* ---------- iPhone : barre d'onglets en bas, zones sûres (encoche, barre d'accueil) ---------- */
+/* --sat / --sab valent les marges système ; le simulateur les remplace pour imiter un iPhone. */
+:root{--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);--tabh:62px}
+html{-webkit-text-size-adjust:100%}
+@media(max-width:800px){
+ .top{padding-top:var(--sat);z-index:30}
+ #tabs{position:fixed;left:0;right:0;bottom:0;z-index:40;padding:6px 2px calc(4px + var(--sab));border-bottom:0;border-top:1px solid var(--line);
+  background:color-mix(in srgb,var(--panel) 88%,transparent);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px)}
+ main .wrap{padding-bottom:calc(var(--tabh) + var(--sab) + 24px)}
+ #toast{top:8px}
+ /* « Noter » : panneau qui monte du bas, au-dessus de la barre d'onglets */
+ #sheet{position:fixed;left:0;right:0;bottom:calc(var(--tabh) + var(--sab));z-index:35;padding:0 0 10px;background:none;animation:shup .22s ease-out}
+ #sheet::before{content:'';position:fixed;inset:0;background:rgba(0,0,0,.28);z-index:-1}
+ #sheet .sh{box-shadow:0 -6px 30px rgba(0,0,0,.18)}
+ a,button,label,.chip{-webkit-touch-callout:none}
+}
+@keyframes shup{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+@media(prefers-reduced-motion:reduce){#sheet{animation:none}}
+
+/* ---------- premier lancement ---------- */
+#onb{position:fixed;inset:0;z-index:100;background:var(--bg);overflow-y:auto;padding:calc(var(--sat) + 24px) 20px calc(var(--sab) + 24px);display:flex}
+.ob-in{width:min(100%,440px);margin:auto;display:flex;flex-direction:column;min-height:100%}
+.ob{display:flex;flex-direction:column;gap:14px;flex:1;animation:obin .3s ease-out}
+.ob[hidden]{display:none}
+.ob-logo{width:76px;height:76px;margin:12px 0 4px}
+.ob h1{font-size:32px;line-height:1.1;margin:0;letter-spacing:-.02em}
+.ob h2{font-size:28px;margin:8px 0 0;letter-spacing:-.01em}
+.ob-lead{color:var(--mute);font-size:16px;margin:0 0 6px}
+.ob-list{list-style:none;margin:6px 0 10px;padding:0;display:flex;flex-direction:column;gap:18px}
+.ob-list li{display:grid;grid-template-columns:44px minmax(0,1fr);gap:14px;align-items:start}
+.ob-list i{width:44px;height:44px;border-radius:14px;background:color-mix(in srgb,var(--c) 16%,transparent);display:grid;place-items:center}
+.ob-list svg{width:22px;height:22px;stroke:var(--c);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ob-list b{display:block;font-weight:800}
+.ob-list span{color:var(--mute);font-size:14.5px}.ob-list b{color:var(--ink);font-size:16px}
+.ob-form{display:grid;gap:12px;background:var(--panel);border-radius:22px;padding:16px}
+.ob-cta{margin-top:auto;width:100%;min-height:54px;font-size:17px}
+.ob .btn.ghost{width:100%}
+.ob-choice{background:var(--panel);border-radius:20px;border:0!important;padding:14px;margin-bottom:2px}
+.ob-note{margin-top:auto;text-align:center}
+.ob-dots{display:flex;gap:7px;justify-content:center;padding-top:18px}
+.ob-dots i{width:7px;height:7px;border-radius:9px;background:var(--line);transition:width .2s,background .2s}
+.ob-dots i.on{width:22px;background:var(--ink)}
+@keyframes obin{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.ob{animation:none}}
+
+/* ---------- bandeau données de démo ---------- */
+#demobar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:color-mix(in srgb,var(--slp) 14%,var(--panel));border-radius:16px;padding:6px 6px 6px 14px;margin:8px 0 6px;font-size:14px}
+#demobar[hidden]{display:none}
+#demobar .btn{background:var(--panel)}
+
+/* ---------- données et confidentialité ---------- */
+.privacy{margin:0 0 12px;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14.5px}
+.lnk{color:var(--trn);font-weight:700;text-decoration:none}
+.btn.danger{background:color-mix(in srgb,var(--bad) 14%,transparent);color:var(--bad)}
+.btn.danger.armed{background:var(--bad);color:#fff}
+label.btn.filebtn:not(.pri){color:var(--ink);margin:0}
+.adv{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.adv summary{cursor:pointer;font-weight:700;color:var(--mute);font-size:14px}
+@media(min-width:801px){.ob-in{min-height:0}.ob-cta{margin-top:20px}.ob-note{margin-top:16px}#onb{padding-top:40px;padding-bottom:40px}}

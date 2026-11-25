@@ -8,7 +8,7 @@ export default [
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: 'module',
-      globals: { ...globals.browser },
+      globals: { ...globals.browser, __APP_VERSION__: 'readonly' },
     },
     rules: {
       // Le code est volontairement compact (expressions courtes enchaînées).

@@ -1,0 +1,10 @@
+{
+  "appId": "com.aurel943.carnetdesante",
+  "appName": "Carnet de santé",
+  "webDir": "dist",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#f2f2f6",
+    "scrollEnabled": true
+  }
+}

@@ -13,8 +13,6 @@
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon-180.png">
 <link rel="manifest" href="./manifest.webmanifest">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./src/styles.css">
 </head>
 <body>
@@ -37,6 +35,7 @@
 <div class="kbd dskonly"><b>←</b><b>→</b> changer de jour<br><b>1</b>–<b>7</b> onglets · <b>N</b> noter<br><b>Échap</b> fermer</div>
 </header>
 <main id="sc"><div class="wrap">
+<div id="demobar" hidden><span><b>Démo</b> · profil fictif</span><button type="button" class="btn small" data-act="demoEnd">Utiliser mes données</button></div>
 <div class="daynav" id="dn"><button class="btn icon" data-act="dprev" aria-label="Jour précédent">‹</button><div><h2 id="dtitle"></h2><p id="dsub" class="mute small"></p></div><button class="btn icon" data-act="dnext" aria-label="Jour suivant">›</button></div>
 <div id="dnote"></div>
 
@@ -126,7 +125,7 @@
   <button class="hr" data-act="psub" data-s="dossier" style="--c:var(--hrt)"><i><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg></i><span><b>Dossier médical</b><small>Rendez-vous, vaccins, analyses, blessures</small></span><em>›</em></button>
   <button class="hr" data-act="psub" data-s="apple" style="--c:var(--rec)"><i><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></i><span><b>Apple Santé</b><small id="hubapple">Importer et mettre à jour tes données</small></span><em>›</em></button>
   <button class="hr" data-act="psub" data-s="reglages" style="--c:var(--mute)"><i><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></i><span><b>Réglages</b><small>Objectifs, profil, VFC, favoris, compléments</small></span><em>›</em></button>
-  <button class="hr" data-act="psub" data-s="donnees" style="--c:var(--slp)"><i><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></i><span><b>Sauvegarde</b><small>Exporter ou restaurer tes données</small></span><em>›</em></button>
+  <button class="hr" data-act="psub" data-s="donnees" style="--c:var(--slp)"><i><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></i><span><b>Données et confidentialité</b><small>Sauvegarde, restauration, suppression</small></span><em>›</em></button>
  </div>
  <div class="subbar" id="subbar" hidden><button class="btn small" data-act="psub" data-s="">‹ Plus</button><h2 id="subt"></h2></div>
  <div data-sub="dossier" hidden>
@@ -160,14 +159,63 @@
    <p class="mute small">Le fichier est analysé dans ton navigateur, minute par minute : fréquence cardiaque, pas, VFC horodatée, phases et éveils du sommeil. Rien n'est envoyé ailleurs. Sont gardés : 13 mois de résumés quotidiens, et le détail des 35 dernières nuits et journées (hypnogramme, FC et VFC nocturnes, courbe cardiaque, stress heure par heure). Ta FC maximale est déduite de tes entraînements pour calculer tes zones.</p></div>
  </div>
  <div data-sub="donnees" hidden>
-  <div class="panel"><h2>Sauvegarde</h2><p id="savenote" class="small"></p>
-   <h3>Exporter</h3><textarea id="exp" readonly rows="4"></textarea><div class="row"><button class="btn small" data-act="copy">Copier l'export</button></div>
-   <h3>Importer</h3><textarea id="imp" rows="4" placeholder="Colle ici un export…"></textarea><div class="row"><button class="btn small" data-act="import">Importer (remplace tout)</button><span id="impmsg" class="mute small"></span></div>
-   <p class="mute small">L'export contient tes séances, ta nutrition, ton journal, ton dossier et tes réglages. Les données Apple Santé se réimportent depuis ton iPhone.</p></div>
+  <div class="panel"><h2>Tes données restent chez toi</h2><p id="savenote" class="small"></p>
+   <ul class="privacy"><li>Pas de compte, pas de serveur : tout est stocké sur cet appareil.</li><li>Aucune publicité, aucun traceur, aucune donnée vendue ou partagée.</li><li>Tu peux tout exporter ou tout effacer à tout moment.</li></ul>
+   <a class="lnk" href="./confidentialite.html">Lire la politique de confidentialité ›</a></div>
+  <div class="panel"><h2>Sauvegarde</h2>
+   <p class="small">Enregistre un fichier avec tes séances, ta nutrition, ton journal, ton dossier et tes réglages : garde-le dans Fichiers ou iCloud Drive, ou envoie-le sur un autre appareil. Les données Apple Santé se réimportent depuis l'iPhone.</p>
+   <div class="row"><button class="btn pri" data-act="bksave">Enregistrer une sauvegarde</button><label class="btn filebtn">Restaurer une sauvegarde<input type="file" id="bkfile" class="vh" accept=".json,application/json,text/plain"></label></div>
+   <p id="bkmsg" class="small"></p>
+   <details class="adv"><summary>Copier-coller (avancé)</summary>
+    <h3>Exporter</h3><textarea id="exp" readonly rows="4"></textarea><div class="row"><button class="btn small" data-act="copy">Copier l'export</button></div>
+    <h3>Importer</h3><textarea id="imp" rows="4" placeholder="Colle ici un export…"></textarea><div class="row"><button class="btn small" data-act="import">Importer (remplace tout)</button><span id="impmsg" class="mute small"></span></div>
+   </details></div>
+  <div class="panel"><h2>Effacer mes données</h2>
+   <p class="small">Supprime définitivement de cet appareil tout ce que contient l'appli : séances, repas, journal, dossier médical, réglages et données Apple Santé importées. Les données de l'app Santé d'Apple ne sont pas touchées.</p>
+   <div class="row"><button class="btn danger" data-act="wipe">Effacer toutes mes données</button></div></div>
+  <div class="panel about"><h2>À propos</h2>
+   <p class="small"><b>Carnet de santé</b> <span id="appver" class="mute"></span></p>
+   <p class="mute small">Carnet de santé n'est pas un dispositif médical. Ses scores, repères et analyses sont des estimations à partir de tes données ; ils ne remplacent pas l'avis d'un professionnel de santé. En cas de symptôme ou de doute, consulte ton médecin.</p></div>
  </div>
 </section>
 </div></main>
 
+<div id="onb" hidden role="dialog" aria-modal="true" aria-labelledby="onbt">
+ <div class="ob-in">
+  <section class="ob" data-step="0">
+   <svg class="ob-logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="var(--ink)"/><g fill="none" stroke-width="3" stroke-linecap="round" transform="rotate(-90 16 16)"><circle cx="16" cy="16" r="9" stroke="var(--eff)" stroke-dasharray="19 38"/><circle cx="16" cy="16" r="9" stroke="var(--rec)" stroke-dasharray="17 40" stroke-dashoffset="-19"/><circle cx="16" cy="16" r="9" stroke="var(--slp)" stroke-dasharray="17 40" stroke-dashoffset="-38"/></g></svg>
+   <h1 id="onbt">Carnet de santé</h1>
+   <p class="ob-lead">Ton coach personnel, qui interprète chaque chiffre de ta montre.</p>
+   <ul class="ob-list">
+    <li style="--c:var(--eff)"><i><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></i><span><b>Effort, récupération, sommeil</b>Trois scores chaque matin, et le conseil qui va avec.</span></li>
+    <li style="--c:var(--trn)"><i><svg viewBox="0 0 24 24"><path d="M3 10v4M6 8v8M18 8v8M21 10v4M6 12h12"/></svg></i><span><b>Entraînement et nutrition</b>Séances de muscu, charge, records, repas et protéines.</span></li>
+    <li style="--c:var(--rec)"><i><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></i><span><b>Privé par conception</b>Pas de compte ni de serveur : tes données restent sur ton téléphone.</span></li>
+   </ul>
+   <button type="button" class="btn pri ob-cta" data-act="onb" data-to="1">Commencer</button>
+  </section>
+  <section class="ob" data-step="1" hidden>
+   <h2>Ton profil</h2>
+   <p class="ob-lead">Pour comparer tes chiffres aux normes de ton âge et calculer tes zones cardiaques. Tout est facultatif et modifiable dans les réglages.</p>
+   <div class="ob-form">
+    <label>Année de naissance<input id="ob-birth" inputmode="numeric" placeholder="ex. 1990" maxlength="4"></label>
+    <label>Sexe<select id="ob-sex"><option value="">Non précisé</option><option value="h">Homme</option><option value="f">Femme</option></select></label>
+    <label>Taille (cm)<input id="ob-height" inputmode="numeric" placeholder="ex. 175" maxlength="3"></label>
+    <label>Heures de sommeil visées<select id="ob-sleep"><option value="420">7 h</option><option value="450" selected>7 h 30</option><option value="480">8 h</option><option value="510">8 h 30</option></select></label>
+   </div>
+   <button type="button" class="btn pri ob-cta" data-act="onb" data-to="2">Continuer</button>
+   <button type="button" class="btn ghost" data-act="onb" data-to="2" data-skip="1">Plus tard</button>
+  </section>
+  <section class="ob" data-step="2" hidden>
+   <h2>Tes données</h2>
+   <p class="ob-lead">Le carnet s'appuie sur les mesures de ton Apple Watch ou de ton iPhone.</p>
+   <button type="button" class="hr ob-choice" data-act="onbGo" data-go2="apple" style="--c:var(--rec)"><i><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></i><span><b>Importer Apple Santé</b><small>Depuis l'app Santé : Exporter toutes les données de santé</small></span><em>›</em></button>
+   <button type="button" class="hr ob-choice" data-act="onbGo" data-go2="demo" style="--c:var(--slp)"><i><svg viewBox="0 0 24 24"><path d="M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z"/></svg></i><span><b>Explorer avec des données de démo</b><small>Deux mois d'un profil fictif, effaçables d'un geste</small></span><em>›</em></button>
+   <button type="button" class="hr ob-choice" data-act="onbGo" data-go2="empty" style="--c:var(--mute)"><i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></i><span><b>Commencer sans données</b><small>Noter tes séances, repas et check-ins à la main</small></span><em>›</em></button>
+   <p class="mute small ob-note">Carnet de santé n'est pas un dispositif médical : ses analyses ne remplacent pas l'avis d'un professionnel de santé.</p>
+  </section>
+  <div class="ob-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+ </div>
+</div>
 <datalist id="exlist"></datalist>
 <div id="tip" hidden></div>
 <script type="module" src="./src/main.js"></script>
