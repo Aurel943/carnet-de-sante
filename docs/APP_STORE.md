@@ -5,7 +5,7 @@ le dossier `ios/` contient le projet Xcode, qui embarque la version compilée de
 
 ## Ce qui est déjà prêt
 
-- Projet Xcode (`ios/App`), iPhone uniquement, portrait, iOS 16 minimum, en français.
+- Projet Xcode (`ios/App`), iPhone uniquement, portrait, iOS 17.5 minimum (nécessaire aux couleurs clair / sombre de l’interface), en français.
 - **Lecture directe d'Apple Santé (HealthKit)**, en lecture seule : module natif
   `ios/App/App/HealthSyncPlugin.swift`, capacité HealthKit (`App.entitlements`) et texte
   d'autorisation (`NSHealthShareUsageDescription` dans `Info.plist`). Voir plus bas.

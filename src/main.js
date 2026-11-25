@@ -217,8 +217,19 @@ function drawHyp(f){const s=f.querySelector('svg'),c=f._d,W=f.clientWidth,H2=f.c
   return{gx:Xf(m),mk:[],ty:top+lh*2,html:`<div class="d">${hhmm(m)}</div>${sx?`<div><i class="sw" style="background:${SC[sx[2]]}"></i>${SN[sx[2]]} : <b>${hhmm(sx[0])} – ${hhmm(sx[1])}</b> (${fmtSl(sx[1]-sx[0])})</div>`:''}${hv?`<div><i class="sw" style="background:var(--hrt)"></i>FC : <b>${hv} bpm</b></div>`:''}${pv?`<div><i class="sw" style="background:var(--mind)"></i>VFC ${hvLab()} à ${hhmm(pv[0])} : <b>${r0(pv[1])} ms</b></div>`:''}`}}};
  interact(f)}
 const nar=W=>W<520;
-function gaugeSVG(v,col,unit,max=100){const r=56,C=2*Math.PI*r,p=v==null?0:clamp(v/max,0,1);return `<svg viewBox="0 0 140 140" aria-hidden="true"><circle cx="70" cy="70" r="${r}" fill="none" stroke="${col}" stroke-opacity=".15" stroke-width="13"/><circle cx="70" cy="70" r="${r}" fill="none" stroke="${col}" stroke-width="13" stroke-linecap="round" stroke-dasharray="${(C*p).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 70 70)"${p<=0?' opacity="0"':''}/><text class="gv" x="70" y="${unit?74:80}" text-anchor="middle">${v==null?'–':Math.round(v)}</text>${unit?`<text class="gu" x="70" y="96" text-anchor="middle">${unit}</text>`:''}</svg>`}
-function gauge(v,col,label,sub,link,unit='%',big){return `<${link?'button':'div'} class="gauge${big?' big':''}"${link?` data-go="${link}"`:''}>${gaugeSVG(v,col,unit)}<b>${label}</b><span>${sub||''}</span></${link?'button':'div'}>`}
+/* Anneaux : dégradé angulaire (ton profond au départ, plus clair au bout) dessiné en petits segments,
+   bouts arrondis, légère ombre sous l'extrémité ; remplissage animé quand la valeur change. */
+let ringN=0;const ringSeen=new Map();
+function arcRing(cx,cy,r,w,p,col,id,shadow=true){if(!(p>0))return'';p=Math.min(p,0.9995);
+ const a0=-Math.PI/2,a1=a0+p*2*Math.PI,N=Math.max(2,Math.ceil(p*(r>20?90:36))),dk=`color-mix(in oklab, ${col} 82%, #000)`,lt=`color-mix(in oklab, ${col} 66%, #fff)`,
+  mix=t=>`color-mix(in oklab, ${dk} ${Math.round((1-t)*100)}%, ${lt})`,P=a=>[cx+r*Math.cos(a),cy+r*Math.sin(a)],f=v=>v.toFixed(2);
+ let g='';for(let k=0;k<N;k++){const s0=a0+(a1-a0)*k/N,s1=Math.min(a1,a0+(a1-a0)*(k+1)/N+0.01),[x0,y0]=P(s0),[x1,y1]=P(s1);g+=`<path d="M${f(x0)} ${f(y0)}A${r} ${r} 0 0 1 ${f(x1)} ${f(y1)}" style="stroke:${mix((k+.5)/N*p)}" stroke-width="${w}" fill="none"/>`}
+ const [sx,sy]=P(a0),[ex,ey]=P(a1),dx=Math.cos(a1+Math.PI/2)*w*.22,dy=Math.sin(a1+Math.PI/2)*w*.22;
+ return `<circle cx="${f(sx)}" cy="${f(sy)}" r="${w/2}" style="fill:${mix(0)}"/>${g}${shadow&&p>.04?`<circle cx="${f(ex+dx)}" cy="${f(ey+dy)}" r="${w/2}" fill="#000" opacity=".3" filter="url(#${id}b)"/>`:''}<circle cx="${f(ex)}" cy="${f(ey)}" r="${w/2}" style="fill:${mix(p)}"/>`}
+function gaugeSVG(v,col,unit,max=100,key){const r=56,w=10,p=v==null?0:clamp(v/max,0,1),id='rg'+(++ringN);
+ const an=!!key&&p>0&&ringSeen.get(key)!==p&&!matchMedia('(prefers-reduced-motion: reduce)').matches;if(key)ringSeen.set(key,p);
+ return `<svg viewBox="0 0 140 140" aria-hidden="true"><defs><filter id="${id}b" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2"/></filter>${an?`<mask id="${id}m"><circle class="ringgrow" cx="70" cy="70" r="${r}" fill="none" stroke="#fff" pathLength="100" stroke-dasharray="100 100" stroke-dashoffset="100" transform="rotate(-97 70 70)"/></mask>`:''}</defs><circle cx="70" cy="70" r="${r}" fill="none" stroke="${col}" stroke-opacity=".15" stroke-width="${w}"/><g${an?` mask="url(#${id}m)"`:''}>${arcRing(70,70,r,w,p,col,id)}</g><text class="gv" x="70" y="${unit?74:80}" text-anchor="middle">${v==null?'–':Math.round(v)}</text>${unit?`<text class="gu" x="70" y="96" text-anchor="middle">${unit}</text>`:''}</svg>`}
+function gauge(v,col,label,sub,link,unit='%',big){return `<${link?'button':'div'} class="gauge${big?' big':''}"${link?` data-go="${link}"`:''}>${gaugeSVG(v,col,unit,100,label+'|'+S.day+(big?'|b':''))}<b>${label}</b><span>${sub||''}</span></${link?'button':'div'}>`}
 const zbar=z=>{const t=(z||[]).reduce((a,b)=>a+b,0);return t?`<div class="zb">${z.map((m,i)=>m?`<i style="width:${m/t*100}%;background:${ZC[i]}"></i>`:'').join('')}</div>`:''};
 const zleg=z=>`<div class="zl">${(z||[]).map((m,i)=>m?`<span><i style="--c:${ZC[i]}"></i>Z${i+1} ${m} min</span>`:'').join('')}</div>`;
 
@@ -233,7 +244,7 @@ function renderDayNav(){const d=S.day,v0=cur(),rel=d===today()?"Aujourd'hui":d==
 }
 
 /* ---------- frise de la semaine : un mini-anneau par jour (comme l'app Forme) ---------- */
-function ringSVG(rings){const sz=34,c=sz/2;return `<svg viewBox="0 0 ${sz} ${sz}" aria-hidden="true">${rings.map(([v,col,r,w])=>{const C=2*Math.PI*r,p=v==null?0:clamp(v/100,0,1);return `<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${col}" stroke-opacity=".2" stroke-width="${w}"/>${p>0?`<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-dasharray="${(C*p).toFixed(2)} ${C.toFixed(2)}" transform="rotate(-90 ${c} ${c})"/>`:''}`}).join('')}</svg>`}
+function ringSVG(rings){const sz=34,c=sz/2,id='rw'+(++ringN);return `<svg viewBox="0 0 ${sz} ${sz}" aria-hidden="true">${rings.map(([v,col,r,w])=>{const p=v==null?0:clamp(v/100,0,1);return `<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${col}" stroke-opacity=".2" stroke-width="${w}"/>${arcRing(c,c,r,w,p,col,id,false)}`}).join('')}</svg>`}
 function renderWeek(v){const d=S.day,t=today(),wd=(new Date(d+'T12:00').getDay()+6)%7,mon=addD(d,-wd),L='LMMJVSD';
  const val=(f,x)=>{try{const r=f(x);return r==null?null:typeof r==='object'?r.s:r}catch(e){return null}};
  $('#wk').innerHTML=[0,1,2,3,4,5,6].map(i=>{const x=addD(mon,i),fut=x>t;

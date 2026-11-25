@@ -803,3 +803,9 @@ label.btn.filebtn:not(.pri){color:var(--ink)}
 }
 /* coach replié : le texte est coupé net après 3 lignes (la marge du bas devient une bordure, hors zone de défilement) */
 @media(max-width:800px){#coach{padding-bottom:0;border-bottom:11px solid var(--panel2)}#coach.more:not(.open)::after{bottom:0}}
+
+/* ---------- anneaux : remplissage animé ---------- */
+.gauge svg mask circle{stroke-width:18}
+.ringgrow{animation:ringgrow 1s cubic-bezier(.2,.75,.2,1) .05s forwards}
+@keyframes ringgrow{to{stroke-dashoffset:0}}
+@media(prefers-reduced-motion:reduce){.ringgrow{animation:none;stroke-dashoffset:0}}
