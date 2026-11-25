@@ -1,9 +1,7 @@
 /* Carnet de santé : logique de l'application (état, moteur d'interprétation, vues, import, événements). */
-// Police intégrée à l'appli (aucun appel à Google Fonts) : sous-ensemble latin, graisses utilisées
-import '@fontsource/plus-jakarta-sans/latin-500.css';
-import '@fontsource/plus-jakarta-sans/latin-600.css';
-import '@fontsource/plus-jakarta-sans/latin-700.css';
-import '@fontsource/plus-jakarta-sans/latin-800.css';
+// Police : SF Pro (police système) sur les appareils Apple ; ailleurs Inter, intégrée à l'appli
+// (aucun appel à un service de polices). Chargée seulement si SF Pro est absent.
+import '@fontsource-variable/inter/wght.css';
 import {$,$$,esc,clone,iso,today,addD,dShort,dLong,dWk,num,has,fx,f2,r0,sg,clamp,nid,norm,plain,e1,sortDesc,setTxt,fmtSl,hhmm,hm,avg,sdv} from './utils.js';
 import {BASE_EX,SPORTS,MEALS,WT,MG,SCALES,MEAS,ZC,ZN,IC,DEF} from './constants.js';
 import {readHealth} from './health-import.js';

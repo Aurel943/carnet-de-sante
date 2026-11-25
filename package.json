@@ -1,6 +1,6 @@
 {
   "name": "carnet-de-sante",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "private": true,
   "description": "Carnet de santé personnel : sommeil, récupération, effort, nutrition et tendances, à partir des données Apple Santé.",
   "type": "module",
@@ -24,7 +24,7 @@
   "dependencies": {
     "@capacitor/core": "^8.6.2",
     "@capacitor/ios": "^8.6.2",
-    "@fontsource/plus-jakarta-sans": "^5.3.0",
+    "@fontsource-variable/inter": "^5.3.0",
     "jszip": "^3.10.1"
   }
 }
