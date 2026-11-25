@@ -251,14 +251,33 @@ const EMPTY={
 function emptyHTML(v){const [c,ic,t,p]=EMPTY[v];
  return `<div class="emptyv" style="--c:${c}"><i><svg viewBox="0 0 24 24">${ic}</svg></i><h3>${t}</h3><p>${p}</p><div class="row">${HKN?'<button type="button" class="btn pri" data-act="hkauth">Connecter Apple Santé</button>':'<button type="button" class="btn pri" data-act="psub" data-s="apple">Importer Apple Santé</button>'}<button type="button" class="btn" data-act="demoTry">Essayer avec la démo</button></div></div>`}
 
+/* ---------- calories brûlées : métabolisme de base + calories actives ---------- */
+/* Métabolisme de base par la formule de Mifflin-St Jeor (la plus fiable chez l'adulte selon les études
+   comparatives) : poids moyen des 7 dernières pesées, taille, âge, sexe. Sans profil complet, on se rabat
+   sur l'énergie au repos d'Apple Santé. */
+function bmrInfo(){const W=weights(),wk=Object.keys(W).sort(),wt=wk.length?wAvg(W,wk[wk.length-1]):null,ht=num(S.set.height),a=ageOf(),sx=S.set.sex;
+ if(!wt||!(ht>100)||a==null)return{miss:[!wt&&'ton poids',!(ht>100)&&'ta taille',a==null&&'ton année de naissance'].filter(Boolean)};
+ const b=10*wt+6.25*ht-5*a;return{v:Math.round(sx==='h'?b+5:sx==='f'?b-161:b-78),wt,ht,a,sx}}
+function burnOf(d){const h=H(d),b=bmrInfo(),t=today(),now=new Date(),fr=d===t?(now.getHours()*60+now.getMinutes())/1440:d>t?0:1;
+ const basal=b.v?b.v*fr:has(h.bs)?num(h.bs):null,active=num(h.ac);
+ if(basal==null&&!active)return null;return{basal:basal||0,active,total:(basal||0)+active,src:b.v?'calc':'apple',fr,b}}
+function burnTile(d,tile){const x=burnOf(d),isT=d===today(),hm2=new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+ if(!x)return tile('var(--eff)','Calories brûlées','–',hKeys().length?'renseigne ton poids, ta taille et ton âge':'métabolisme de base + calories actives','','burn');
+ const bar=`<div class="burnbar"><i style="flex:${Math.max(1,x.basal)}"></i><i class="ac" style="flex:${Math.max(0,x.active)}"></i></div><div class="burnlg"><span><i></i>${r0(x.basal)} kcal de base</span><span><i class="ac"></i>${r0(x.active)} kcal actives</span></div>`;
+ return tile('var(--eff)','Calories brûlées',`${r0(x.total)}<small> kcal</small>`,isT?`depuis minuit, à ${hm2}`:'sur la journée',bar,'burn')}
+
+/* le total avance au fil de la journée : rafraîchi chaque minute sur Aujourd'hui */
+setInterval(()=>{if(cur()==='aujourdhui'&&S.day===today()&&!msKind&&document.visibilityState==='visible'&&!document.activeElement?.closest?.('input,textarea,select'))renderView('aujourdhui')},60000);
+
 /* ---------- aujourd'hui ---------- */
 function renderToday(){const d=S.day,h=H(d),D=S.days[d]||{},it=D.items||[],T=dayTrain(d),set=S.set;
  const rc=recovery(d),sl=sleepScore(d),ef=effortOf(d),tg=effTarget(rc&&rc.s);
  $('#g3').innerHTML=gauge(ef,'var(--eff)','Effort',tg?`conseillé ${tg[0]}–${tg[1]}`:'charge du jour','effort','')+gauge(rc&&rc.s,'var(--rec)','Récupération',rc?recLab(rc.s)[0]:(calib(d)<7&&hKeys().length?`calibrage ${calib(d)}/7 nuits`:'en attente de données'),'recuperation')+gauge(sl&&sl.s,'var(--slp)','Sommeil',h.sl?fmtSl(h.sl):'pas de nuit','sommeil');
  $('#coach').innerHTML=coach(d,rc,sl,ef,tg);
  const st=num(h.stz),wat=num(D.w)||num(h.wa),vb=nhrvBase(d);
- const tile=(c,k,v,s,extra='',mk='')=>`<div class="tile${mk?' tap':''}" style="--c:${c}"${mk?` data-act="metric" data-k="${mk}" role="button" tabindex="0" aria-label="${esc(k)} : voir le détail"`:''}><span class="k"><i></i>${k}</span><span class="v">${v}</span><span class="s">${s}</span>${extra}</div>`;
+ const tile=(c,k,v,s,extra='',mk='')=>`<div class="tile${mk?' tap':''}${mk==='burn'?' wide':''}" style="--c:${c}"${mk?` data-act="metric" data-k="${mk}" role="button" tabindex="0" aria-label="${esc(k)} : voir le détail"`:''}><span class="k"><i></i>${k}</span><span class="v">${v}</span><span class="s">${s}</span>${extra}</div>`;
  $('#tiles').innerHTML=[
+  burnTile(d,tile),
   tile('var(--str)','Stress estimé',has(h.stz)?`${st}<small> / 100</small>`:'–',has(h.stz)?stressLab(st):hKeys().length?(d===today()?'calculé au fil de la journée':'pas de mesure ce jour'):IMP('après import Apple','après synchro Apple Santé'),'','stz'),
   tile('var(--mind)','VFC nocturne',nhrv(d)?`${r0(nhrv(d))}<small> ms</small>`:'–',nhrv(d)&&vb?`normale ${r0(vb.m)} ms`:'pendant ton sommeil','','hrv'),
   tile('var(--hrt)','FC au repos',h.rhr?`${h.rhr}<small> bpm</small>`:'–',h.nmin?`min. nocturne ${h.nmin} bpm`:'','','rhr'),
@@ -814,36 +833,39 @@ let metK='',metP=30;
 const dayKcal=d=>{const it=dayIt(d);return it.length?it.reduce((a,x)=>a+kcalOf(x),0):null};
 const dayWat=d=>{const w=num((S.days[d]||{}).w)||num(H(d).wa);return w?w/1000:null};
 const MET={
+ burn:{t:'Calories brûlées',u:'kcal',col:'var(--eff)',cum:1,f:d=>{const x=burnOf(d);return x?x.total:null},bars:1,fmt:r0,
+  about:'Ton corps dépense de l\'énergie en permanence, même au repos : c\'est le métabolisme de base, qui représente 60 à 70 % de la dépense d\'une journée chez la plupart des gens. Il dépend surtout de ta masse maigre, donc de ton poids, de ta taille, de ton âge et de ton sexe. La formule de Mifflin-St Jeor, utilisée ici, est celle que les études comparatives jugent la plus fiable chez l\'adulte : elle tombe à moins de 10 % près pour la majorité des gens. Le métabolisme de base est réparti sur les 24 heures, d\'où un total qui grimpe au fil de la journée. Les calories actives viennent de ta montre (mouvement et fréquence cardiaque) ; elles sont moins précises, avec des écarts de 20 % ou plus selon les activités. La digestion ajoute environ 10 % de ce que tu manges, non compté ici. C\'est une estimation, utile surtout pour suivre tes tendances.'},
  stz:{t:'Stress estimé',u:'/ 100',col:'var(--str)',f:d=>has(H(d).stz)?num(H(d).stz):null,line:1,fmt:r0,
   about:'Part des minutes de la journée où ta fréquence cardiaque était nettement au-dessus de ton repos alors que tu bougeais peu (hors sommeil et entraînement). Une FC qui monte sans effort physique reflète souvent une activation du système nerveux sympathique : stress, mais aussi caféine, chaleur, digestion, déshydratation ou station debout prolongée. C\'est donc une estimation, pas une mesure du stress. Sous 10, la journée a été calme ; au-delà de 20 à 30, elle a été chargée. La respiration lente (environ 6 cycles par minute), l\'activité physique régulière et un sommeil suffisant aident à faire baisser cette activation.'},
  hrv:{t:'VFC nocturne',u:'ms',col:'var(--mind)',f:d=>nhrv(d),line:1,fmt:r0,base:d=>{const b=nhrvBase(d);return b?{m:b.m,s:b.s}:null},
   about:'La variabilité de la fréquence cardiaque (VFC) mesure les petites différences de durée entre deux battements. Elle reflète surtout l\'activité du système nerveux parasympathique, celui du repos et de la récupération. Elle varie énormément d\'une personne à l\'autre (âge, génétique, condition physique) et baisse naturellement avec l\'âge : il n\'existe pas de bonne valeur universelle, et comparer la tienne à celle de quelqu\'un d\'autre n\'a pas de sens. Ce qui compte, c\'est ta tendance : au-dessus de ta plage habituelle, c\'est souvent signe de bonne récupération ; une baisse qui dure plusieurs jours accompagne fréquemment un manque de sommeil, l\'alcool, le stress, une maladie qui commence ou une charge d\'entraînement trop forte. L\'entraînement d\'endurance régulier tend à l\'augmenter sur plusieurs semaines. L\'Apple Watch mesure le SDNN, qui ne se compare pas directement au RMSSD utilisé par d\'autres appareils.'},
  rhr:{t:'FC au repos',u:'bpm',col:'var(--hrt)',f:d=>num(H(d).rhr)||null,line:1,fmt:r0,base:d=>{const b=zb(x=>num(H(x).rhr)||null,d);return b.m!=null?{m:b.m,s:Math.max(b.s,1.5)}:null},
   about:'La fréquence cardiaque au repos est le nombre de battements par minute quand tu es éveillé et immobile depuis un moment. Chez l\'adulte, 60 à 100 bpm est considéré comme normal ; les sportifs d\'endurance descendent souvent sous 60. Les grandes études de suivi associent une FC de repos plus basse à un meilleur pronostic cardiovasculaire et à une meilleure espérance de vie. L\'entraînement d\'endurance la fait baisser progressivement, sur plusieurs semaines à quelques mois. À court terme, une hausse de 5 bpm ou plus pendant plusieurs jours par rapport à ton habitude accompagne souvent fatigue, maladie, déshydratation, alcool, chaleur ou stress.'},
- st:{t:'Pas',u:'pas',col:'var(--eff)',f:d=>num(H(d).st)||null,bars:1,fmt:r0,goal:()=>num(S.set.steps),
+ st:{t:'Pas',u:'pas',col:'var(--eff)',cum:1,f:d=>num(H(d).st)||null,bars:1,fmt:r0,goal:()=>num(S.set.steps),
   about:'Marcher davantage est l\'un des comportements les plus clairement associés à une meilleure santé. Dans les grandes études, le risque de mortalité baisse nettement à mesure que le nombre de pas augmente, jusqu\'à environ 8 000 à 10 000 pas par jour avant 60 ans et 6 000 à 8 000 après ; au-delà, le bénéfice se stabilise. Chaque tranche de 1 000 pas en plus compte, même en partant de peu. Le rythme compte aussi : une partie des pas faite à allure soutenue (marche rapide) apporte un bénéfice supplémentaire.'},
- nut:{t:'Nutrition',u:'kcal',col:'var(--nut)',f:dayKcal,bars:1,fmt:r0,goal:()=>num(S.set.kcal),
+ nut:{t:'Nutrition',u:'kcal',col:'var(--nut)',cum:1,f:dayKcal,bars:1,fmt:r0,goal:()=>num(S.set.kcal),
   about:'Les besoins caloriques dépendent de ta taille, de ton poids, de ton âge et de ton activité ; les formules et les montres les estiment avec une erreur de plusieurs centaines de kcal. La mesure la plus fiable est ta « dépense réelle estimée » (onglet Nutrition), calculée à partir de ce que tu manges et de l\'évolution de ton poids. Pour les protéines, avec de la musculation, environ 1,6 g par kg de poids et par jour suffit à la plupart des gens pour garder ou développer du muscle, jusqu\'à 2,2 g/kg en déficit calorique ; les répartir en 3 ou 4 prises de 20 à 40 g aide. Le minimum pour la santé générale est de 0,8 g/kg.'},
- wat:{t:'Hydratation',u:'L',col:'var(--wat)',f:dayWat,bars:1,fmt:fx,goal:()=>num(S.set.water)/1000,
+ wat:{t:'Hydratation',u:'L',col:'var(--wat)',cum:1,f:dayWat,bars:1,fmt:fx,goal:()=>num(S.set.water)/1000,
   about:'Les apports en eau conseillés, boissons et aliments compris, sont d\'environ 2,5 L par jour pour un homme et 2 L pour une femme ; les boissons en apportent 70 à 80 %, le reste vient de l\'alimentation. Les besoins augmentent avec la chaleur, l\'altitude et l\'activité physique : compte environ 0,5 à 1 L de plus par heure d\'effort qui fait transpirer. La soif et une urine claire restent de bons repères au quotidien.'},
 };
 function openMetric(k){if(!MET[k])return;metK=k;openSheet('metric');renderMetric()}
 function renderMetric(){const m=MET[metK];if(!m)return;const end=S.day,from=addD(end,-(metP-1)),pts=[];
  for(let x=from;x<=end;x=addD(x,1)){const v=m.f(x);if(v!=null&&isFinite(v))pts.push({x,y:Math.round(v*100)/100})}
- const ys=pts.map(p=>p.y),av=avg(ys),mn=ys.length?Math.min(...ys):null,mx=ys.length?Math.max(...ys):null,last=m.f(end),b=m.base?m.base(end):null,goal=m.goal?m.goal():0;
+ const part=m.cum&&end===today(),ys=pts.filter(p=>!(part&&p.x===end)).map(p=>p.y),av=avg(ys),mn=ys.length?Math.min(...ys):null,mx=ys.length?Math.max(...ys):null,last=m.f(end),b=m.base?m.base(end):null,goal=m.goal?m.goal():0;
  const U=v=>v==null?'–':`${m.fmt(v)}<small> ${m.u}</small>`,per=`${dShort(from)} – ${dShort(end)}`;
  const row=(l,v)=>`<div class="mrow"><span>${l}</span><b>${v}</b></div>`;
  /* interprétation de la valeur du jour */
  let note='';
  if(last!=null&&b&&(metK==='hrv'||metK==='rhr')){const lo=b.m-b.s,hi=b.m+b.s,z=(last-b.m)/b.s,lab=metK==='hrv'?(z>1?'au-dessus de ta plage habituelle, un signe fréquent de bonne récupération':z<-1?'sous ta plage habituelle. Une baisse isolée est courante ; si elle dure plusieurs jours, pense sommeil, alcool, stress, maladie ou charge d\'entraînement':'dans ta plage habituelle'):(z>1?`plus haute que d'habitude (${sg(Math.round(last-b.m))} bpm). Si cela dure plusieurs jours, pense fatigue, maladie, alcool ou stress`:z<-1?'plus basse que d\'habitude, ce qui va souvent avec une bonne récupération':'dans ta plage habituelle');
   note=`${metK==='hrv'?'Ta VFC':'Ta FC au repos'} (${m.fmt(last)} ${m.u}) est ${lab}. Plage habituelle sur 30 jours : ${m.fmt(lo)} à ${m.fmt(hi)} ${m.u}.`}
+ else if(metK==='burn'){const x=burnOf(end),b=bmrInfo();note=(b.v?`Ton métabolisme de base est estimé à ${r0(b.v)} kcal par jour (${fx(b.wt)} kg, ${b.ht} cm, ${b.a} ans${b.sx?'':', sexe non précisé : moyenne homme-femme'}).`:`Pour calculer ton métabolisme de base, renseigne ${b.miss.join(', ')} (Plus → Réglages, et ton poids dans Nutrition). En attendant, l'appli utilise l'énergie au repos mesurée par Apple Santé.`)+(x?` ${end===today()?'Aujourd\'hui à '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'Ce jour-là'} : ${r0(x.basal)} kcal de base + ${r0(x.active)} kcal actives = ${r0(x.total)} kcal.`:'')}
  else if(metK==='stz'&&last!=null)note=`Stress estimé de ${r0(last)} / 100 ce jour : ${stressLab(last).toLowerCase()}.`;
  else if(metK==='st'&&av!=null){const a=ageOf(),old=a!=null&&a>=60,g1=old?6000:8000;note=`Moyenne de ${r0(av)} pas par jour sur la période : ${av>=g1?'au niveau où la recherche observe l\'essentiel du bénéfice pour la santé':av>=g1-3000?'chaque millier de pas en plus apporterait un bénéfice mesurable':'augmenter progressivement, par exemple de 1 000 pas par jour chaque semaine, apporterait un bénéfice net'}.`}
  else if(metK==='nut'&&av!=null){const pr=[];for(let x=from;x<=end;x=addD(x,1)){const it=dayIt(x);if(it.length)pr.push(sum(it,'p'))}const W=weights(),wk=Object.keys(W).sort(),wt=wk.length?wAvg(W,wk[wk.length-1]):null,pa=avg(pr);note=`${r0(av)} kcal et ${r0(pa)} g de protéines par jour en moyenne sur les jours notés${wt?`, soit ${fx(pa/wt)} g/kg pour ${fx(wt)} kg`:''}.`}
  else if(metK==='wat'&&av!=null){note=`${fx(av)} L par jour en moyenne sur les jours notés, pour un objectif de ${fx(goal)} L.`}
  $('#mdet').innerHTML=`<div class="seg mseg">${[[7,'7 J'],[30,'30 J'],[182,'6 M']].map(([n,l])=>`<button type="button" data-act="mper" data-n="${n}" class="${metP===n?'on':''}">${l}</button>`).join('')}</div>
-  <div class="panel"><div class="mhead"><span class="eyebrow">Moyenne</span><b class="big">${U(av)}</b><span class="mute small">${per}${pts.length&&pts.length<metP?` · ${pts.length} jour${pts.length>1?'s':''} avec mesure`:''}</span></div><div class="fig sm" id="mfig"><svg></svg></div></div>
-  <div class="panel mstats">${row(end===today()?"Aujourd'hui":dShort(end),U(last))}${row('Minimum',U(mn))}${row('Maximum',U(mx))}${b?row('Plage habituelle (30 j)',`${m.fmt(b.m-b.s)} – ${m.fmt(b.m+b.s)}<small> ${m.u}</small>`):''}${goal?row('Objectif',U(goal)):''}</div>
+  <div class="panel"><div class="mhead"><span class="eyebrow">Moyenne${part?' · jours complets':''}</span><b class="big">${U(av)}</b><span class="mute small">${per}${pts.length&&pts.length<metP?` · ${pts.length} jour${pts.length>1?'s':''} avec mesure`:''}</span></div><div class="fig sm" id="mfig"><svg></svg></div></div>
+  <div class="panel mstats">${row(end===today()?(part?"Aujourd'hui, en cours":"Aujourd'hui"):dShort(end),U(last))}${row('Minimum',U(mn))}${row('Maximum',U(mx))}${b?row('Plage habituelle (30 j)',`${m.fmt(b.m-b.s)} – ${m.fmt(b.m+b.s)}<small> ${m.u}</small>`):''}${goal?row('Objectif',U(goal)):''}</div>
   <h3 class="ms-sec">À propos</h3><div class="panel mabout">${note?`<p><b>${note}</b></p>`:''}<p>${m.about}</p><p class="mute small">Repères tirés des recommandations et de la recherche ; ils ne remplacent pas un avis médical.</p></div>`;
  setFig('#mfig',{series:[{name:m.t,pts,col:m.col,bars:!!m.bars,dots:!m.bars&&metP<=30,r:3,w:2,last:!m.bars}],unit:m.u,zero:!!m.bars,hline:goal||null,band:b?[b.m-b.s,b.m+b.s]:null,fmt:m.fmt,empty:'Pas de mesure sur cette période'});
  if(msKind==='metric')msBar()}

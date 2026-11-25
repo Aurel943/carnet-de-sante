@@ -21,7 +21,11 @@ L'appli fonctionne dans un navigateur, s'installe sur l'écran d'accueil (PWA) e
 | **Tendances** | Bilan santé sur 30 jours, rigueur du suivi, semaine, corrélations observées, bien-être, poids, mensurations, masse grasse, VO2 max, activité quotidienne |
 | **Plus** | Dossier médical (rendez-vous, vaccins, analyses, blessures + rappels), import Apple Santé, réglages et objectifs, données et confidentialité (sauvegarde en fichier, restauration, suppression) |
 
-Un toucher sur une tuile (stress, VFC, FC au repos, pas, nutrition, hydratation) ouvre sa page
+La tuile **Calories brûlées** donne la dépense depuis minuit, à l'instant présent : métabolisme de
+base (formule de Mifflin-St Jeor à partir du poids, de la taille, de l'âge et du sexe, réparti sur
+les 24 heures) + calories actives de la montre.
+
+Un toucher sur une tuile (calories brûlées, stress, VFC, FC au repos, pas, nutrition, hydratation) ouvre sa page
 de détail : courbe sur 7 jours, 30 jours ou 6 mois, moyenne, minimum, maximum, plage habituelle,
 et une explication de ce que la recherche dit de cette mesure.
 

@@ -569,12 +569,12 @@ a{text-decoration:none}
 
 /* ---------- tuiles : icônes façon SF Symbols ---------- */
 #tiles .tile .k i{width:16px;height:16px;border-radius:0;-webkit-mask:var(--ico) center/contain no-repeat;mask:var(--ico) center/contain no-repeat}
-#tiles .tile:nth-child(1){--ico:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4.5%2016a7.5%207.5%200%201%201%2015%200%22/%3E%3Cpath%20d%3D%22M12%2016l3.5-4.5%22/%3E%3C/svg%3E")}
-#tiles .tile:nth-child(2){--ico:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M2%2012h4l2-5%203.5%2010%203-8%202%203h5.5%22/%3E%3C/svg%3E")}
-#tiles .tile:nth-child(3){--ico:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22%23000%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%2020s-7.5-4.6-7.5-10.2A4.2%204.2%200%200%201%2012%207.2a4.2%204.2%200%200%201%207.5%202.6C19.5%2015.4%2012%2020%2012%2020z%22/%3E%3C/svg%3E")}
-#tiles .tile:nth-child(4){--ico:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22%23000%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%202.5c.8%203.8%205.5%205.6%205.5%2011a5.5%205.5%200%200%201-11%200c0-2.8%201.6-4.2%202.4-6%20.9%201.3%201.8%201.9%202.9%202.2-.3-2.5-.6-4.6.2-7.2z%22/%3E%3C/svg%3E")}
-#tiles .tile:nth-child(5){--ico:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M7%203v8M5%203v5a2%202%200%200%200%204%200V3M7%2011v10M17%203c-2.2%201-3.2%203.3-3.2%206.2%200%202.3%201%203%203.2%203V21%22/%3E%3C/svg%3E")}
-#tiles .tile:nth-child(6){--ico:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22%23000%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%203s6.5%206.8%206.5%2011.4a6.5%206.5%200%200%201-13%200C5.5%209.8%2012%203%2012%203z%22/%3E%3C/svg%3E")}
+#tiles .tile[data-k=stz]{--ico:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4.5%2016a7.5%207.5%200%201%201%2015%200%22/%3E%3Cpath%20d%3D%22M12%2016l3.5-4.5%22/%3E%3C/svg%3E")}
+#tiles .tile[data-k=hrv]{--ico:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M2%2012h4l2-5%203.5%2010%203-8%202%203h5.5%22/%3E%3C/svg%3E")}
+#tiles .tile[data-k=rhr]{--ico:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22%23000%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%2020s-7.5-4.6-7.5-10.2A4.2%204.2%200%200%201%2012%207.2a4.2%204.2%200%200%201%207.5%202.6C19.5%2015.4%2012%2020%2012%2020z%22/%3E%3C/svg%3E")}
+#tiles .tile[data-k=st]{--ico:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2213%22%20cy%3D%224%22%20r%3D%221.8%22%20fill%3D%22%23000%22/%3E%3Cpath%20d%3D%22M10.5%2021l2-6%202.5%202v4M12.5%2015l.8-5.2%203.2%202.2%202.5-.5M9.5%2011.5l2.8-2.3%22/%3E%3C/svg%3E")}
+#tiles .tile[data-k=nut]{--ico:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M7%203v8M5%203v5a2%202%200%200%200%204%200V3M7%2011v10M17%203c-2.2%201-3.2%203.3-3.2%206.2%200%202.3%201%203%203.2%203V21%22/%3E%3C/svg%3E")}
+#tiles .tile[data-k=wat]{--ico:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22%23000%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%203s6.5%206.8%206.5%2011.4a6.5%206.5%200%200%201-13%200C5.5%209.8%2012%203%2012%203z%22/%3E%3C/svg%3E")}
 
 /* ---------- frise de la semaine ---------- */
 .wkstrip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;margin:-6px 0 16px}
@@ -749,3 +749,14 @@ label.btn.filebtn:not(.pri){color:var(--ink)}
  .tabs .tplus .pi{width:44px;height:44px;font-size:28px;font-weight:300}
  .tabs .tplus:active{transform:translateY(-50%) scale(.94)}
 }
+#tiles .tile[data-k=burn]{--ico:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22%23000%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%202.5c.8%203.8%205.5%205.6%205.5%2011a5.5%205.5%200%200%201-11%200c0-2.8%201.6-4.2%202.4-6%20.9%201.3%201.8%201.9%202.9%202.2-.3-2.5-.6-4.6.2-7.2z%22/%3E%3C/svg%3E")}
+
+/* ---------- tuile « Calories brûlées » ---------- */
+.tile.wide{grid-column:1/-1}
+.burnbar{display:flex;gap:2px;height:10px;border-radius:5px;overflow:hidden;margin:10px 0 6px}
+.burnbar i{display:block;background:color-mix(in srgb,var(--eff) 30%,var(--field));min-width:2px}
+.burnbar i.ac{background:var(--eff)}
+.burnlg{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13px;color:var(--mute)}
+.burnlg span{display:flex;align-items:center;gap:6px}
+.burnlg i{width:9px;height:9px;border-radius:3px;background:color-mix(in srgb,var(--eff) 30%,var(--field))}
+.burnlg i.ac{background:var(--eff)}
