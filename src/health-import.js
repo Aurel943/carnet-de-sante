@@ -11,7 +11,7 @@ function rmssd(b,bp){let rr=[];if(b.length>=10){for(let i=1;i<b.length;i++){let 
  const val=x=>x>=300&&x<=2000,ok=rr.map((x,i)=>{if(!val(x))return null;const w=rr.slice(Math.max(0,i-3),i+4).filter(val).sort((p,q)=>p-q),m=w[w.length>>1];return Math.abs(x-m)>0.45*m?null:x});
  const df=[];for(let i=1;i<ok.length;i++){const a=ok[i-1],c=ok[i];if(a==null||c==null)continue;df.push((c-a)**2)}
  const good=ok.filter(x=>x!=null);return df.length>=8?{v:Math.round(Math.sqrt(avg(df))*10)/10,q:good.length/rr.length,sd:Math.round(sdv(good)*10)/10}:null}
-export function healthParser(cut,sex){
+export function healthParser(cut,sex,age){
  const CHK=[],days={},mean={},lastv={},wk=[],slp={},QT='HKQuantityTypeIdentifier',HRB={},STB={},HV={},HVL={},RRS={},O2S={};let cw=null,ch=null,lastSd='';
  const KEEP=new Set(['StepCount','ActiveEnergyBurned','BasalEnergyBurned','AppleExerciseTime','DistanceWalkingRunning','FlightsClimbed','AppleStandTime','DietaryWater','RestingHeartRate','HeartRate','WalkingHeartRateAverage','HeartRateRecoveryOneMinute','HeartRateVariabilitySDNN','RespiratoryRate','OxygenSaturation','AppleSleepingWristTemperature','VO2Max','BodyMass','BodyFatPercentage']);
  const add=(d,k,s,v)=>{const o=days[d]||(days[d]={}),m=o[k]||(o[k]={});m[s]=(m[s]||0)+v};
@@ -69,7 +69,10 @@ export function healthParser(cut,sex){
   // FC max : d'après les entraînements
   let hmax=0;for(const w of wk){each(w.d,w.st,w.min,(dd,m,v)=>{if(v>hmax)hmax=v});if(w.mx0>hmax)hmax=w.mx0}
   if(!hmax){for(const b of Object.values(HRB))for(let m=0;m<1440;m++)if(b.c[m]){const v=b.s[m]/b.c[m];if(v>hmax)hmax=v}}
-  hmax=Math.round(clamp(hmax||195,150,215));
+  // FC max observée, mais jamais sous la valeur attendue pour l'âge (208 − 0,7 × âge) :
+  // sans séance vraiment intense, la FC max observée sous-estime la vraie et fausse les zones.
+  const pred=age>=15&&age<=90?208-0.7*age:0;
+  hmax=Math.round(clamp(Math.max(hmax,pred)||195,150,215));
   // sommeil
   const best={};for(const o of Object.values(slp))if(o.t>0&&(!best[o.n]||o.t>best[o.n].t))best[o.n]=o;
   const sleepMin={},cutDet=addD(today(),-35);let anyRm=false;for(const [k,v] of Object.entries(LST))Object.assign(det[k]||(det[k]={}),v);
@@ -102,8 +105,8 @@ export function healthParser(cut,sex){
   for(const w of wk){const o={ty:w.ty,st:w.st,min:w.min,kcal:w.kcal};if(w.km)o.km=w.km;if(w.hr)o.hr=w.hr;if(w.mx)o.mx=w.mx;if(w.tr)o.tr=w.tr;if(w.z.some(Boolean))o.z=w.z;(g(w.d).wk||(g(w.d).wk=[])).push(o)}
   const cs=CHK.slice().sort((a,b)=>a-b);return{d:out,det,last:lastSd,hmax,rm:anyRm,chk:cs.length?{med:cs[cs.length>>1],n:cs.length}:null}}}}
 async function loadZip(){const m=await import('jszip');return m.default||m}
-export async function readHealth(file,prog,sex){
- const P=healthParser(addD(today(),-395),sex),dec=new TextDecoder();let buf='';
+export async function readHealth(file,prog,sex,age){
+ const P=healthParser(addD(today(),-395),sex,age),dec=new TextDecoder();let buf='';
  const feed=ch=>{buf+=dec.decode(ch,{stream:true});let st=0,i;while((i=buf.indexOf('\n',st))>=0){P.line(buf.slice(st,i));st=i+1}buf=buf.slice(st)};
  if(/\.zip$/i.test(file.name)||file.type.includes('zip')){
   const Z=await loadZip(),zip=await Z.loadAsync(file);

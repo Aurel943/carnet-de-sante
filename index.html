@@ -77,12 +77,12 @@
  <div class="g12" id="sesscard"></div>
  <div class="panel g6"><h2>Effort et récupération, 30 jours</h2><div class="fig sm" id="fer"><svg></svg></div><div class="lg"><span><i style="--c:var(--eff)"></i>Effort</span><span><i style="--c:var(--rec)"></i>Récupération</span></div></div>
  <div class="panel g6"><div class="ph"><h2>Zones cardiaques, 28 jours</h2><span class="mute small">entraînements enregistrés par la montre</span></div><div id="z28"></div></div>
- <div class="panel g12"><div class="ph"><h2>Charge d'entraînement</h2><span class="mute small">7 jours comparés aux 28 derniers</span></div><div class="kpis" id="lk"></div><div class="fig sm" id="fl"><svg></svg></div><p class="mute small">Charge = effort cardiaque (TRIMP) des séances avec la montre, ou minutes × intensité ressentie sans montre. Un ratio entre 0,8 et 1,3 est la zone habituellement conseillée ; au-dessus de 1,5, le risque de blessure augmente.</p></div>
+ <div class="panel g12"><div class="ph"><h2>Charge d'entraînement</h2><span class="mute small">7 jours comparés aux 28 derniers</span></div><div class="kpis" id="lk"></div><div class="fig sm" id="fl"><svg></svg></div><p class="mute small">Charge = effort cardiaque (TRIMP) des séances avec la montre, ou minutes × intensité ressentie sans montre. Repère couramment utilisé : entre 0,8 et 1,3, ta charge progresse sans à-coup ; au-delà de 1,5, la hausse est brutale. Cet indicateur est discuté dans la recherche : retiens surtout qu'il vaut mieux augmenter la charge progressivement que viser un chiffre précis.</p></div>
  <div class="two g12">
   <div class="panel"><h2>Volume muscu, 7 jours</h2><p class="mute small">Séries par groupe musculaire. Zone grisée : 10 à 20 séries par semaine.</p><div id="mg"></div></div>
   <div class="panel"><h2>16 dernières semaines</h2><div id="heat"></div><div class="lg"><span><i style="--c:var(--trn)"></i>Muscu</span><span><i style="--c:var(--eff)"></i>Autre sport</span></div><p class="mute small" id="heatsum"></p></div>
  </div>
- <div class="panel g7"><h2>Force</h2><label>Exercice<select id="pex"></select></label><div class="kpis" id="pk" style="margin-top:14px"></div><div class="fig" id="f1"><svg></svg></div><p class="mute small">1RM estimé (formule d'Epley) de ta meilleure série à chaque séance.</p><div id="ptab" class="scroll"></div></div>
+ <div class="panel g7"><h2>Force</h2><label>Exercice<select id="pex"></select></label><div class="kpis" id="pk" style="margin-top:14px"></div><div class="fig" id="f1"><svg></svg></div><p class="mute small">1RM estimé (formule d'Epley) de ta meilleure série à chaque séance. L'estimation est fiable surtout pour les séries de 10 répétitions ou moins.</p><div id="ptab" class="scroll"></div></div>
  <div class="panel g5"><h2>Records</h2><div id="recs" class="scroll"></div></div>
  <div class="panel g12"><h2>Journal d'entraînement</h2><div id="hist"></div></div>
 </section>
@@ -188,6 +188,7 @@
  <section class="ms" role="dialog" aria-modal="true" aria-labelledby="mstitle">
   <header class="ms-bar"><button type="button" class="ms-btn" id="msl" data-act="msclose">Annuler</button><h3 id="mstitle"></h3><span id="msr"></span></header>
   <div class="ms-body" data-k="seance"><div id="editor"></div></div>
+  <div class="ms-body" data-k="metric" hidden><div id="mdet"></div></div>
   <div class="ms-body" data-k="food" hidden>
    <div class="panel">
     <form id="ff"><div class="addrow"><label>Aliment<input id="fn" autocomplete="off" placeholder="ex. Riz 200 g cuit"></label><label>Protéines (g)<input id="fp" inputmode="decimal" placeholder="0"></label><label>Glucides (g)<input id="fg" inputmode="decimal" placeholder="option"></label><label>Lipides (g)<input id="fl2" inputmode="decimal" placeholder="option"></label><label>Calories<input id="fk" inputmode="numeric" placeholder="auto"></label><label class="fmeal">Repas<select id="fm"></select></label></div>

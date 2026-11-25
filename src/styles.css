@@ -604,3 +604,17 @@ a{text-decoration:none}
  .mkr p.open{display:block}
  .mkr p.more:not(.open)::after{content:'plus';position:absolute;right:0;bottom:0;padding-left:34px;color:var(--tint);background:linear-gradient(90deg,transparent,var(--panel2) 30px)}
 }
+
+/* ---------- pages de détail ---------- */
+.tile.tap{cursor:pointer;transition:transform .12s}
+.tile.tap:active{transform:scale(.98)}
+.tile.tap .k::after{content:'';margin-left:auto;width:7px;height:7px;border-right:2px solid var(--mute2);border-bottom:2px solid var(--mute2);transform:rotate(-45deg);flex:none}
+.mseg{display:flex;width:100%;margin-bottom:14px}.mseg button{flex:1}
+.mhead{display:grid;gap:2px;margin-bottom:10px}
+.mhead .big{font-size:34px}
+.mstats{padding-top:4px;padding-bottom:4px}
+.mrow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;min-height:48px;align-items:center;border-top:.5px solid var(--line);font-size:17px}
+.mrow:first-child{border-top:0}
+.mrow b{font:600 17px var(--round);font-variant-numeric:tabular-nums}.mrow b small{font:500 14px var(--round);color:var(--mute)}
+.mabout p{margin:0 0 12px;font-size:16px;line-height:1.5}.mabout p:last-child{margin-bottom:0}
+.mabout p b{font-weight:500}

@@ -21,6 +21,14 @@ L'appli fonctionne dans un navigateur, s'installe sur l'écran d'accueil (PWA) e
 | **Tendances** | Bilan santé sur 30 jours, rigueur du suivi, semaine, corrélations observées, bien-être, poids, mensurations, masse grasse, VO2 max, activité quotidienne |
 | **Plus** | Dossier médical (rendez-vous, vaccins, analyses, blessures + rappels), import Apple Santé, réglages et objectifs, données et confidentialité (sauvegarde en fichier, restauration, suppression) |
 
+Un toucher sur une tuile (stress, VFC, FC au repos, pas, nutrition, hydratation) ouvre sa page
+de détail : courbe sur 7 jours, 30 jours ou 6 mois, moyenne, minimum, maximum, plage habituelle,
+et une explication de ce que la recherche dit de cette mesure.
+
+Les repères (normes de VO2 max par âge et sexe, masse grasse selon l'âge, FC max selon l'âge,
+sommeil, pas, activité, protéines) s'appuient sur les recommandations et les grandes études de
+cohorte ; ce sont des estimations, pas un diagnostic.
+
 Au premier lancement, un accueil en trois écrans présente l'appli, demande le profil
 (facultatif) et propose d'importer Apple Santé, d'explorer **des données de démo** (deux mois
 d'un profil fictif) ou de commencer sans données.

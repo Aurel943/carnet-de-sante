@@ -40,6 +40,8 @@ const sum=(a,k)=>a.reduce((t,x)=>t+num(x[k]),0);
 const kcalOf=x=>num(x.k)||(num(x.p)*4+num(x.g)*4+num(x.l)*9);
 
 /* ---------- moteur d'interprétation ---------- */
+/* Repères tirés des recommandations et des grandes études de cohorte ; ce sont des estimations, pas un diagnostic. */
+const ageOf=()=>{const b=num(S.set.birth);return b>1900?new Date().getFullYear()-b:null};
 function vals(k,d,n,off=1){const v=[];for(let i=off;i<off+n;i++){const x=H(addD(d,-i))[k];if(has(x)&&(k==='tp'||num(x)>0))v.push(num(x))}return v}
 function base(k,d,n=30){const v=vals(k,d,n);return v.length>=3?avg(v):null}
 function winAvg(k,d,n){const v=vals(k,d,n,0);return avg(v)}
@@ -68,10 +70,10 @@ function needOf_(d){const T=num(S.set.sleep);let debt=0,n=0;for(let i=1;i<=7;i++
 function sleepScore_(d){const h=H(d);if(!h.sl)return null;const c=[],nd=needOf(d);
  c.push(['Durée',clamp(h.sl/nd.need*100,0,100),.4,`${fmtSl(h.sl)} pour un besoin de ${fmtSl(nd.need)}`]);
  const win=has(h.sw)&&has(h.sb)?((h.sw-h.sb+1440)%1440):null,eff=num(h.ef)||(win?h.sl/win:null);
- if(eff)c.push(['Efficacité',clamp((eff-0.75)/0.17*100,0,100),.15,`${r0(eff*100)} % du temps ${h.lat!=null?'au lit':'entre endormissement et réveil'} passé à dormir`]);
- if(h.sd||h.sr){const rp=(num(h.sd)+num(h.sr))/h.sl;c.push(['Récupératrice',clamp((rp-0.15)/0.2*100,0,100),.2,`${r0(rp*100)} % en profond + paradoxal (repère montre : 30 à 35 %)`])}
+ if(eff)c.push(['Efficacité',clamp((eff-0.70)/0.22*100,0,100),.15,`${r0(eff*100)} % du temps ${h.lat!=null?'au lit':'entre endormissement et réveil'} passé à dormir`]);
+ if(h.sd||h.sr){const rp=(num(h.sd)+num(h.sr))/h.sl;c.push(['Récupératrice',clamp((rp-0.15)/0.23*100,0,100),.2,`${r0(rp*100)} % en profond + paradoxal (repère adulte : 35 à 45 %, moins avec l'âge)`])}
  const bt=vals('sb',d,14);if(has(h.sb)&&bt.length>=4){const dv=Math.abs(h.sb-avg(bt));c.push(['Régularité',clamp(100-dv*0.9,0,100),.15,`coucher à ${hhmm(h.sb)}, ${r0(dv)} min de ta moyenne`])}
- if(has(h.wu))c.push(['Continuité',clamp(100-num(h.wu)*12,0,100),.1,`${h.wu} réveil${h.wu>1?'s':''} dans la nuit`]);
+ if(has(h.wu))c.push(['Continuité',clamp(100-Math.max(0,num(h.wu)-2)*15,0,100),.1,`${h.wu} réveil${h.wu>1?'s':''} dans la nuit${num(h.wu)<=2?' (normal)':''}`]);
  const W=c.reduce((a,x)=>a+x[2],0);return{s:Math.round(c.reduce((a,x)=>a+x[1]*x[2],0)/W),c,nd}}
 function zb(f,d,n=30,minN=7){const b=[];for(let i=1;i<=n;i++){const x=f(addD(d,-i));if(x!=null&&x>0)b.push(x)}return b.length>=minN?{m:avg(b),s:sdv(b),n:b.length}:{n:b.length}}
 function calib(d){const a=zb(nhrv,d).n,b=zb(x=>num(H(x).hrv)||null,d).n;return Math.max(a,b)}
@@ -101,20 +103,27 @@ const monFmt=(x,v)=>x.k==='tp'?sg(Math.round((v-x.m)*100)/100)+' °C':x.k==='rr'
 /* ---------- bilan santé ---------- */
 function markers(){const L=hLast()||today(),out=[],age=num(S.set.birth)>1900?new Date().getFullYear()-num(S.set.birth):null,sex=S.set.sex,hgt=num(S.set.height),W=weights(),wk=Object.keys(W).sort(),wt=wk.length?wAvg(W,wk[wk.length-1]):null;
  const M=(t,v,st,p)=>out.push({t,v,st,p}),OK=['Optimal','var(--rec)'],GD=['Bon','var(--rec)'],MID=['À améliorer','var(--str)'],BAD=['À surveiller','var(--bad)'],NA=['À compléter','var(--mute)'];
- const rhr=winAvg('rhr',L,30);if(rhr)M('FC au repos',r0(rhr)+' bpm',rhr<55?['Athlétique','var(--rec)']:rhr<65?GD:rhr<75?MID:BAD,'Une FC de repos basse traduit un cœur entraîné. Une hausse durable de plus de 5 bpm signale fatigue, maladie ou surmenage.');
- const vo=hKeys().filter(d=>H(d).vo2).map(d=>H(d).vo2);if(vo.length){const v=vo[vo.length-1];if(age&&sex){const off=Math.max(0,Math.floor((age-20)/10))*3.5,th=(sex==='f'?[31,35,39,45]:[38,42,46,52]).map(x=>x-off);const c=v<th[0]?['Faible','var(--bad)']:v<th[1]?['Moyen','var(--str)']:v<th[2]?['Bon','var(--rec)']:v<th[3]?['Très bon','var(--rec)']:['Excellent','var(--rec)'];M('VO2 max',fx(v)+' ml/kg/min',c,`Pour ${sex==='f'?'une femme':'un homme'} de ${age} ans : bon à partir de ${th[1]}, excellent au-delà de ${th[3]}. C'est l'un des meilleurs indicateurs de santé à long terme ; il progresse avec l'endurance en zone 2 et le fractionné.`)}else M('VO2 max',fx(v)+' ml/kg/min',NA,'Renseigne ton année de naissance et ton sexe (Plus → Réglages) pour situer ta valeur par rapport aux normes de ton âge.')}
- const nv=[];for(let i=0;i<90;i++){const x=nhrv(addD(L,-i));if(x)nv.push([i,x])}if(nv.length>=20){const a=avg(nv.filter(x=>x[0]<14).map(x=>x[1])),b=avg(nv.filter(x=>x[0]>=14).map(x=>x[1]));if(a&&b){const pc=Math.round((a/b-1)*100);M('Tendance de la VFC',`${r0(a)} ms (${pc>0?'+':''}${pc} %)`,pc>=-5?(pc>=5?['En hausse','var(--rec)']:['Stable','var(--rec)']):pc>=-12?MID:BAD,`Tes 14 dernières nuits comparées aux 2 mois et demi précédents (${hvLab()}). La VFC n'a pas de norme universelle : c'est ta tendance qui compte. Une baisse durable traduit un stress ou une récupération insuffisante.`)}}
- const sl=winAvg('sl',L,30);if(sl)M('Sommeil moyen',fmtSl(sl),sl>=420&&sl<=540?OK:sl>=360?MID:BAD,'Les adultes ont besoin de 7 à 9 h. En dessous de 7 h de façon chronique, la récupération musculaire, la glycémie et l\'humeur se dégradent.');
+ const rhr=winAvg('rhr',L,30);if(rhr)M('FC au repos',r0(rhr)+' bpm',rhr<55?['Athlétique','var(--rec)']:rhr<65?GD:rhr<75?['Correcte','var(--rec)']:rhr<90?MID:BAD,'Chez l\'adulte, 60 à 100 bpm au repos est considéré comme normal ; les sportifs d\'endurance descendent souvent sous 60. Les grandes études de suivi associent une FC de repos plus basse à un meilleur pronostic cardiovasculaire. Une hausse de 5 bpm ou plus pendant plusieurs jours accompagne souvent fatigue, maladie, alcool ou stress.');
+ const vo=hKeys().filter(d=>H(d).vo2).map(d=>H(d).vo2);if(vo.length){const v=vo[vo.length-1];if(age&&sex){
+  /* percentiles 25, 50, 75 et 90 de la VO2 max mesurée sur tapis, par âge et par sexe (grande base de données d'épreuves d'effort) */
+  const VT=sex==='f'?{20:[30.5,37.6,44.7,51.3],30:[25.3,30.2,36.1,41.4],40:[22.1,26.7,32.4,38.4],50:[19.9,23.4,27.6,32.0],60:[17.2,20.0,23.8,27.0],70:[15.6,18.3,20.8,23.1]}:{20:[40.1,48.0,55.2,61.8],30:[35.9,42.4,49.2,56.5],40:[31.9,37.8,45.0,52.1],50:[27.1,32.6,39.7,45.6],60:[23.7,28.2,34.5,40.3],70:[20.4,24.4,30.4,36.6]};
+  const th=VT[clamp(Math.floor(age/10)*10,20,70)];const c=v<th[0]?['Sous la moyenne','var(--str)']:v<th[1]?['Moyenne','var(--str)']:v<th[2]?['Bonne','var(--rec)']:v<th[3]?['Très bonne','var(--rec)']:['Excellente','var(--rec)'];
+  M('VO2 max',fx(v)+' ml/kg/min',c,`Parmi ${sex==='f'?'les femmes':'les hommes'} de ton âge testés sur tapis, la moitié dépasse ${fx(th[1])} et 10 % dépassent ${fx(th[3])} ml/kg/min. La capacité cardio-respiratoire est l'un des facteurs les plus fortement liés à l'espérance de vie ; elle progresse avec l'endurance facile et le fractionné. La montre l'estime avec une marge d'erreur de plusieurs points.`)}else M('VO2 max',fx(v)+' ml/kg/min',NA,'Renseigne ton année de naissance et ton sexe (Plus → Réglages) pour situer ta valeur par rapport aux personnes de ton âge.')}
+ const nv=[];for(let i=0;i<90;i++){const x=nhrv(addD(L,-i));if(x)nv.push([i,x])}if(nv.length>=20){const a=avg(nv.filter(x=>x[0]<14).map(x=>x[1])),b=avg(nv.filter(x=>x[0]>=14).map(x=>x[1]));if(a&&b){const pc=Math.round((a/b-1)*100);M('Tendance de la VFC',`${r0(a)} ms (${pc>0?'+':''}${pc} %)`,pc>=-5?(pc>=5?['En hausse','var(--rec)']:['Stable','var(--rec)']):pc>=-12?MID:BAD,`Tes 14 dernières nuits comparées aux 2 mois et demi précédents (${hvLab()}). La VFC varie énormément d'une personne à l'autre et baisse avec l'âge : il n'existe pas de bonne valeur universelle, c'est ta tendance qui compte. Une baisse de plusieurs semaines accompagne souvent un stress, un manque de sommeil ou une récupération insuffisante ; une hausse progressive, une meilleure forme.`)}}
+ const sl=winAvg('sl',L,30);if(sl)M('Sommeil moyen',fmtSl(sl),sl>=420&&sl<=540?OK:sl>=360?MID:BAD,'Il est recommandé de dormir au moins 7 h par nuit (7 à 9 h chez l\'adulte). Moins de 7 h de façon habituelle est associé à une moins bonne récupération, à un risque cardiométabolique plus élevé et à une humeur dégradée ; plus de 9 h de façon habituelle peut signaler un sommeil de mauvaise qualité ou un problème de santé.');
  const bt=vals('sb',L,30,0);if(bt.length>=10){const v=sdv(bt);M('Régularité du coucher',`± ${r0(v)} min`,v<30?OK:v<60?MID:BAD,'Écart-type de ton heure d\'endormissement. Des horaires réguliers (± 30 min) améliorent la qualité du sommeil et la récupération, même à durée égale.')}
- const st=winAvg('st',L,30);if(st)M('Pas par jour',r0(st),st>=8000?OK:st>=5000?MID:BAD,'Les études associent 7 000 à 10 000 pas par jour à une baisse nette de la mortalité ; au-delà, le bénéfice continue mais plus lentement.');
- const exs=vals('ex',L,28,0);if(exs.length>=14){const wkm=exs.reduce((a,b)=>a+b,0)/4;M('Activité par semaine',r0(wkm)+' min',wkm>=300?['Excellent','var(--rec)']:wkm>=150?GD:wkm>=75?MID:BAD,'L\'OMS recommande 150 à 300 min d\'activité modérée par semaine (ou 75 à 150 min intense), plus 2 séances de renforcement. Mesuré par les minutes d\'exercice de la montre.')}
+ const st=winAvg('st',L,30);if(st){const old=age!=null&&age>=60,g1=old?6000:8000,g0=old?4000:5000;M('Pas par jour',r0(st),st>=g1?OK:st>=g0?MID:BAD,`Le risque de mortalité baisse nettement quand on marche davantage, jusqu'à environ ${old?'6 000 à 8 000':'8 000 à 10 000'} pas par jour ${old?'après':'avant'} 60 ans ; au-delà, le bénéfice se stabilise. Chaque tranche de 1 000 pas en plus compte, même en partant de peu, et la marche rapide apporte un bénéfice supplémentaire.`)}
+ const exs=vals('ex',L,28,0);if(exs.length>=14){const wkm=exs.reduce((a,b)=>a+b,0)/4;M('Activité par semaine',r0(wkm)+' min',wkm>=300?['Excellent','var(--rec)']:wkm>=150?GD:wkm>=75?MID:BAD,'L\'OMS recommande au moins 150 à 300 min d\'activité d\'intensité modérée par semaine (ou 75 à 150 min d\'intensité soutenue), plus au moins 2 séances de renforcement musculaire. Mesuré ici par les minutes d\'exercice de la montre (marche rapide et plus).')}
  if(wt){if(hgt>100){const bmi=wt/(hgt/100)**2;M('IMC',fx(bmi),bmi>=18.5&&bmi<25?GD:bmi<30?MID:BAD,`${fx(wt)} kg pour ${hgt} cm. Chez un pratiquant de musculation, l'IMC surestime souvent l'excès de poids : regarde plutôt ton tour de taille.`)}else M('IMC','–',NA,'Renseigne ta taille (Plus → Réglages) pour calculer ton IMC et ton rapport tour de taille / taille.')}
  const ms=Object.keys(S.days).filter(d=>S.days[d].m&&S.days[d].m.taille).sort();if(ms.length&&hgt>100){const w=S.days[ms[ms.length-1]].m.taille,r=w/hgt;M('Tour de taille / taille',f2(r),r<0.5?OK:r<0.6?MID:BAD,`${fx(w)} cm de tour de taille. Sous 0,5, le risque cardiométabolique est faible ; c'est un meilleur indicateur que l'IMC pour la graisse abdominale.`)}
- const bf=hKeys().filter(d=>H(d).bf).map(d=>H(d).bf);if(bf.length&&sex){const v=bf[bf.length-1],r=sex==='f'?[21,33,39]:[8,20,25];M('Masse grasse',fx(v)+' %',v<r[0]?MID:v<=r[1]?GD:v<=r[2]?MID:BAD,`Plage saine pour ${sex==='f'?'une femme':'un homme'} : ${r[0]} à ${r[1]} %. Les balances à impédance ont une marge d'erreur de plusieurs points.`)}
- const pr=[];for(let i=0;i<14;i++){const d=addD(today(),-i);if(dayIt(d).length)pr.push(sum(dayIt(d),'p'))}if(pr.length>=5&&wt){const gk=avg(pr)/wt;M('Protéines par kg',fx(gk)+' g/kg',gk>=1.6&&gk<=2.4?OK:gk>=1.2?MID:BAD,`${r0(avg(pr))} g par jour en moyenne pour ${fx(wt)} kg. Pour prendre ou garder du muscle, la recherche recommande 1,6 à 2,2 g/kg.`)}
- const o2=winAvg('o2',L,30);if(o2)M('Saturation nocturne',fx(o2)+' %',o2>=95?OK:o2>=92?MID:BAD,'Une saturation habituellement sous 92-93 % la nuit peut évoquer des apnées du sommeil : à évoquer avec un médecin si elle se confirme.');
- const rr=winAvg('rr',L,30);if(rr)M('Respiration nocturne',fx(rr)+' /min',rr>=12&&rr<=20?OK:MID,'La norme au repos est de 12 à 20 respirations par minute. Ce qui compte surtout, ce sont les écarts brusques à ta propre moyenne.');
- const dp=winAvg('dip',L,14);if(dp)M('Baisse de FC la nuit',r0(dp)+' %',dp>=10&&dp<=25?OK:dp>=5?MID:BAD,'Ta FC devrait baisser de 10 à 20 % la nuit par rapport à la journée. Une baisse faible est souvent liée à un repas ou un entraînement tardif, à l\'alcool ou au stress.');
+ const bf=hKeys().filter(d=>H(d).bf).map(d=>H(d).bf);if(bf.length&&sex){const v=bf[bf.length-1],a=age==null?30:age,
+  /* plages selon l'âge et le sexe : [bas, haut de la plage saine, début de l'obésité] */
+  r=sex==='f'?(a<40?[21,32,39]:a<60?[23,33,40]:[24,35,42]):(a<40?[8,19,25]:a<60?[11,21,28]:[13,24,30]);
+  M('Masse grasse',fx(v)+' %',v<r[0]?['Basse','var(--str)']:v<=r[1]?GD:v<r[2]?['Élevée','var(--str)']:BAD,`Plage habituellement considérée comme saine pour ${sex==='f'?'une femme':'un homme'} de ${age==null?'20 à 39':a<40?'20 à 39':a<60?'40 à 59':'60 ans et plus'}${age==null?' ans (renseigne ton année de naissance pour affiner)':a<60?' ans':''} : ${r[0]} à ${r[1]} %. Les balances à impédance ont une marge d'erreur de 3 à 5 points : suis surtout la tendance.`)}
+ const pr=[];for(let i=0;i<14;i++){const d=addD(today(),-i);if(dayIt(d).length)pr.push(sum(dayIt(d),'p'))}if(pr.length>=5&&wt){const gk=avg(pr)/wt;M('Protéines par kg',fx(gk)+' g/kg',gk>=1.6?OK:gk>=1.2?MID:gk>=0.8?['Minimum','var(--str)']:BAD,`${r0(avg(pr))} g par jour en moyenne pour ${fx(wt)} kg. Avec de la musculation, environ 1,6 g/kg par jour suffit à la plupart des gens pour garder ou développer du muscle (jusqu'à 2,2 g/kg en déficit calorique) ; au-delà, le bénéfice est faible. Le minimum pour la santé générale est de 0,8 g/kg.`)}
+ const o2=winAvg('o2',L,30);if(o2)M('Saturation nocturne',fx(o2)+' %',o2>=95?OK:o2>=92?MID:BAD,'Au repos, 95 à 100 % est normal, et de brèves baisses la nuit sont fréquentes. Une moyenne nocturne habituellement sous 92-93 %, surtout avec des ronflements ou de la fatigue au réveil, mérite d\'en parler à un médecin (apnées du sommeil). La mesure au poignet est moins précise qu\'un oxymètre au doigt.');
+ const rr=winAvg('rr',L,30);if(rr)M('Respiration nocturne',fx(rr)+' /min',rr>=12&&rr<=20?OK:MID,'Chez l\'adulte au repos, 12 à 20 respirations par minute est la norme. Ce qui compte surtout, ce sont les hausses brusques par rapport à ta propre moyenne : elles accompagnent souvent une infection.');
+ const dp=winAvg('dip',L,14);if(dp)M('Baisse de FC la nuit',r0(dp)+' %',dp>=10?OK:dp>=5?MID:BAD,'Chez la plupart des gens, la FC baisse d\'environ 10 à 20 % pendant le sommeil par rapport à la journée. Une baisse faible et durable est associée à un moins bon profil cardiovasculaire ; ponctuellement, un repas copieux, l\'alcool, un entraînement tardif ou le stress la réduisent.');
  return out}
 function tdeeEst(){const e=today(),ds=[];for(let i=1;i<=21;i++){const d=addD(e,-i);if(dayIt(d).length)ds.push(d)}if(ds.length<10)return null;const W=weights(),wp=[];for(let i=1;i<=21;i++){const d=addD(e,-i);if(W[d])wp.push([-i,W[d]])}if(wp.length<6)return null;
  const mx=avg(wp.map(p=>p[0])),my=avg(wp.map(p=>p[1])),sxx=wp.reduce((a,p)=>a+(p[0]-mx)**2,0);if(!sxx)return null;const rate=wp.reduce((a,p)=>a+(p[0]-mx)*(p[1]-my),0)/sxx;
@@ -235,14 +244,14 @@ function renderToday(){const d=S.day,h=H(d),D=S.days[d]||{},it=D.items||[],T=day
  $('#g3').innerHTML=gauge(ef,'var(--eff)','Effort',tg?`conseillé ${tg[0]}–${tg[1]}`:'charge du jour','effort','')+gauge(rc&&rc.s,'var(--rec)','Récupération',rc?recLab(rc.s)[0]:(calib(d)<7&&hKeys().length?`calibrage ${calib(d)}/7 nuits`:'en attente de données'),'recuperation')+gauge(sl&&sl.s,'var(--slp)','Sommeil',h.sl?fmtSl(h.sl):'pas de nuit','sommeil');
  $('#coach').innerHTML=coach(d,rc,sl,ef,tg);
  const st=num(h.stz),wat=num(D.w)||num(h.wa),vb=nhrvBase(d);
- const tile=(c,k,v,s,extra='')=>`<div class="tile" style="--c:${c}"><span class="k"><i></i>${k}</span><span class="v">${v}</span><span class="s">${s}</span>${extra}</div>`;
+ const tile=(c,k,v,s,extra='',mk='')=>`<div class="tile${mk?' tap':''}" style="--c:${c}"${mk?` data-act="metric" data-k="${mk}" role="button" tabindex="0" aria-label="${esc(k)} : voir le détail"`:''}><span class="k"><i></i>${k}</span><span class="v">${v}</span><span class="s">${s}</span>${extra}</div>`;
  $('#tiles').innerHTML=[
-  tile('var(--str)','Stress estimé',has(h.stz)?`${st}<small> / 100</small>`:'–',has(h.stz)?stressLab(st):hKeys().length?(d===today()?'calculé au fil de la journée':'pas de mesure ce jour'):IMP('après import Apple','après synchro Apple Santé')),
-  tile('var(--mind)','VFC nocturne',nhrv(d)?`${r0(nhrv(d))}<small> ms</small>`:'–',nhrv(d)&&vb?`normale ${r0(vb.m)} ms`:'pendant ton sommeil'),
-  tile('var(--hrt)','FC au repos',h.rhr?`${h.rhr}<small> bpm</small>`:'–',h.nmin?`min. nocturne ${h.nmin} bpm`:''),
-  tile('var(--eff)','Activité',h.st?`${r0(h.st)}<small> pas</small>`:'–',[h.ac?r0(h.ac)+' kcal actives':'',h.ex?h.ex+' min d\'exercice':''].filter(Boolean).join(' · ')),
-  tile('var(--nut)','Nutrition',`${r0(it.reduce((a,x)=>a+kcalOf(x),0))}<small> kcal</small>`,`${r0(sum(it,'p'))} g de protéines sur ${r0(set.prot)}`),
-  tile('var(--wat)','Hydratation',`${fx(wat/1000)}<small> / ${fx(num(set.water)/1000)} L</small>`,'',`<div class="row"><button class="btn small" data-act="water" data-v="250">+25 cl</button><button class="btn small" data-act="water" data-v="500">+50 cl</button></div>`)
+  tile('var(--str)','Stress estimé',has(h.stz)?`${st}<small> / 100</small>`:'–',has(h.stz)?stressLab(st):hKeys().length?(d===today()?'calculé au fil de la journée':'pas de mesure ce jour'):IMP('après import Apple','après synchro Apple Santé'),'','stz'),
+  tile('var(--mind)','VFC nocturne',nhrv(d)?`${r0(nhrv(d))}<small> ms</small>`:'–',nhrv(d)&&vb?`normale ${r0(vb.m)} ms`:'pendant ton sommeil','','hrv'),
+  tile('var(--hrt)','FC au repos',h.rhr?`${h.rhr}<small> bpm</small>`:'–',h.nmin?`min. nocturne ${h.nmin} bpm`:'','','rhr'),
+  tile('var(--eff)','Activité',h.st?`${r0(h.st)}<small> pas</small>`:'–',[h.ac?r0(h.ac)+' kcal actives':'',h.ex?h.ex+' min d\'exercice':''].filter(Boolean).join(' · '),'','st'),
+  tile('var(--nut)','Nutrition',`${r0(it.reduce((a,x)=>a+kcalOf(x),0))}<small> kcal</small>`,`${r0(sum(it,'p'))} g de protéines sur ${r0(set.prot)}`,'','nut'),
+  tile('var(--wat)','Hydratation',`${fx(wat/1000)}<small> / ${fx(num(set.water)/1000)} L</small>`,'',`<div class="row"><button class="btn small" data-act="water" data-v="250">+25 cl</button><button class="btn small" data-act="water" data-v="500">+50 cl</button></div>`,'wat')
  ].join('');
  const x=X(d);const sleep=[];if(has(h.sw))sleep.push([0,(h.sw+720)%1440]);const hn=H(addD(d,1));if(has(hn.sb)){const m=(hn.sb+720)%1440;if(m>600)sleep.push([m,1440])}
  const wk=(h.wk||[]).filter(w=>has(w.st)).map(w=>[w.st,w.st+num(w.min)]);
@@ -253,12 +262,12 @@ function renderToday(){const d=S.day,h=H(d),D=S.days[d]||{},it=D.items||[],T=day
  $('#monmini').innerHTML=mo.length?`<div class="mm" data-go="recuperation"><div><div class="eyebrow">Moniteur de santé</div><b style="font-size:17px">${bad.length?`${bad.length} ${bad.length>1?'signaux':'signal'} inhabituel${bad.length>1?'s':''} : ${bad.map(x=>x.l).join(', ')}`:'Tous tes signes vitaux sont dans ta normale'}</b></div><div class="dots" style="margin-left:auto">${mo.map(x=>`<i style="--c:${x.col}" data-tip="${esc(x.l+' : '+monFmt(x,x.v)+'\n'+x.lab)}"></i>`).join('')}</div></div>`:'<div class="eyebrow">Moniteur de santé</div><p class="mute small" style="margin:4px 0 0">Il faut au moins 7 nuits importées pour établir ta normale.</p>';
  renderCheckin()}
 function coach(d,rc,sl,ef,tg){const h=H(d),out=[];
- if(rc&&!rc.partial){const [l]=recLab(rc.s);out.push(`<b>Récupération ${l.toLowerCase()} (${rc.s} %).</b> `+(rc.s>=67?'Ton système nerveux est reposé : bon jour pour une séance exigeante ou un record.':rc.s>=34?'Entraîne-toi normalement, sans viser l\'intensité maximale.':'Ton corps récupère encore : privilégie marche, mobilité ou repos.'));
+ if(rc&&!rc.partial){const [l]=recLab(rc.s);out.push(`<b>Récupération ${l.toLowerCase()} (${rc.s} %).</b> `+(rc.s>=67?'Tes indicateurs (VFC, FC de repos, sommeil) sont au niveau ou au-dessus de ta normale : bon jour pour une séance exigeante.':rc.s>=34?'Tes indicateurs sont proches de ta normale : entraîne-toi normalement, sans forcément viser ton maximum.':'Tes indicateurs sont sous ta normale : privilégie une activité légère ou le repos, et dors davantage ce soir.'));
   const low=rc.c.filter(x=>x[1]<45).map(x=>x[0]);if(low.length)out.push(`Ce qui tire vers le bas : ${low.join(', ')}.`)}
  if(tg)out.push(`Effort conseillé : <b>${tg[0]} à ${tg[1]}</b>${ef!=null?` (actuel : ${ef})`:''}.`);
  if(d===today()||d===hLast()){const nd=needOf(addD(d,1)),wa=wakeAvg(d);if(wa!=null)out.push(`Ce soir, vise <b>${fmtSl(nd.need)}</b> de sommeil : couche-toi vers <b>${hhmm(wa-nd.need-15)}</b> pour te lever à ${hhmm(wa)}.`)}
- if(has(h.tp)){const tb=base('tp',d);if(tb!=null&&h.tp-tb>=0.5)out.push('<b>Température au poignet inhabituelle</b> : surveille un éventuel début de maladie.')}
- if(num(h.stz)>=30)out.push('Journée stressante d\'après ta FC : quelques minutes de respiration lente aident à redescendre.');
+ if(has(h.tp)){const tb=base('tp',d);if(tb!=null&&h.tp-tb>=0.5)out.push('<b>Température au poignet plus élevée que d\'habitude</b> : cela peut précéder une infection, mais aussi venir de l\'alcool, d\'une chambre chaude ou, chez la femme, de la seconde moitié du cycle.')}
+ if(num(h.stz)>=30)out.push('Ta FC est restée élevée au repos une bonne partie de la journée (stress, caféine, chaleur, digestion…). Quelques minutes de respiration lente, environ 6 cycles par minute, aident à la faire redescendre.');
  return out.join(' ')||''+IMP('Importe tes données Apple Santé et remplis ton check-in','Connecte Apple Santé et remplis ton check-in')+' : le coach interprétera ici ta récupération, ton effort et ton besoin de sommeil.'}
 function actsHTML(d,T){T=T||dayTrain(d);const L=[];
  for(const s of T.mu){const w=T.att.filter(isStr)[0];L.push(`<div class="act" style="--c:var(--trn)"><div class="ic"><svg viewBox="0 0 24 24">${IC.lift}</svg></div><div><div class="t">${esc(s.name)}</div><div class="m">${(s.ex||[]).length} exercices · ${fx((s.ex||[]).reduce((a,x)=>a+x.sets.reduce((b,y)=>b+num(y.w)*num(y.r),0),0)/1000)} t${s.dur?' · '+esc(s.dur)+' min':''}${w&&w.hr?' · '+w.hr+' bpm moy.':''}${w&&w.kcal?' · '+w.kcal+' kcal':''}</div>${w?zbar(w.z)+zleg(w.z):''}</div><div class="e">${w&&w.tr?r0(100*(1-Math.exp(-w.tr/110))):''}<small>${w&&w.tr?'effort':''}</small></div></div>`)}
@@ -348,7 +357,7 @@ function renderEffort(){renderSessCard();const d=S.day,h=H(d),rc=recovery(d),ef=
  const e=today(),fr=addD(e,-29),E=[],R=[];for(let k=fr;k<=e;k=addD(k,1)){const a=effortOf(k);if(a!=null)E.push({x:k,y:a});const r=recovery(k);if(r)R.push({x:k,y:r.s})}
  setFig('#fer',{series:[{name:'Effort',avg:true,pts:E,col:'var(--eff)',bars:true,op:.75},{name:'Récupération',avg:true,df:v=>r0(v)+' pts',tf:v=>r0(v)+' %',pts:R,col:'var(--rec)',last:true}],ymin:0,ymax:100,empty:'Pas encore de données'});
   const Zs=zones28(),zt2=Zs.reduce((a,b)=>a+b,0);if(zt2){const pc=Zs.map(m=>m/zt2*100),low=pc[0]+pc[1],mid=pc[2],hi=pc[3]+pc[4];
-  $('#z28').innerHTML=zbar(Zs)+`<div class="comp" style="margin-top:12px">${Zs.map((m,i)=>`<div class="cr"><span>${ZN[i]}</span><div class="bar" style="--c:${ZC[i]}"><i style="width:${pc[i]}%"></i></div><span class="num">${r0(pc[i])} %</span><small>${r0(m)} min sur 28 jours</small></div>`).join('')}</div><div class="coach">${low>=70&&hi>=10?'<b>Répartition polarisée</b> : beaucoup de basse intensité et un peu de haute intensité, la combinaison la plus efficace pour l\'endurance et la VO2 max.':mid>=35?'<b>Beaucoup de temps en zone 3</b> (tempo) : fatigant sans être le plus efficace. Ralentis tes sorties faciles (zone 2) et rends tes séances dures vraiment dures.':hi<5?'<b>Presque pas de haute intensité</b> : ajoute une séance de fractionné par semaine pour faire progresser ta VO2 max.':low<60?'<b>Peu de basse intensité</b> : ajoute du volume facile en zone 2 (tu peux parler en faisant l\'effort) pour construire ta base aérobie.':'Répartition équilibrée de tes intensités.'} Zones calculées avec ta FC max. de ${S.health.hrmax||'–'} bpm.</div>`}else $('#z28').innerHTML='<p class="mute small">Pas d\'entraînement avec FC enregistré par la montre sur 28 jours.</p>';
+  $('#z28').innerHTML=zbar(Zs)+`<div class="comp" style="margin-top:12px">${Zs.map((m,i)=>`<div class="cr"><span>${ZN[i]}</span><div class="bar" style="--c:${ZC[i]}"><i style="width:${pc[i]}%"></i></div><span class="num">${r0(pc[i])} %</span><small>${r0(m)} min sur 28 jours</small></div>`).join('')}</div><div class="coach">${low>=70&&hi>=10?'<b>Répartition polarisée</b> : surtout de la basse intensité et un peu de haute intensité, une répartition que la recherche associe à de bons progrès en endurance et en VO2 max.':mid>=35?'<b>Beaucoup de temps en zone 3</b> (tempo) : c\'est fatigant, et la plupart des programmes d\'endurance conseillent plutôt de rendre les sorties faciles vraiment faciles (zone 2) et les séances dures vraiment dures.':hi<5?'<b>Presque pas de haute intensité</b> : ajoute une séance de fractionné par semaine pour faire progresser ta VO2 max.':low<60?'<b>Peu de basse intensité</b> : ajoute du volume facile en zone 2 (tu peux parler en faisant l\'effort) pour construire ta base aérobie.':'Répartition équilibrée de tes intensités.'} Zones calculées avec ta FC max. de ${S.health.hrmax||'–'} bpm.</div>`}else $('#z28').innerHTML='<p class="mute small">Pas d\'entraînement avec FC enregistré par la montre sur 28 jours.</p>';
  renderLoad();renderMG();renderHeat();renderForce();renderRecs();renderHist()}
 function lastFor(name,excl){const k=norm(name);if(!k)return null;for(const s of done()){if(s.id===excl||s.kind==='sport')continue;const e=(s.ex||[]).find(e=>norm(e.n)===k&&e.sets.some(x=>num(x.r)>0));if(e)return{s,e}}return null}
 function suggest(name,excl){const L=lastFor(name,excl);if(!L)return null;const sets=L.e.sets.filter(x=>num(x.r)>0);const top=Math.max(...sets.map(x=>num(x.w)));const up=top>0&&sets.filter(x=>num(x.w)===top).every(x=>num(x.r)>=S.set.rmax);return{L,sets,top,up,w:up?top+num(S.set.inc):top}}
@@ -608,6 +617,8 @@ document.addEventListener('click',ev=>{unlockAudio();if(matchMedia('(max-width:8
  case'qa':return quick(b.dataset.q);
  case'dpick':S.day=b.dataset.d;return renderView(cur());
  case'msclose':return closeSheet();
+ case'metric':return openMetric(b.dataset.k);
+ case'mper':metP=+b.dataset.n;return renderMetric();
  case'msopen':if(!S.cur){startMode=b.dataset.m||'mu';renderStart()}return openSheet('seance');
  case'foodadd':return openFood(b.dataset.m);
  case'foodsave':return $('#ff').requestSubmit();
@@ -678,7 +689,7 @@ for(const id in SK)$('#'+id).addEventListener('change',ev=>{const key=SK[id];if(
 $('#hfile').addEventListener('change',async ev=>{const f=ev.target.files[0];ev.target.value='';if(!f)return;const bar=$('#hbar'),bi=bar.querySelector('i'),msg=$('#hmsg');
  const prog=p=>{p=Math.min(100,p||0);bi.style.width=p.toFixed(0)+'%';msg.textContent=(p>=96?'Analyse des nuits et du cœur… ':'Lecture… ')+p.toFixed(0)+' %'};
  bar.hidden=false;bi.style.width='0';msg.dataset.busy='1';msg.textContent='Ouverture du fichier…';
- try{const R=await readHealth(f,prog,S.set.sex),r=R.d,n=Object.keys(r).length;
+ try{const R=await readHealth(f,prog,S.set.sex,ageOf()),r=R.d,n=Object.keys(r).length;
   if(!n){msg.textContent='Aucune donnée récente dans ce fichier.';return}
   if(S.set.demo)clearDemo();applyHealth(R);
   const w=Object.values(r).reduce((a,o)=>a+(o.wk||[]).length,0),ns=Object.values(r).filter(o=>o.sl).length,nv=Object.values(r).filter(o=>o.nhv).length,nrm=Object.values(r).filter(o=>o.nrm).length;
@@ -717,7 +728,7 @@ async function loadDemo(){
  toast('Préparation des données de démo…');await new Promise(r=>setTimeout(r,30));
  const prev={};for(const k of PROFILE_KEYS)prev[k]=clone(S.set[k]??'');
  for(const k of PROFILE_KEYS)if(k==='sups'||!has(S.set[k]))S.set[k]=clone(DEMO_PROFILE[k]);
- const R=await readHealth(new File([demoHealthXML()],'export.xml',{type:'text/xml'}),()=>{},S.set.sex);
+ const R=await readHealth(new File([demoHealthXML()],'export.xml',{type:'text/xml'}),()=>{},S.set.sex,ageOf());
  S.health={upd:'',d:{}};S.detail={d:{}};applyHealth(R);
  const M=demoManual();S.cur=null;S.sessions=M.sessions;S.days=M.days;S.med=M.med;
  S.set.demo={prev};S.set.onb=1;S.day=today();put.set();put.day(today());
@@ -741,7 +752,7 @@ async function hkSync({full=false,quiet=false}={}){
  bar.hidden=quiet&&inc;prog(0);
  try{
   if(S.set.demo)clearDemo();
-  const R=await readHealthKit({from,sex:S.set.sex,onProgress:prog});
+  const R=await readHealthKit({from,sex:S.set.sex,age:ageOf(),onProgress:prog});
   if(!Object.keys(R.d).length){if(!inc)toast("Aucune donnée reçue d'Apple Santé. Vérifie l'accès : Réglages → Santé → Accès aux données et appareils → Carnet de santé.");return}
   applyHealth(R,inc);S.health.src='hk';S.health.sync=Date.now();put.health();
   if(!inc)toast(`Apple Santé connecté : ${Object.keys(R.d).length} jours lus.`);else if(!quiet)toast('Apple Santé à jour.')
@@ -760,7 +771,9 @@ let msKind='',foodMeal='';
 const mealNow=()=>{const hr=new Date().getHours();return hr<11?'Petit-déjeuner':hr<15?'Déjeuner':hr<18?'Collation':'Dîner'};
 function msBar(){const t=$('#mstitle'),l=$('#msl'),r=$('#msr');
  if(msKind==='seance'){t.textContent=S.cur?'Séance en cours':'Nouvelle séance';l.textContent=S.cur?'Fermer':'Annuler';r.innerHTML=S.cur?'<button type="button" class="ms-btn ms-done" data-act="finish">Terminer</button>':''}
- else if(msKind==='food'){t.textContent=foodMeal;l.textContent='Annuler';r.innerHTML='<button type="button" class="ms-btn ms-done" data-act="foodsave">Ajouter</button>'}}
+ else if(msKind==='food'){t.textContent=foodMeal;l.textContent='Annuler';r.innerHTML='<button type="button" class="ms-btn ms-done" data-act="foodsave">Ajouter</button>'}
+ else if(msKind==='metric'){t.textContent=(MET[metK]||{}).t||'';l.textContent='';r.innerHTML='<button type="button" class="ms-btn ms-done" data-act="msclose">OK</button>'}
+ l.style.visibility=l.textContent?'':'hidden'}
 function openSheet(k){msKind=k;const m=$('#msheet');$$('#msheet .ms-body').forEach(b=>b.hidden=b.dataset.k!==k);msBar();m.hidden=false;document.documentElement.classList.add('ms-open');m.querySelector('.ms-body:not([hidden])').scrollTop=0}
 function closeSheet(){if(!msKind)return;msKind='';const a=document.activeElement;if(a&&$('#msheet').contains(a))a.blur();$('#msheet').hidden=true;document.documentElement.classList.remove('ms-open');setTimeout(renderSoft,0)}
 function openFood(m){renderNutri();foodMeal=m;$('#ff').reset();$('#fm').value=m;openSheet('food');if(matchMedia('(pointer:fine)').matches)$('#fn').focus()}
@@ -769,6 +782,45 @@ function renderSessCard(){const c=S.cur,el=$('#sesscard');if(!el)return;
  if(c){const n=c.ex.filter(e=>norm(e.n)).length,h0=new Date(c.t||Date.now()).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
   el.innerHTML=`<div class="panel sessnow"><button type="button" class="hr" data-act="msopen" style="--c:var(--trn)"><i><svg viewBox="0 0 24 24">${IC.lift}</svg></i><span><b>Séance en cours</b><small>${esc(c.name||'Séance')} · ${n} exercice${n>1?'s':''} · commencée à ${h0}</small></span><em class="go">Reprendre</em></button></div>`;return}
  el.innerHTML=`<div class="panel sessnew"><h2>Noter une séance</h2>${row('mu','var(--trn)',IC.lift,'Séance de muscu','Séries, charges et progression suggérée')}${row('sp','var(--eff)',IC.bolt,'Autre sport','Course, vélo, natation, yoga…')}</div>`}
+
+/* ---------- pages de détail des tuiles (comme dans Santé) ---------- */
+let metK='',metP=30;
+const dayKcal=d=>{const it=dayIt(d);return it.length?it.reduce((a,x)=>a+kcalOf(x),0):null};
+const dayWat=d=>{const w=num((S.days[d]||{}).w)||num(H(d).wa);return w?w/1000:null};
+const MET={
+ stz:{t:'Stress estimé',u:'/ 100',col:'var(--str)',f:d=>has(H(d).stz)?num(H(d).stz):null,line:1,fmt:r0,
+  about:'Part des minutes de la journée où ta fréquence cardiaque était nettement au-dessus de ton repos alors que tu bougeais peu (hors sommeil et entraînement). Une FC qui monte sans effort physique reflète souvent une activation du système nerveux sympathique : stress, mais aussi caféine, chaleur, digestion, déshydratation ou station debout prolongée. C\'est donc une estimation, pas une mesure du stress. Sous 10, la journée a été calme ; au-delà de 20 à 30, elle a été chargée. La respiration lente (environ 6 cycles par minute), l\'activité physique régulière et un sommeil suffisant aident à faire baisser cette activation.'},
+ hrv:{t:'VFC nocturne',u:'ms',col:'var(--mind)',f:d=>nhrv(d),line:1,fmt:r0,base:d=>{const b=nhrvBase(d);return b?{m:b.m,s:b.s}:null},
+  about:'La variabilité de la fréquence cardiaque (VFC) mesure les petites différences de durée entre deux battements. Elle reflète surtout l\'activité du système nerveux parasympathique, celui du repos et de la récupération. Elle varie énormément d\'une personne à l\'autre (âge, génétique, condition physique) et baisse naturellement avec l\'âge : il n\'existe pas de bonne valeur universelle, et comparer la tienne à celle de quelqu\'un d\'autre n\'a pas de sens. Ce qui compte, c\'est ta tendance : au-dessus de ta plage habituelle, c\'est souvent signe de bonne récupération ; une baisse qui dure plusieurs jours accompagne fréquemment un manque de sommeil, l\'alcool, le stress, une maladie qui commence ou une charge d\'entraînement trop forte. L\'entraînement d\'endurance régulier tend à l\'augmenter sur plusieurs semaines. L\'Apple Watch mesure le SDNN, qui ne se compare pas directement au RMSSD utilisé par d\'autres appareils.'},
+ rhr:{t:'FC au repos',u:'bpm',col:'var(--hrt)',f:d=>num(H(d).rhr)||null,line:1,fmt:r0,base:d=>{const b=zb(x=>num(H(x).rhr)||null,d);return b.m!=null?{m:b.m,s:Math.max(b.s,1.5)}:null},
+  about:'La fréquence cardiaque au repos est le nombre de battements par minute quand tu es éveillé et immobile depuis un moment. Chez l\'adulte, 60 à 100 bpm est considéré comme normal ; les sportifs d\'endurance descendent souvent sous 60. Les grandes études de suivi associent une FC de repos plus basse à un meilleur pronostic cardiovasculaire et à une meilleure espérance de vie. L\'entraînement d\'endurance la fait baisser progressivement, sur plusieurs semaines à quelques mois. À court terme, une hausse de 5 bpm ou plus pendant plusieurs jours par rapport à ton habitude accompagne souvent fatigue, maladie, déshydratation, alcool, chaleur ou stress.'},
+ st:{t:'Pas',u:'pas',col:'var(--eff)',f:d=>num(H(d).st)||null,bars:1,fmt:r0,goal:()=>num(S.set.steps),
+  about:'Marcher davantage est l\'un des comportements les plus clairement associés à une meilleure santé. Dans les grandes études, le risque de mortalité baisse nettement à mesure que le nombre de pas augmente, jusqu\'à environ 8 000 à 10 000 pas par jour avant 60 ans et 6 000 à 8 000 après ; au-delà, le bénéfice se stabilise. Chaque tranche de 1 000 pas en plus compte, même en partant de peu. Le rythme compte aussi : une partie des pas faite à allure soutenue (marche rapide) apporte un bénéfice supplémentaire.'},
+ nut:{t:'Nutrition',u:'kcal',col:'var(--nut)',f:dayKcal,bars:1,fmt:r0,goal:()=>num(S.set.kcal),
+  about:'Les besoins caloriques dépendent de ta taille, de ton poids, de ton âge et de ton activité ; les formules et les montres les estiment avec une erreur de plusieurs centaines de kcal. La mesure la plus fiable est ta « dépense réelle estimée » (onglet Nutrition), calculée à partir de ce que tu manges et de l\'évolution de ton poids. Pour les protéines, avec de la musculation, environ 1,6 g par kg de poids et par jour suffit à la plupart des gens pour garder ou développer du muscle, jusqu\'à 2,2 g/kg en déficit calorique ; les répartir en 3 ou 4 prises de 20 à 40 g aide. Le minimum pour la santé générale est de 0,8 g/kg.'},
+ wat:{t:'Hydratation',u:'L',col:'var(--wat)',f:dayWat,bars:1,fmt:fx,goal:()=>num(S.set.water)/1000,
+  about:'Les apports en eau conseillés, boissons et aliments compris, sont d\'environ 2,5 L par jour pour un homme et 2 L pour une femme ; les boissons en apportent 70 à 80 %, le reste vient de l\'alimentation. Les besoins augmentent avec la chaleur, l\'altitude et l\'activité physique : compte environ 0,5 à 1 L de plus par heure d\'effort qui fait transpirer. La soif et une urine claire restent de bons repères au quotidien.'},
+};
+function openMetric(k){if(!MET[k])return;metK=k;openSheet('metric');renderMetric()}
+function renderMetric(){const m=MET[metK];if(!m)return;const end=S.day,from=addD(end,-(metP-1)),pts=[];
+ for(let x=from;x<=end;x=addD(x,1)){const v=m.f(x);if(v!=null&&isFinite(v))pts.push({x,y:Math.round(v*100)/100})}
+ const ys=pts.map(p=>p.y),av=avg(ys),mn=ys.length?Math.min(...ys):null,mx=ys.length?Math.max(...ys):null,last=m.f(end),b=m.base?m.base(end):null,goal=m.goal?m.goal():0;
+ const U=v=>v==null?'–':`${m.fmt(v)}<small> ${m.u}</small>`,per=`${dShort(from)} – ${dShort(end)}`;
+ const row=(l,v)=>`<div class="mrow"><span>${l}</span><b>${v}</b></div>`;
+ /* interprétation de la valeur du jour */
+ let note='';
+ if(last!=null&&b&&(metK==='hrv'||metK==='rhr')){const lo=b.m-b.s,hi=b.m+b.s,z=(last-b.m)/b.s,lab=metK==='hrv'?(z>1?'au-dessus de ta plage habituelle, un signe fréquent de bonne récupération':z<-1?'sous ta plage habituelle. Une baisse isolée est courante ; si elle dure plusieurs jours, pense sommeil, alcool, stress, maladie ou charge d\'entraînement':'dans ta plage habituelle'):(z>1?`plus haute que d'habitude (${sg(Math.round(last-b.m))} bpm). Si cela dure plusieurs jours, pense fatigue, maladie, alcool ou stress`:z<-1?'plus basse que d\'habitude, ce qui va souvent avec une bonne récupération':'dans ta plage habituelle');
+  note=`${metK==='hrv'?'Ta VFC':'Ta FC au repos'} (${m.fmt(last)} ${m.u}) est ${lab}. Plage habituelle sur 30 jours : ${m.fmt(lo)} à ${m.fmt(hi)} ${m.u}.`}
+ else if(metK==='stz'&&last!=null)note=`Stress estimé de ${r0(last)} / 100 ce jour : ${stressLab(last).toLowerCase()}.`;
+ else if(metK==='st'&&av!=null){const a=ageOf(),old=a!=null&&a>=60,g1=old?6000:8000;note=`Moyenne de ${r0(av)} pas par jour sur la période : ${av>=g1?'au niveau où la recherche observe l\'essentiel du bénéfice pour la santé':av>=g1-3000?'chaque millier de pas en plus apporterait un bénéfice mesurable':'augmenter progressivement, par exemple de 1 000 pas par jour chaque semaine, apporterait un bénéfice net'}.`}
+ else if(metK==='nut'&&av!=null){const pr=[];for(let x=from;x<=end;x=addD(x,1)){const it=dayIt(x);if(it.length)pr.push(sum(it,'p'))}const W=weights(),wk=Object.keys(W).sort(),wt=wk.length?wAvg(W,wk[wk.length-1]):null,pa=avg(pr);note=`${r0(av)} kcal et ${r0(pa)} g de protéines par jour en moyenne sur les jours notés${wt?`, soit ${fx(pa/wt)} g/kg pour ${fx(wt)} kg`:''}.`}
+ else if(metK==='wat'&&av!=null){note=`${fx(av)} L par jour en moyenne sur les jours notés, pour un objectif de ${fx(goal)} L.`}
+ $('#mdet').innerHTML=`<div class="seg mseg">${[[7,'7 J'],[30,'30 J'],[182,'6 M']].map(([n,l])=>`<button type="button" data-act="mper" data-n="${n}" class="${metP===n?'on':''}">${l}</button>`).join('')}</div>
+  <div class="panel"><div class="mhead"><span class="eyebrow">Moyenne</span><b class="big">${U(av)}</b><span class="mute small">${per}${pts.length&&pts.length<metP?` · ${pts.length} jour${pts.length>1?'s':''} avec mesure`:''}</span></div><div class="fig sm" id="mfig"><svg></svg></div></div>
+  <div class="panel mstats">${row(end===today()?"Aujourd'hui":dShort(end),U(last))}${row('Minimum',U(mn))}${row('Maximum',U(mx))}${b?row('Plage habituelle (30 j)',`${m.fmt(b.m-b.s)} – ${m.fmt(b.m+b.s)}<small> ${m.u}</small>`):''}${goal?row('Objectif',U(goal)):''}</div>
+  <h3 class="ms-sec">À propos</h3><div class="panel mabout">${note?`<p><b>${note}</b></p>`:''}<p>${m.about}</p><p class="mute small">Repères tirés des recommandations et de la recherche ; ils ne remplacent pas un avis médical.</p></div>`;
+ setFig('#mfig',{series:[{name:m.t,pts,col:m.col,bars:!!m.bars,dots:!m.bars&&metP<=30,r:3,w:2,last:!m.bars}],unit:m.u,zero:!!m.bars,hline:goal||null,band:b?[b.m-b.s,b.m+b.s]:null,fmt:m.fmt,empty:'Pas de mesure sur cette période'});
+ if(msKind==='metric')msBar()}
 
 /* ---------- premier lancement ---------- */
 const needOnb=()=>!S.set.onb&&!hKeys().length&&!S.sessions.length&&!Object.keys(S.days).length&&!S.med.length;

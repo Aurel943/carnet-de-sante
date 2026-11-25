@@ -41,8 +41,8 @@ export function* exportLines(r){
  * Lit Apple Santé depuis le jour `from` (AAAA-MM-JJ) jusqu'à maintenant, par périodes de 30 jours.
  * Renvoie le résultat de l'analyseur (même forme qu'un import de fichier), avec `from`.
  */
-export async function readHealthKit({from=addD(today(),-395),sex='',onProgress=()=>{}}={}){
- const P=healthParser(from,sex),t0=new Date(from+'T00:00').getTime()/1000,t1=Math.floor(Date.now()/1000),step=30*86400,n=Math.max(1,Math.ceil((t1-t0)/step));
+export async function readHealthKit({from=addD(today(),-395),sex='',age=null,onProgress=()=>{}}={}){
+ const P=healthParser(from,sex,age),t0=new Date(from+'T00:00').getTime()/1000,t1=Math.floor(Date.now()/1000),step=30*86400,n=Math.max(1,Math.ceil((t1-t0)/step));
  let k=0,count=0;
  for(let a=t0;a<t1;a+=step){
   const r=await api().query({start:a,end:Math.min(a+step,t1)});
