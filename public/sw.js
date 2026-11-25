@@ -1,6 +1,7 @@
 // Service worker minimal : l'appli reste utilisable hors connexion.
-// Pages : réseau d'abord, cache en secours. Fichiers statiques (noms hachés par Vite) : cache d'abord.
-const CACHE = 'carnet-v1';
+// Pages : toujours redemandées au serveur (sans le cache HTTP), cache en secours hors connexion.
+// Fichiers statiques (noms hachés par Vite, donc jamais périmés) : cache d'abord.
+const CACHE = 'carnet-v2';
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './index.html'])).then(() => self.skipWaiting()));
@@ -23,7 +24,7 @@ self.addEventListener('fetch', (e) => {
 
   if (req.mode === 'navigate') {
     e.respondWith(
-      fetch(req)
+      fetch(req, { cache: 'no-cache' })
         .then((res) => { const copy = res.clone(); caches.open(CACHE).then((c) => c.put('./index.html', copy)); return res; })
         .catch(() => caches.match('./index.html')),
     );

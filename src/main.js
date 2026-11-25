@@ -777,6 +777,10 @@ async function init(){
  /* Autre onglet ouvert sur la même appli : on recharge les données qu'il vient d'écrire. */
  addEventListener('storage',e=>{if(e.key!==LS)return;if(e.newValue==null)return location.reload();S.sessions=[];S.days={};lsLoad();bump();renderSoft()});
  /* Hors connexion sur le web ; inutile dans l'appli iOS, qui embarque déjà ses fichiers. */
- if('serviceWorker' in navigator&&import.meta.env.PROD&&!window.Capacitor?.isNativePlatform?.())navigator.serviceWorker.register('./sw.js').catch(()=>{});
+ if('serviceWorker' in navigator&&import.meta.env.PROD&&!window.Capacitor?.isNativePlatform?.()){
+  /* Nouvelle version publiée : on recharge une fois pour l'afficher tout de suite. */
+  const had=!!navigator.serviceWorker.controller;let done=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!done&&!$('#onb').contains(document.activeElement)){done=true;location.reload()}});
+  navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{})}
 }
 init();
