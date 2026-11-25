@@ -2,7 +2,7 @@ import Foundation
 import Capacitor
 import HealthKit
 
-/// Lecture directe d'Apple Santé (HealthKit) pour Carnet de santé.
+/// Lecture directe d'Apple Santé (HealthKit) pour Arden.
 ///
 /// Côté JavaScript : `HealthSync.isAvailable()`, `HealthSync.requestAuthorization()`
 /// et `HealthSync.query({ start, end })` (secondes depuis 1970).

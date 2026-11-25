@@ -1,7 +1,7 @@
-# Carnet de santé
+# Arden
 
 Application web mobile de suivi santé et forme, en français : trois jauges du jour
-(**effort**, **récupération**, **sommeil**), la phrase du coach, la frise cardiaque de la
+(**dépense**, **énergie**, **sommeil**), la phrase du coach, la frise cardiaque de la
 journée, et une analyse détaillée par onglet. Les données viennent de l'export
 **Apple Santé** (analysé entièrement dans le navigateur) et de ce que tu notes à la main.
 
@@ -13,11 +13,11 @@ L'appli fonctionne dans un navigateur, s'installe sur l'écran d'accueil (PWA) e
 
 | Onglet | Contenu |
 | --- | --- |
-| **Aujourd'hui** | Jauges effort / récupération / sommeil, conseil du coach, moniteur de santé, tuiles (stress, VFC, FC au repos, activité, nutrition, hydratation), courbe cardiaque de la journée, activités, check-in (humeur, énergie, stress, courbatures, étiquettes) |
+| **Aujourd'hui** | Jauges dépense / énergie / sommeil, conseil du coach, moniteur de santé, tuiles (stress, VFC, FC au repos, activité, nutrition, hydratation), courbe cardiaque de la journée, activités, check-in (humeur, énergie, stress, courbatures, étiquettes) |
 | **Sommeil** | Score et composantes, hypnogramme de la nuit avec FC et VFC, 14 dernières nuits, tendances, besoin de sommeil et heure de coucher conseillée |
-| **Récupération** | Score, moniteur de santé (plage normale personnelle), VFC nocturne, FC nocturne, stress estimé, signes vitaux (SpO₂, respiration, température au poignet…) |
-| **Effort** | Zones cardiaques, journal de séances de muscu (séries, minuteur de repos, progression suggérée), autres sports, charge d'entraînement (ratio 7 j / 28 j), volume par groupe musculaire, 1RM estimé, records |
-| **Nutrition** | Repas et macros, favoris, hydratation, compléments, dépense réelle estimée, 14 derniers jours |
+| **Énergie** | Score, moniteur de santé (plage normale personnelle), VFC nocturne, FC nocturne, stress estimé, signes vitaux (SpO₂, respiration, température au poignet…) |
+| **Dépense** | Zones cardiaques, journal de séances de muscu (séries, minuteur de repos, progression suggérée), autres sports, charge d'entraînement (ratio 7 j / 28 j), volume par groupe musculaire, 1RM estimé, records |
+| **Nutrition** | Repas et macros, favoris, hydratation, compléments, besoins caloriques réels, 14 derniers jours |
 | **Tendances** | Bilan santé sur 30 jours, rigueur du suivi, semaine, corrélations observées, bien-être, poids, mensurations, masse grasse, VO2 max, activité quotidienne |
 | **Plus** | Dossier médical (rendez-vous, vaccins, analyses, blessures + rappels), import Apple Santé, réglages et objectifs, données et confidentialité (sauvegarde en fichier, restauration, suppression) |
 

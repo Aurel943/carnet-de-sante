@@ -1,6 +1,6 @@
 {
-  "name": "Carnet de santé",
-  "short_name": "Carnet",
+  "name": "Arden",
+  "short_name": "Arden",
   "description": "Sommeil, récupération, effort, nutrition et tendances, à partir de tes données Apple Santé.",
   "lang": "fr",
   "start_url": "./",

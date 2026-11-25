@@ -1,7 +1,7 @@
 // Service worker minimal : l'appli reste utilisable hors connexion.
 // Pages : toujours redemandées au serveur (sans le cache HTTP), cache en secours hors connexion.
 // Fichiers statiques (noms hachés par Vite, donc jamais périmés) : cache d'abord.
-const CACHE = 'carnet-v2';
+const CACHE = 'arden-v1';
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './index.html'])).then(() => self.skipWaiting()));

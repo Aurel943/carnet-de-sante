@@ -1,5 +1,5 @@
-/* Carnet de santé : feuille de styles dans le langage visuel d'Apple (iOS 26)
-   - couleurs système d'Apple (systemBlue, systemOrange…) et fonds groupés (#F2F2F7 / #000)
+/* Arden : feuille de styles dans le langage visuel d'Apple (iOS 26)
+   - palette propre d'Arden (corail, turquoise, bleu nuit…) et fonds groupés (#F2F2F7 / #000)
    - SF Pro (police système des appareils Apple), Inter ailleurs ; chiffres en SF Pro Rounded comme dans Santé
    - cartes et listes groupées à grands arrondis, séparateurs fins, boutons en capsule
    - barre d'onglets flottante en verre sur iPhone, barre latérale façon iPad / Mac sur grand écran
@@ -22,25 +22,25 @@
  --glass:light-dark(rgba(255,255,255,.72),rgba(36,36,38,.72));
  --glass-edge:light-dark(rgba(255,255,255,.9),rgba(255,255,255,.14));
  --thumb:light-dark(#fff,#636366);
- /* identité du Carnet : actions en graphite (noir en clair, blanc en sombre), pas le bleu système */
+ /* identité d’Arden : actions en graphite (noir en clair, blanc en sombre), pas le bleu système */
  --tint:light-dark(#1c1c1e,#f2f2f7);
  --on-tint:light-dark(#fff,#1c1c1e);
- /* couleurs système d'Apple, une par thème de l'appli */
- --eff:light-dark(#ff9500,#ff9f0a);   /* effort : orange */
- --rec:light-dark(#34c759,#30d158);   /* récupération : vert */
- --slp:light-dark(#5856d6,#5e5ce6);   /* sommeil : indigo */
- --str:light-dark(#ffcc00,#ffd60a);   /* stress : jaune */
- --hrt:light-dark(#ff2d55,#ff375f);   /* cœur : rose */
- --nut:light-dark(#00c7be,#63e6e2);   /* nutrition : menthe */
- --bod:light-dark(#a2845e,#ac8e68);   /* corps : brun */
- --wat:light-dark(#32ade6,#64d2ff);   /* eau : cyan */
- --mind:light-dark(#af52de,#bf5af2);  /* VFC, humeur : violet */
- --trn:light-dark(#007aff,#0a84ff);   /* muscu : bleu */
- --ok:light-dark(#34c759,#30d158);
- --bad:light-dark(#ff3b30,#ff453a);
- /* zones cardiaques et phases du sommeil (comme dans Santé) */
- --z1:#8e8e93;--z2:light-dark(#007aff,#0a84ff);--z3:light-dark(#34c759,#30d158);--z4:light-dark(#ff9500,#ff9f0a);--z5:light-dark(#ff3b30,#ff453a);
- --awake:light-dark(#ff7f5c,#ff9479);--rem:light-dark(#5ac8fa,#70d7ff);--core:light-dark(#007aff,#409cff);--deep:light-dark(#3634a3,#5e5ce6);
+ /* palette d'Arden : un ton par thème, un peu plus doux que les couleurs système */
+ --eff:light-dark(#f2553d,#ff6e57);   /* dépense : corail */
+ --rec:light-dark(#0aa898,#2fd3c1);   /* énergie : turquoise */
+ --slp:light-dark(#3651d4,#6b84ff);   /* sommeil : bleu nuit */
+ --str:light-dark(#e3a008,#ffc83d);   /* stress : ambre */
+ --hrt:light-dark(#e0335a,#ff5277);   /* cœur : framboise */
+ --nut:light-dark(#4caa2e,#7fd65a);   /* nutrition : vert tendre */
+ --bod:light-dark(#9a7651,#b9966c);   /* corps : brun */
+ --wat:light-dark(#2894d8,#5ab8f2);   /* eau : bleu ciel */
+ --mind:light-dark(#c2459e,#e46fc4);  /* VFC, humeur : magenta */
+ --trn:light-dark(#7a5cd6,#a68cff);   /* muscu, tendances : lavande */
+ --ok:light-dark(#1f9e6a,#3ccf8e);
+ --bad:light-dark(#e0453a,#ff5d50);
+ /* zones cardiaques et phases du sommeil */
+ --z1:#8e8e93;--z2:light-dark(#2894d8,#5ab8f2);--z3:light-dark(#1f9e6a,#3ccf8e);--z4:light-dark(#e3a008,#ffc83d);--z5:light-dark(#e0453a,#ff5d50);
+ --awake:light-dark(#f07a5a,#ff9479);--rem:light-dark(#5bb8f0,#7fcdff);--core:light-dark(#3f63e0,#6b84ff);--deep:light-dark(#232f8c,#4651c9);
  /* arrondis : cartes, éléments imbriqués, contrôles */
  --r-card:26px;--r-in:16px;--r-ctl:12px;
  /* zones sûres (encoche, barre d'accueil) ; le simulateur les remplace */
@@ -153,12 +153,11 @@ label.filebtn:focus-within{outline:3px solid color-mix(in srgb,var(--tint) 50%,t
 .st{display:inline-block;font-size:12px;font-weight:500;padding:3px 10px;border-radius:99px;background:color-mix(in srgb,var(--c) 15%,transparent);color:var(--c);white-space:nowrap}
 .pr{display:inline-block;background:var(--str);color:#000;padding:1px 8px;border-radius:99px;font-weight:600;margin-left:6px;font-size:12px}
 
-/* ---------- anneaux du jour (comme les anneaux d'Activité) ---------- */
+/* ---------- jauges du jour : arcs ouverts de 270° (signature d'Arden) ---------- */
 .gauges{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;text-align:center}
 .gauge{display:grid;justify-items:center;gap:3px;background:none;border:0;color:inherit;font:inherit;cursor:pointer;padding:6px 4px;border-radius:var(--r-in);transition:background .15s}
 @media(hover:hover){.gauge:hover{background:var(--panel2)}}
 .gauge svg{width:min(100%,168px);height:auto}
-.gauge svg circle{stroke-width:10}
 .gauge .gv{font:500 32px/1 var(--round);fill:var(--ink);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .gauge .gu{font:500 12px var(--round);fill:var(--mute)}
 .gauge b{font-size:15px;font-weight:500;letter-spacing:-.02em}.gauge span{font-size:13px;color:var(--mute);line-height:1.3}
@@ -452,9 +451,9 @@ td.num,th.num{text-align:right}
 @media(min-width:801px){.ob-in{min-height:0}.ob-cta{margin-top:24px}.ob-note{margin-top:16px}#onb{padding-top:40px;padding-bottom:40px}}
 
 /* ---------- bandeaux : démo, synchronisation ---------- */
-#demobar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:color-mix(in srgb,var(--slp) 13%,var(--panel));border-radius:99px;padding:6px 6px 6px 18px;margin:4px 0 10px;font-size:15px}
+#demobar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:color-mix(in srgb,var(--trn) 13%,var(--panel));border-radius:99px;padding:6px 6px 6px 18px;margin:4px 0 10px;font-size:15px}
 #demobar[hidden]{display:none}
-#demobar b{font-weight:500;color:var(--slp)}
+#demobar b{font-weight:500;color:var(--trn)}
 #demobar .btn{background:var(--panel);min-height:34px}
 #syncbar{background:var(--panel);border-radius:var(--r-in);padding:12px 16px;margin:4px 0 10px;font-size:15px;font-weight:500}
 #syncbar[hidden]{display:none}
@@ -581,7 +580,7 @@ a{text-decoration:none}
 .wd{display:grid;justify-items:center;gap:3px;border:0;background:none;color:var(--ink);font:inherit;padding:6px 0 7px;border-radius:16px;cursor:pointer}
 .wd span{font-size:12px;font-weight:500;color:var(--mute)}
 .wd svg,.wd .ph{width:34px;height:34px}
-.wd .ph{display:block;border-radius:50%;border:2px dashed var(--line)}
+.wd .ph{display:block;border-radius:10px;border:2px dashed var(--line);transform:scale(.62,.9)}
 .wd b{font:500 14px/22px var(--round);width:24px;height:24px;line-height:24px;text-align:center;border-radius:50%}
 .wd.tod b{color:var(--tint);font-weight:600}
 .wd.on{background:var(--panel)}
@@ -621,8 +620,8 @@ a{text-decoration:none}
 .mabout p{margin:0 0 12px;font-size:16px;line-height:1.5}.mabout p:last-child{margin-bottom:0}
 .mabout p b{font-weight:500}
 
-/* ---------- identité du Carnet : boutons et accents personnalisés ---------- */
-/* couleur de chaque section, reprise des anneaux du logo */
+/* ---------- identité d’Arden : boutons et accents personnalisés ---------- */
+/* couleur de chaque section, reprise de l'arc du logo */
 .tabs a{--tc:var(--mute)}
 .tabs a[href="#aujourdhui"]{--tc:light-dark(#f5a300,#ffd60a)}
 .tabs a[href="#sommeil"]{--tc:var(--slp)}
@@ -740,7 +739,7 @@ label.btn.filebtn:not(.pri){color:var(--ink)}
 @media(max-width:800px){
  #tabs{right:calc(14px + 58px + 10px);grid-template-columns:repeat(5,minmax(0,1fr));padding:4px}
  .tabs a{min-height:56px;padding:5px 2px 4px;gap:3px;border-radius:99px}
- .tabs .lb{font-size:10px;font-weight:500;letter-spacing:-.01em}
+ .tabs .lb{font-size:10px;line-height:14px;font-weight:500;letter-spacing:-.01em}
  .tabs a[aria-current=page] .lb,.tabs a.sub-on .lb{font-weight:600}
  .tabs .tplus{position:absolute;top:50%;right:-68px;transform:translateY(-50%);width:58px;height:58px;min-height:0;padding:0;margin:0;border-radius:50%;
   background:var(--glass);-webkit-backdrop-filter:blur(24px) saturate(1.9);backdrop-filter:blur(24px) saturate(1.9);
@@ -804,8 +803,8 @@ label.btn.filebtn:not(.pri){color:var(--ink)}
 /* coach replié : le texte est coupé net après 3 lignes (la marge du bas devient une bordure, hors zone de défilement) */
 @media(max-width:800px){#coach{padding-bottom:0;border-bottom:11px solid var(--panel2)}#coach.more:not(.open)::after{bottom:0}}
 
-/* ---------- anneaux : remplissage animé ---------- */
-.gauge svg mask circle{stroke-width:18}
+/* ---------- jauges : remplissage animé ---------- */
+.gauge svg mask path{stroke-width:18}
 .ringgrow{animation:ringgrow 1s cubic-bezier(.2,.75,.2,1) .05s forwards}
 @keyframes ringgrow{to{stroke-dashoffset:0}}
 @media(prefers-reduced-motion:reduce){.ringgrow{animation:none;stroke-dashoffset:0}}

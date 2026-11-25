@@ -1,4 +1,4 @@
-# Publier Carnet de santé sur l'App Store
+# Publier Arden sur l'App Store
 
 L'appli web est emballée dans une vraie appli iOS avec [Capacitor](https://capacitorjs.com/) :
 le dossier `ios/` contient le projet Xcode, qui embarque la version compilée de l'appli (`dist/`).
@@ -23,7 +23,7 @@ le dossier `ios/` contient le projet Xcode, qui embarque la version compilée de
 1. **Politique de confidentialité** : remplacer `[nom de l'éditeur]` et `[adresse e-mail de contact]`
    dans `confidentialite.html`.
 2. **Identifiant de l'appli** (`appId` dans `capacitor.config.json`, et « Bundle Identifier » dans
-   Xcode) : `com.aurel943.carnetdesante` par défaut. Il doit être unique et ne pourra plus changer
+   Xcode) : `com.aurel943.arden` par défaut. Il doit être unique et ne pourra plus changer
    une fois l'appli publiée.
 
 ## Ce qu'il faut
@@ -64,8 +64,8 @@ Sur [App Store Connect](https://appstoreconnect.apple.com/) → **Mes apps → +
 
 | Champ | Proposition |
 | --- | --- |
-| Nom | Carnet de santé |
-| Sous-titre (30 car.) | Sommeil, récup et effort |
+| Nom | Arden |
+| Sous-titre (30 car.) | Sommeil, énergie et dépense |
 | Catégorie | Santé et forme |
 | Prix | Gratuit |
 | URL de confidentialité | https://aurel943.github.io/carnet-de-sante/confidentialite.html |
@@ -76,22 +76,22 @@ Sur [App Store Connect](https://appstoreconnect.apple.com/) → **Mes apps → +
 
 **Description proposée :**
 
-> Carnet de santé interprète chaque chiffre de ta montre, comme un coach personnel.
+> Arden interprète chaque chiffre de ta montre, comme un coach personnel.
 > Il se connecte directement à Apple Santé et se met à jour à chaque ouverture.
 >
-> Chaque matin, trois scores : effort, récupération et sommeil, avec le conseil qui va avec :
+> Chaque matin, trois scores : dépense, énergie et sommeil, avec le conseil qui va avec :
 > quelle intensité viser aujourd'hui, à quelle heure te coucher ce soir.
 >
 > • Sommeil : score détaillé, phases de la nuit, fréquence cardiaque et VFC nocturnes, dette de sommeil.
-> • Récupération : VFC, FC au repos, respiration, température au poignet, comparées à ta propre normale.
-> • Effort : zones cardiaques, charge d'entraînement, journal de muscu, records et 1RM estimé.
-> • Nutrition : repas, protéines, hydratation, compléments, dépense réelle.
+> • Énergie : VFC, FC au repos, respiration, température au poignet, comparées à ta propre normale.
+> • Dépense : zones cardiaques, charge d'entraînement, journal de muscu, records et 1RM estimé.
+> • Nutrition : repas, protéines, hydratation, compléments, besoins caloriques réels.
 > • Tendances : bilan santé, VO2 max, poids, mensurations, et ce que révèlent tes données.
 > • Dossier médical : rendez-vous, vaccins, analyses, avec rappels.
 >
 > Privé par conception : pas de compte, pas de serveur, pas de publicité. Tes données restent sur ton iPhone.
 >
-> Carnet de santé n'est pas un dispositif médical et ne remplace pas l'avis d'un professionnel de santé.
+> Arden n'est pas un dispositif médical et ne remplace pas l'avis d'un professionnel de santé.
 
 **Notes pour l'équipe de revue d'Apple** (champ « Notes » de la version) :
 
@@ -123,7 +123,7 @@ Dans l'appli iOS, Apple Santé est lu directement : plus besoin du fichier d'exp
   peut toujours importer depuis **Plus → Apple Santé**.
 - **Si iOS refuse l'accès**, il ne le dit pas à l'appli : les lectures reviennent simplement
   vides, et l'appli indique où rétablir l'accès (Réglages → Santé → Accès aux données et
-  appareils → Carnet de santé).
+  appareils → Arden).
 
 **Tester sur ordinateur** : dans le simulateur (`npm run sim`), cocher **Appli iOS (Apple Santé
 simulé)**. L'appli se comporte alors comme sur iPhone, avec un faux HealthKit qui renvoie les

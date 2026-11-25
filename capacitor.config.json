@@ -1,6 +1,6 @@
 {
-  "appId": "com.aurel943.carnetdesante",
-  "appName": "Carnet de santé",
+  "appId": "com.aurel943.arden",
+  "appName": "Arden",
   "webDir": "dist",
   "ios": {
     "contentInset": "never",

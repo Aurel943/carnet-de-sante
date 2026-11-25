@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>fr</string>
 	<key>CFBundleDisplayName</key>
-        <string>Carnet de santé</string>
+        <string>Arden</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -64,7 +64,7 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Carnet de santé lit ton sommeil, ta fréquence cardiaque, ta VFC, ton activité et tes entraînements pour calculer tes scores d'effort, de récupération et de sommeil. Ces données restent sur ton iPhone.</string>
+	<string>Arden lit ton sommeil, ta fréquence cardiaque, ta VFC, ton activité et tes entraînements pour calculer tes scores d'effort, de récupération et de sommeil. Ces données restent sur ton iPhone.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>UIViewControllerBasedStatusBarAppearance</key>

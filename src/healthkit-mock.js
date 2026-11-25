@@ -44,7 +44,7 @@ export const healthKitMock={
  async isAvailable(){return{available:true}},
  async requestAuthorization(){
   // Imite la feuille d'autorisation d'iOS
-  const ok=window.confirm('« Carnet de santé » souhaite accéder à tes données Santé (lecture seule).\n\nSimulation de la demande d\'autorisation d\'iOS : OK pour tout autoriser.');
+  const ok=window.confirm('« Arden » souhaite accéder à tes données Santé (lecture seule).\n\nSimulation de la demande d\'autorisation d\'iOS : OK pour tout autoriser.');
   if(!ok)cache={src:[],q:{},c:{},w:[],hr:{s:[],v:[]}};else cache=null;
   return{shown:true}},
  async query({start,end}){await wait(60);return sliceNative(data(),start,end)},

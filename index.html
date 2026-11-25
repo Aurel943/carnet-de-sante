@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
-<meta name="description" content="Carnet de santé personnel : sommeil, récupération, effort, nutrition et tendances, à partir de tes données Apple Santé.">
+<meta name="description" content="Arden : sommeil, énergie, dépense, nutrition et tendances, à partir de tes données Apple Santé.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Carnet">
-<title>Carnet de santé</title>
+<meta name="apple-mobile-web-app-title" content="Arden">
+<title>Arden</title>
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon-180.png">
 <link rel="manifest" href="./manifest.webmanifest">
@@ -17,13 +17,13 @@
 </head>
 <body>
 <header class="top">
- <div class="wrap tt"><div class="brand"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="10" fill="var(--ink)"/><circle cx="16" cy="16" r="9" fill="none" stroke="var(--eff)" stroke-width="3" stroke-dasharray="19 38" stroke-linecap="round" transform="rotate(-90 16 16)"/><circle cx="16" cy="16" r="9" fill="none" stroke="var(--rec)" stroke-width="3" stroke-dasharray="17 40" stroke-dashoffset="-19" stroke-linecap="round" transform="rotate(-90 16 16)"/><circle cx="16" cy="16" r="9" fill="none" stroke="var(--slp)" stroke-width="3" stroke-dasharray="17 40" stroke-dashoffset="-38" stroke-linecap="round" transform="rotate(-90 16 16)"/></svg><h1>Carnet de santé</h1></div><span id="st" class="pill local">Sauvegarde locale</span></div>
+ <div class="wrap tt"><div class="brand"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="10" fill="var(--ink)"/><g fill="none" stroke-width="3.2" stroke-linecap="round"><path d="M9.636 23.364A9 9 0 0 1 7.981 12.914" stroke="var(--eff)"/><path d="M10.095 10.208A9 9 0 0 1 21.905 10.208" stroke="var(--rec)"/><path d="M24.019 12.914A9 9 0 0 1 22.364 23.364" stroke="var(--slp)"/></g><circle cx="22.364" cy="23.364" r=".75" fill="var(--bg)"/></svg><h1>Arden</h1></div><span id="st" class="pill local">Sauvegarde locale</span></div>
  <nav class="wrap tabs" id="tabs">
   <a href="#aujourdhui"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span class="lb"><span class="lf">Aujourd'hui</span><span class="ls">Résumé</span></span></a>
   <a href="#sommeil"><svg viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/></svg><span class="lb">Sommeil</span></a>
-  <a href="#recuperation"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg><span class="lb">Récup.</span></a>
+  <a href="#recuperation"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span class="lb">Énergie</span></a>
   <button type="button" class="tplus" data-act="sheet" aria-label="Noter quelque chose"><span class="pi" aria-hidden="true">+</span><span class="lb">Noter</span></button>
-  <a href="#effort"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span class="lb">Effort</span></a>
+  <a href="#effort"><svg viewBox="0 0 24 24"><path d="M12 2.5c.8 3.8 5.5 5.6 5.5 11a5.5 5.5 0 0 1-11 0c0-2.8 1.6-4.2 2.4-6 .9 1.3 1.8 1.9 2.9 2.2-.3-2.5-.6-4.6.2-7.2z"/></svg><span class="lb">Dépense</span></a>
   <a href="#nutrition" class="dsk"><svg viewBox="0 0 24 24"><path d="M4 11h16a8 8 0 0 1-16 0zM9 7c0-2 1.5-3 3-3s3 1 3 3"/></svg><span class="lb">Nutrition</span></a>
   <a href="#tendances" class="dsk"><svg viewBox="0 0 24 24"><path d="M4 4v16h16M8 15l4-4 3 3 5-6"/></svg><span class="lb">Tendances</span></a>
   <a href="#plus"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg><span class="lb">Plus</span></a>
@@ -61,7 +61,7 @@
 </section>
 
 <section id="v-recuperation" class="view" hidden>
- <div class="panel g12"><div class="two" style="align-items:center"><div class="gauge big" id="grc"></div><div><div class="eyebrow">Ce qui compose ta récupération</div><div class="comp" id="rcc"></div></div></div><div class="coach" id="rccoach"></div></div>
+ <div class="panel g12"><div class="two" style="align-items:center"><div class="gauge big" id="grc"></div><div><div class="eyebrow">Ce qui compose ton énergie</div><div class="comp" id="rcc"></div></div></div><div class="coach" id="rccoach"></div></div>
  <div class="panel g6"><div class="ph"><h2>Moniteur de santé</h2><span class="mute small" id="mons"></span></div><div class="mon" id="mon"></div><p class="mute small">Chaque mesure de la nuit est placée sur ta propre plage normale (zone verte : moyenne ± 1,5 écart-type de tes 30 nuits précédentes). Plusieurs signaux inhabituels en même temps, surtout température, respiration et FC qui montent, précèdent souvent une infection ou un surmenage.</p></div>
  <div class="panel g6"><h2>VFC nocturne</h2><div class="kpis" id="vk2"></div><div class="fig" id="fhv"><svg></svg></div><p class="mute small">Ta variabilité cardiaque pendant le sommeil, nuit par nuit, sur fond de ta plage habituelle (bande colorée). Par défaut, la même valeur que l'app Santé d'Apple (SDNN, moyenne du jour) ; tu peux passer au SDNN du sommeil seul ou au RMSSD dans Plus → Réglages. Sortir durablement sous la bande signale une fatigue accumulée.</p></div>
  <div class="two g12">
@@ -77,7 +77,7 @@
 <section id="v-effort" class="view" hidden>
  <div class="panel g12"><div class="two" style="align-items:center"><div class="gauge big" id="gef"></div><div><div class="eyebrow">Zones cardiaques de la journée</div><div id="dz"></div><div class="stats" id="efs"></div></div></div><div class="coach" id="efcoach"></div></div>
  <div class="g12" id="sesscard"></div>
- <div class="panel g6"><h2>Effort et récupération, 30 jours</h2><div class="fig sm" id="fer"><svg></svg></div><div class="lg"><span><i style="--c:var(--eff)"></i>Effort</span><span><i style="--c:var(--rec)"></i>Récupération</span></div></div>
+ <div class="panel g6"><h2>Dépense et énergie, 30 jours</h2><div class="fig sm" id="fer"><svg></svg></div><div class="lg"><span><i style="--c:var(--eff)"></i>Dépense</span><span><i style="--c:var(--rec)"></i>Énergie</span></div></div>
  <div class="panel g6"><div class="ph"><h2>Zones cardiaques, 28 jours</h2><span class="mute small">entraînements enregistrés par la montre</span></div><div id="z28"></div></div>
  <div class="panel g12"><div class="ph"><h2>Charge d'entraînement</h2><span class="mute small">7 jours comparés aux 28 derniers</span></div><div class="kpis" id="lk"></div><div class="fig sm" id="fl"><svg></svg></div><p class="mute small">Charge = effort cardiaque (TRIMP) des séances avec la montre, ou minutes × intensité ressentie sans montre. Repère couramment utilisé : entre 0,8 et 1,3, ta charge progresse sans à-coup ; au-delà de 1,5, la hausse est brutale. Cet indicateur est discuté dans la recherche : retiens surtout qu'il vaut mieux augmenter la charge progressivement que viser un chiffre précis.</p></div>
  <div class="two g12">
@@ -98,7 +98,7 @@
   <div id="flist"></div><div class="row"><button class="btn small" data-act="copyY">Copier les repas de la veille</button></div>
  </div>
  <div class="two g5 st"><div class="panel"><h2>Hydratation</h2><div id="water"></div></div><div class="panel"><h2>Compléments</h2><div id="sups"></div></div></div>
- <div class="panel g5"><h2>Dépense réelle estimée</h2><div id="tdee"></div></div>
+ <div class="panel g5"><h2>Besoins caloriques réels</h2><div id="tdee"></div></div>
  <div class="panel g12"><h2>14 derniers jours</h2><div class="kpis" id="nk"></div><div id="prot14"></div><p class="mute small">Protéines par jour. Le trait vertical marque ton objectif.</p></div>
 </section>
 
@@ -124,7 +124,7 @@
 <section id="v-plus" class="view" hidden>
  <div class="panel hub" id="hub">
   <h2>Plus</h2>
-  <button class="hr" data-go="nutrition" style="--c:var(--nut)"><i><svg viewBox="0 0 24 24"><path d="M4 11h16a8 8 0 0 1-16 0zM9 7c0-2 1.5-3 3-3s3 1 3 3"/></svg></i><span><b>Nutrition</b><small>Repas, macros, hydratation, compléments, dépense réelle</small></span><em>›</em></button>
+  <button class="hr" data-go="nutrition" style="--c:var(--nut)"><i><svg viewBox="0 0 24 24"><path d="M4 11h16a8 8 0 0 1-16 0zM9 7c0-2 1.5-3 3-3s3 1 3 3"/></svg></i><span><b>Nutrition</b><small>Repas, macros, hydratation, compléments, besoins caloriques</small></span><em>›</em></button>
   <button class="hr" data-go="tendances" style="--c:var(--trn)"><i><svg viewBox="0 0 24 24"><path d="M4 4v16h16M8 15l4-4 3 3 5-6"/></svg></i><span><b>Tendances et bilan santé</b><small>Ta semaine, analyses, poids, mensurations, VO2 max</small></span><em>›</em></button>
   <button class="hr" data-act="psub" data-s="dossier" style="--c:var(--hrt)"><i><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg></i><span><b>Dossier médical</b><small>Rendez-vous, vaccins, analyses, blessures</small></span><em>›</em></button>
   <button class="hr" data-act="psub" data-s="apple" style="--c:var(--rec)"><i><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></i><span><b>Apple Santé</b><small id="hubapple">Importer et mettre à jour tes données</small></span><em>›</em></button>
@@ -149,7 +149,7 @@
     <label>Calcul de la VFC nocturne<select id="s-hvm"><option value="apple">SDNN Apple, moyenne du jour : même chiffre que l'app Santé</option><option value="sdnn">SDNN Apple, seulement pendant le sommeil</option><option value="rmssd">RMSSD recalculé battement par battement pendant le sommeil</option></select></label>
    </div>
    <label class="chk"><input type="checkbox" id="s-auto"> Lancer le minuteur de repos après chaque série notée</label>
-   <p class="mute small">Le besoin de sommeil part de ton sommeil de base, puis s'ajuste à ta dette des 7 dernières nuits et à l'effort de la veille.</p></div>
+   <p class="mute small">Le besoin de sommeil part de ton sommeil de base, puis s'ajuste à ta dette des 7 dernières nuits et à la dépense de la veille.</p></div>
   <div class="two"><div class="panel"><h2>Compléments suivis</h2><ul class="flist" id="suplist"></ul><form id="supf" class="row"><input id="supn" placeholder="ex. Créatine 5 g" style="flex:1"><button class="btn small">Ajouter</button></form></div>
    <div class="panel"><h2>Étiquettes du check-in</h2><ul class="flist" id="taglist"></ul><form id="tagf" class="row"><input id="tagn" placeholder="ex. Sieste" style="flex:1"><button class="btn small">Ajouter</button></form></div></div>
   <div class="panel"><h2>Aliments favoris</h2><ul class="flist" id="favlist"></ul></div>
@@ -158,7 +158,7 @@
   <div class="panel" id="hkpanel" hidden><h2>Apple Santé</h2>
    <p id="hkmsg" class="small"></p>
    <div class="row"><button class="btn pri" id="hkgo" data-act="hkauth">Connecter Apple Santé</button></div>
-   <p class="mute small">L'appli lit, sans jamais rien modifier : sommeil et ses phases, fréquence cardiaque, VFC, respiration, saturation en oxygène, température au poignet, activité, entraînements, VO2 max, poids. Elle se met à jour à chaque ouverture. Pour changer les autorisations : Réglages → Santé → Accès aux données et appareils → Carnet de santé.</p></div>
+   <p class="mute small">L'appli lit, sans jamais rien modifier : sommeil et ses phases, fréquence cardiaque, VFC, respiration, saturation en oxygène, température au poignet, activité, entraînements, VO2 max, poids. Elle se met à jour à chaque ouverture. Pour changer les autorisations : Réglages → Santé → Accès aux données et appareils → Arden.</p></div>
   <div class="panel"><h2 id="impt">Importer Apple Santé</h2>
    <p class="small">Sur ton iPhone : app <b>Santé</b> → ta photo en haut à droite → <b>Exporter toutes les données de santé</b>. Choisis le fichier ici : le .zip tel quel, ou le .xml qu'il contient.</p>
    <label class="btn pri filebtn">Choisir le fichier d'export<input type="file" id="hfile" class="vh" accept=".zip,.xml,application/zip,text/xml"></label>
@@ -182,8 +182,8 @@
    <p class="small">Supprime définitivement de cet appareil tout ce que contient l'appli : séances, repas, journal, dossier médical, réglages et données Apple Santé importées. Les données de l'app Santé d'Apple ne sont pas touchées.</p>
    <div class="row"><button class="btn danger" data-act="wipe">Effacer toutes mes données</button></div></div>
   <div class="panel about"><h2>À propos</h2>
-   <p class="small"><b>Carnet de santé</b> <span id="appver" class="mute"></span></p>
-   <p class="mute small">Carnet de santé n'est pas un dispositif médical. Ses scores, repères et analyses sont des estimations à partir de tes données ; ils ne remplacent pas l'avis d'un professionnel de santé. En cas de symptôme ou de doute, consulte ton médecin.</p></div>
+   <p class="small"><b>Arden</b> <span id="appver" class="mute"></span></p>
+   <p class="mute small">Arden n'est pas un dispositif médical. Ses scores, repères et analyses sont des estimations à partir de tes données ; ils ne remplacent pas l'avis d'un professionnel de santé. En cas de symptôme ou de doute, consulte ton médecin.</p></div>
  </div>
 </section>
 </div></main>
@@ -209,11 +209,11 @@
 <div id="onb" hidden role="dialog" aria-modal="true" aria-labelledby="onbt">
  <div class="ob-in">
   <section class="ob" data-step="0">
-   <svg class="ob-logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="var(--ink)"/><g fill="none" stroke-width="3" stroke-linecap="round" transform="rotate(-90 16 16)"><circle cx="16" cy="16" r="9" stroke="var(--eff)" stroke-dasharray="19 38"/><circle cx="16" cy="16" r="9" stroke="var(--rec)" stroke-dasharray="17 40" stroke-dashoffset="-19"/><circle cx="16" cy="16" r="9" stroke="var(--slp)" stroke-dasharray="17 40" stroke-dashoffset="-38"/></g></svg>
-   <h1 id="onbt">Carnet de santé</h1>
+   <svg class="ob-logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="var(--ink)"/><g fill="none" stroke-width="3.2" stroke-linecap="round"><path d="M9.636 23.364A9 9 0 0 1 7.981 12.914" stroke="var(--eff)"/><path d="M10.095 10.208A9 9 0 0 1 21.905 10.208" stroke="var(--rec)"/><path d="M24.019 12.914A9 9 0 0 1 22.364 23.364" stroke="var(--slp)"/></g><circle cx="22.364" cy="23.364" r=".75" fill="var(--bg)"/></svg>
+   <h1 id="onbt">Arden</h1>
    <p class="ob-lead">Ton coach personnel, qui interprète chaque chiffre de ta montre.</p>
    <ul class="ob-list">
-    <li style="--c:var(--eff)"><i><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></i><span><b>Effort, récupération, sommeil</b>Trois scores chaque matin, et le conseil qui va avec.</span></li>
+    <li style="--c:var(--eff)"><i><svg viewBox="0 0 24 24"><path style="fill:none" d="M6.3 17.7A8 8 0 1 1 17.7 17.7"/><path style="fill:none" d="M9.2 14.8A4 4 0 1 1 14.8 14.8"/></svg></i><span><b>Dépense, énergie, sommeil</b>Trois scores chaque matin, et le conseil qui va avec.</span></li>
     <li style="--c:var(--trn)"><i><svg viewBox="0 0 24 24"><path d="M3 10v4M6 8v8M18 8v8M21 10v4M6 12h12"/></svg></i><span><b>Entraînement et nutrition</b>Séances de muscu, charge, records, repas et protéines.</span></li>
     <li style="--c:var(--rec)"><i><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></i><span><b>Privé par conception</b>Pas de compte ni de serveur : tes données restent sur ton téléphone.</span></li>
    </ul>
@@ -233,11 +233,11 @@
   </section>
   <section class="ob" data-step="2" hidden>
    <h2>Tes données</h2>
-   <p class="ob-lead">Le carnet s'appuie sur les mesures de ton Apple Watch ou de ton iPhone.</p>
+   <p class="ob-lead">Arden s'appuie sur les mesures de ton Apple Watch ou de ton iPhone.</p>
    <button type="button" class="hr ob-choice" data-act="onbGo" data-go2="apple" style="--c:var(--rec)"><i><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></i><span><b>Importer Apple Santé</b><small>Depuis l'app Santé : Exporter toutes les données de santé</small></span><em>›</em></button>
    <button type="button" class="hr ob-choice" data-act="onbGo" data-go2="demo" style="--c:var(--slp)"><i><svg viewBox="0 0 24 24"><path d="M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z"/></svg></i><span><b>Explorer avec des données de démo</b><small>Deux mois d'un profil fictif, effaçables d'un geste</small></span><em>›</em></button>
    <button type="button" class="hr ob-choice" data-act="onbGo" data-go2="empty" style="--c:var(--mute)"><i><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></i><span><b>Commencer sans données</b><small>Noter tes séances, repas et check-ins à la main</small></span><em>›</em></button>
-   <p class="mute small ob-note">Carnet de santé n'est pas un dispositif médical : ses analyses ne remplacent pas l'avis d'un professionnel de santé.</p>
+   <p class="mute small ob-note">Arden n'est pas un dispositif médical : ses analyses ne remplacent pas l'avis d'un professionnel de santé.</p>
   </section>
   <div class="ob-dots" aria-hidden="true"><i></i><i></i><i></i></div>
  </div>
