@@ -227,10 +227,10 @@ const VT={sommeil:'Sommeil',recuperation:'Récupération',effort:'Effort'};
 function renderDayNav(){const d=S.day,v0=cur(),rel=d===today()?"Aujourd'hui":d===addD(today(),-1)?'Hier':'';
  if(VT[v0]){$('#dtitle').textContent=VT[v0];$('#dsub').textContent=rel||dLong(d)}
  else{$('#dtitle').textContent=d===today()?"Aujourd'hui":dLong(d);$('#dsub').textContent=d===today()?dLong(d):rel}$('[data-act=dnext]').disabled=d>=today();
- const L=hLast(),up=S.med.filter(m=>(m.date>=today()&&m.date<=addD(today(),14))||(m.next&&m.next>=today()&&m.next<=addD(today(),14)));const v=cur();
+ const L=hLast(),v=cur();
  $('#dn').hidden=!['aujourdhui','sommeil','recuperation','effort'].includes(v);$('#wk').hidden=$('#dn').hidden;if(!$('#wk').hidden)renderWeek(v);
  $('#dnote').innerHTML=!['aujourdhui','sommeil','recuperation','effort'].includes(v)?'':(!L?emptyHTML(v):d>L?`<div class="notice">Données Apple jusqu'au ${dShort(L)}. ${IMP('Réimporte ton export','Synchronise Apple Santé')} pour mettre à jour, ou <button class="btn small" data-act="dlast">voir le ${dShort(L)}</button></div>`:'')
-  +(v==='aujourdhui'&&d===today()&&up.length?`<button type="button" class="upnext" data-act="psub" data-s="dossier"><i><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg></i><span>${up.map(m=>{const x=m.date>=today()?m.date:m.next,n=Math.round((new Date(x+'T12:00')-new Date(today()+'T12:00'))/864e5);return `<b>${esc(m.title)}</b> ${n===0?"aujourd'hui":n===1?'demain':'dans '+n+' jours'}`}).join('<br>')}</span><em>›</em></button>`:'')}
+}
 
 /* ---------- frise de la semaine : un mini-anneau par jour (comme l'app Forme) ---------- */
 function ringSVG(rings){const sz=34,c=sz/2;return `<svg viewBox="0 0 ${sz} ${sz}" aria-hidden="true">${rings.map(([v,col,r,w])=>{const C=2*Math.PI*r,p=v==null?0:clamp(v/100,0,1);return `<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${col}" stroke-opacity=".2" stroke-width="${w}"/>${p>0?`<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-dasharray="${(C*p).toFixed(2)} ${C.toFixed(2)}" transform="rotate(-90 ${c} ${c})"/>`:''}`}).join('')}</svg>`}
@@ -269,6 +269,9 @@ function burnTile(d,tile){const x=burnOf(d),isT=d===today(),hm2=new Date().toLoc
 /* le total avance au fil de la journée : rafraîchi chaque minute sur Aujourd'hui */
 setInterval(()=>{if(cur()==='aujourdhui'&&S.day===today()&&!msKind&&document.visibilityState==='visible'&&!document.activeElement?.closest?.('input,textarea,select'))renderView('aujourdhui')},60000);
 
+function upNextHTML(){const up=S.med.filter(m=>(m.date>=today()&&m.date<=addD(today(),14))||(m.next&&m.next>=today()&&m.next<=addD(today(),14)));
+ return S.day===today()&&up.length?`<button type="button" class="upnext" data-act="psub" data-s="dossier"><i><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg></i><span>${up.map(m=>{const x=m.date>=today()?m.date:m.next,n=Math.round((new Date(x+'T12:00')-new Date(today()+'T12:00'))/864e5);return `<b>${esc(m.title)}</b> ${n===0?"aujourd'hui":n===1?'demain':'dans '+n+' jours'}`}).join('<br>')}</span><em>›</em></button>`:''}
+
 /* ---------- aujourd'hui ---------- */
 function renderToday(){const d=S.day,h=H(d),D=S.days[d]||{},it=D.items||[],T=dayTrain(d),set=S.set;
  const rc=recovery(d),sl=sleepScore(d),ef=effortOf(d),tg=effTarget(rc&&rc.s);
@@ -278,10 +281,10 @@ function renderToday(){const d=S.day,h=H(d),D=S.days[d]||{},it=D.items||[],T=day
  const tile=(c,k,v,s,extra='',mk='')=>`<div class="tile${mk?' tap':''}${mk==='burn'?' wide':''}" style="--c:${c}"${mk?` data-act="metric" data-k="${mk}" role="button" tabindex="0" aria-label="${esc(k)} : voir le détail"`:''}><span class="k"><i></i>${k}</span><span class="v">${v}</span><span class="s">${s}</span>${extra}</div>`;
  $('#tiles').innerHTML=[
   burnTile(d,tile),
-  tile('var(--str)','Stress estimé',has(h.stz)?`${st}<small> / 100</small>`:'–',has(h.stz)?stressLab(st):hKeys().length?(d===today()?'calculé au fil de la journée':'pas de mesure ce jour'):IMP('après import Apple','après synchro Apple Santé'),'','stz'),
-  tile('var(--mind)','VFC nocturne',nhrv(d)?`${r0(nhrv(d))}<small> ms</small>`:'–',nhrv(d)&&vb?`normale ${r0(vb.m)} ms`:'pendant ton sommeil','','hrv'),
+  tile('var(--eff)','Activité',h.st?`${r0(h.st)}<small> pas</small>`:'–',[h.ex?h.ex+' min d\'exercice':'',h.km?fx(h.km)+' km':''].filter(Boolean).join(' · ')||(h.ac?r0(h.ac)+' kcal actives':''),'','st'),
   tile('var(--hrt)','FC au repos',h.rhr?`${h.rhr}<small> bpm</small>`:'–',h.nmin?`min. nocturne ${h.nmin} bpm`:'','','rhr'),
-  tile('var(--eff)','Activité',h.st?`${r0(h.st)}<small> pas</small>`:'–',[h.ac?r0(h.ac)+' kcal actives':'',h.ex?h.ex+' min d\'exercice':''].filter(Boolean).join(' · '),'','st'),
+  tile('var(--mind)','VFC nocturne',nhrv(d)?`${r0(nhrv(d))}<small> ms</small>`:'–',nhrv(d)&&vb?`normale ${r0(vb.m)} ms`:'pendant ton sommeil','','hrv'),
+  tile('var(--str)','Stress estimé',has(h.stz)?`${st}<small> / 100</small>`:'–',has(h.stz)?stressLab(st):hKeys().length?(d===today()?'calculé au fil de la journée':'pas de mesure ce jour'):IMP('après import Apple','après synchro Apple Santé'),'','stz'),
   tile('var(--nut)','Nutrition',`${r0(it.reduce((a,x)=>a+kcalOf(x),0))}<small> kcal</small>`,`${r0(sum(it,'p'))} g de protéines sur ${r0(set.prot)}`,'','nut'),
   tile('var(--wat)','Hydratation',`${fx(wat/1000)}<small> / ${fx(num(set.water)/1000)} L</small>`,'',`<div class="row"><button class="btn small" data-act="water" data-v="250">+25 cl</button><button class="btn small" data-act="water" data-v="500">+50 cl</button></div>`,'wat')
  ].join('');
@@ -292,6 +295,7 @@ function renderToday(){const d=S.day,h=H(d),D=S.days[d]||{},it=D.items||[],T=day
  $('#acts').innerHTML=actsHTML(d,T)||`<div class="emptyst"><p>Aucune activité ce jour</p><button type="button" class="btn small" data-act="msopen" data-m="mu">Noter une séance</button></div>`;
  const mo=monitor(d),bad=mo.filter(x=>x.warn);
  $('#monmini').innerHTML=mo.length?`<div class="mm" data-go="recuperation"><div><div class="eyebrow">Moniteur de santé</div><b style="font-size:17px">${bad.length?`${bad.length} ${bad.length>1?'signaux':'signal'} inhabituel${bad.length>1?'s':''} : ${bad.map(x=>x.l).join(', ')}`:'Tous tes signes vitaux sont dans ta normale'}</b></div><div class="dots" style="margin-left:auto">${mo.map(x=>`<i style="--c:${x.col}" data-tip="${esc(x.l+' : '+monFmt(x,x.v)+'\n'+x.lab)}"></i>`).join('')}</div></div>`:'<div class="eyebrow">Moniteur de santé</div><p class="mute small" style="margin:4px 0 0">Il faut au moins 7 nuits importées pour établir ta normale.</p>';
+ $('#upn').innerHTML=upNextHTML();
  renderCheckin()}
 function coach(d,rc,sl,ef,tg){const h=H(d),out=[];
  if(rc&&!rc.partial){const [l]=recLab(rc.s);out.push(`<b>Récupération ${l.toLowerCase()} (${rc.s} %).</b> `+(rc.s>=67?'Tes indicateurs (VFC, FC de repos, sommeil) sont au niveau ou au-dessus de ta normale : bon jour pour une séance exigeante.':rc.s>=34?'Tes indicateurs sont proches de ta normale : entraîne-toi normalement, sans forcément viser ton maximum.':'Tes indicateurs sont sous ta normale : privilégie une activité légère ou le repos, et dors davantage ce soir.'));
@@ -635,7 +639,7 @@ function updateDatalist(){const m=new Map();for(const x of exNames())m.set(norm(
 function resumeOnce(){if(resumed)return;resumed=true;const o=S.sessions.filter(s=>s.open).sort(sortDesc)[0];if(o&&!S.cur){S.cur=clone(o);renderEditor()}}
 const views=['aujourdhui','sommeil','recuperation','effort','nutrition','tendances','plus'];
 const cur=()=>{const h=location.hash.slice(1);return views.includes(h)?h:'aujourdhui'};
-function markMore(){if(!matchMedia('(max-width:800px)').matches)return;requestAnimationFrame(()=>$$('.view:not([hidden]) :is(.panel>p.mute.small,.mkr p):not(.open)').forEach(p=>p.classList.toggle('more',p.scrollHeight>p.clientHeight+2)))}
+function markMore(){if(!matchMedia('(max-width:800px)').matches)return;requestAnimationFrame(()=>$$('.view:not([hidden]) :is(.panel>p.mute.small,.mkr p,#coach):not(.open)').forEach(p=>p.classList.toggle('more',p.scrollHeight>p.clientHeight+2)))}
 function renderView(v){const sec=$('#v-'+v);if(sec){sec.classList.toggle('nohd',!hKeys().length);sec.classList.toggle('nosess',!done().length)}if(v==='tendances')$('#tnote').innerHTML=hKeys().length?'':emptyHTML('tendances');setTimeout(markMore,0);setTimeout(syncNav,0);renderDayNav();$('#demobar').hidden=!S.set.demo;try{({aujourdhui:renderToday,sommeil:renderSleep,recuperation:renderRec,effort:renderEffort,nutrition:renderNutri,tendances:renderTrends,plus:renderPlus})[v]()}catch(e){console.error(e)}}
 function renderSoft(){updateDatalist();
  if(!S.cur&&!$('#editor').contains(document.activeElement))renderStart();
@@ -651,7 +655,7 @@ $('#editor').addEventListener('change',ev=>{const t=ev.target,c=S.cur;if(!c)retu
  if(t.dataset.f==='r'&&num(t.value)>0&&S.set.auto!==false)startTimer();
  if(!t.classList.contains('exn'))return;const a=t.closest('.ex'),i=+a.dataset.i,e=c.ex[i];
  if(e.sets.every(s=>s.w===''&&s.r==='')&&suggest(e.n,c.id)){e.sets=prefill(e.n,c.id);a.outerHTML=exHTML(e,i);dirty()}updateHint(i)});
-document.addEventListener('click',ev=>{unlockAudio();if(matchMedia('(max-width:800px)').matches){const nt=ev.target.closest('.panel>p.mute.small,.mkr p');if(nt&&!ev.target.closest('a,button')){nt.classList.toggle('open');return}}if(ev.target.id==='sheet'){quick('close');return}const go=ev.target.closest('[data-go]');if(go){location.hash=go.dataset.go;return}
+document.addEventListener('click',ev=>{unlockAudio();if(matchMedia('(max-width:800px)').matches){const nt=ev.target.closest('.panel>p.mute.small,.mkr p,#coach');if(nt&&!ev.target.closest('a,button')){nt.classList.toggle('open');return}}if(ev.target.id==='sheet'){quick('close');return}const go=ev.target.closest('[data-go]');if(go){location.hash=go.dataset.go;return}
  const b=ev.target.closest('[data-act]');if(!b)return;const act=b.dataset.act,c=S.cur,a=b.closest('.ex'),i=a?+a.dataset.i:-1;
  switch(act){
  case'sheet':{const sh=$('#sheet');sh.hidden=!sh.hidden;setTimeout(()=>{document.documentElement.style.setProperty('--hh',$('.top').offsetHeight+'px')},0);return}
