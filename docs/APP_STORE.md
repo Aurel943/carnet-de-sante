@@ -5,7 +5,10 @@ le dossier `ios/` contient le projet Xcode, qui embarque la version compilée de
 
 ## Ce qui est déjà prêt
 
-- Projet Xcode (`ios/App`), iPhone uniquement, portrait, iOS 15 minimum, en français.
+- Projet Xcode (`ios/App`), iPhone uniquement, portrait, iOS 16 minimum, en français.
+- **Lecture directe d'Apple Santé (HealthKit)**, en lecture seule : module natif
+  `ios/App/App/HealthSyncPlugin.swift`, capacité HealthKit (`App.entitlements`) et texte
+  d'autorisation (`NSHealthShareUsageDescription` dans `Info.plist`). Voir plus bas.
 - Icône 1024 × 1024 et écran de lancement clair / sombre.
 - Déclaration « pas de chiffrement non exempté » (`ITSAppUsesNonExemptEncryption = NO`) :
   pas de questionnaire d'export à remplir à chaque envoi.
@@ -22,7 +25,6 @@ le dossier `ios/` contient le projet Xcode, qui embarque la version compilée de
 2. **Identifiant de l'appli** (`appId` dans `capacitor.config.json`, et « Bundle Identifier » dans
    Xcode) : `com.aurel943.carnetdesante` par défaut. Il doit être unique et ne pourra plus changer
    une fois l'appli publiée.
-3. **Lecture native d'Apple Santé (fortement recommandée)** : voir « Risque de refus » plus bas.
 
 ## Ce qu'il faut
 
@@ -47,7 +49,11 @@ npm run ios
 `npm run ios` compile l'appli, la copie dans le projet iOS et ouvre Xcode. Ensuite, dans Xcode :
 
 1. Cible **App** → onglet **Signing & Capabilities** → **Team** : choisir ton compte développeur.
+   La capacité **HealthKit** doit apparaître dans la liste (elle vient de `App.entitlements`) ;
+   la signature automatique l'active aussi sur l'identifiant de l'appli chez Apple.
 2. Brancher l'iPhone, le choisir en haut, puis **▶** pour tester sur l'appareil.
+   Au premier lancement, choisir **Connecter Apple Santé** : iOS affiche sa demande
+   d'autorisation, puis l'appli lit 13 mois de données (quelques secondes à une minute).
 3. Pour publier : **Product → Archive**, puis **Distribute App → App Store Connect**.
 
 Après chaque modification du code web : `npm run ios:sync` (compile et recopie dans `ios/`).
@@ -71,6 +77,7 @@ Sur [App Store Connect](https://appstoreconnect.apple.com/) → **Mes apps → +
 **Description proposée :**
 
 > Carnet de santé interprète chaque chiffre de ta montre, comme un coach personnel.
+> Il se connecte directement à Apple Santé et se met à jour à chaque ouverture.
 >
 > Chaque matin, trois scores : effort, récupération et sommeil, avec le conseil qui va avec :
 > quelle intensité viser aujourd'hui, à quelle heure te coucher ce soir.
@@ -88,27 +95,45 @@ Sur [App Store Connect](https://appstoreconnect.apple.com/) → **Mes apps → +
 
 **Notes pour l'équipe de revue d'Apple** (champ « Notes » de la version) :
 
-> Aucun compte n'est nécessaire. Au premier lancement, choisir « Explorer avec des données de démo »
-> pour voir toutes les fonctions avec deux mois de données fictives. Toutes les données restent sur l'appareil.
+> Aucun compte n'est nécessaire. Au premier lancement, « Connecter Apple Santé » lit les données
+> Santé de l'appareil (lecture seule). Sur un appareil sans données Santé, choisir « Explorer avec
+> des données de démo » pour voir toutes les fonctions avec deux mois de données fictives.
+> Toutes les données restent sur l'appareil ; rien n'est envoyé sur un serveur.
 
 **Captures** : envoyer les fichiers de `docs/app-store/captures/` (1320 × 2868, iPhone 6,9 pouces) ;
 Apple les réduit automatiquement pour les autres tailles d'iPhone. Clair ou sombre, au choix.
 
-## Risque de refus : la règle 4.2 (fonctionnalité minimale)
+## Apple Santé en direct (HealthKit)
 
-Apple refuse souvent les applis qui ne sont « qu'un site web dans une coquille ». Aujourd'hui,
-l'appli lit Apple Santé via le fichier d'export (`export.zip`), ce qui est lent pour
-l'utilisateur et ne tire pas parti de l'iPhone.
+Dans l'appli iOS, Apple Santé est lu directement : plus besoin du fichier d'export.
 
-La parade la plus solide est de **lire Apple Santé directement (HealthKit)** : l'utilisateur
-autorise l'accès une fois, et les données se mettent à jour seules à chaque ouverture. Côté code,
-c'est faisable sans toucher au moteur d'analyse : les mesures lues par HealthKit peuvent être
-converties au format de l'export et passées au même analyseur (c'est déjà ce que font les
-données de démo). Il faudra alors :
+- **Premier lancement** : « Connecter Apple Santé » affiche la demande d'autorisation d'iOS, puis
+  lit les 13 derniers mois, par tranches de 30 jours (barre de progression en haut de l'écran).
+- **Ensuite** : mise à jour automatique à chaque ouverture (et au retour dans l'appli après
+  15 minutes), en ne relisant que les derniers jours. Bouton « Synchroniser maintenant » dans
+  **Plus → Apple Santé**, et « Synchro Santé » dans le menu **Noter**.
+- **Lecture seule** : l'appli n'écrit rien dans Apple Santé.
+- **Comment ça marche** : le module natif (`HealthSyncPlugin.swift`) renvoie les mesures brutes,
+  et `src/healthkit.js` les convertit au format de l'export Apple avant de les passer au même
+  analyseur que les fichiers. Sur deux mois de données de test, les résultats sont identiques
+  à ceux d'un import de fichier. Seule différence : la fréquence cardiaque est lue en moyenne
+  minute par minute, ce qui peut décaler la FC moyenne d'une journée de 1 bpm.
+- **Pas disponible en direct** : la VFC recalculée en RMSSD battement par battement (elle
+  demande les intervalles entre battements). Elle reste possible avec un fichier d'export, qu'on
+  peut toujours importer depuis **Plus → Apple Santé**.
+- **Si iOS refuse l'accès**, il ne le dit pas à l'appli : les lectures reviennent simplement
+  vides, et l'appli indique où rétablir l'accès (Réglages → Santé → Accès aux données et
+  appareils → Carnet de santé).
 
-- ajouter un module Capacitor HealthKit et la capacité **HealthKit** dans Xcode ;
-- renseigner `NSHealthShareUsageDescription` dans `Info.plist` (texte expliquant pourquoi l'appli lit tes données) ;
-- tester sur un vrai iPhone (le simulateur Xcode n'a pas de données Santé réalistes).
+**Tester sur ordinateur** : dans le simulateur (`npm run sim`), cocher **Appli iOS (Apple Santé
+simulé)**. L'appli se comporte alors comme sur iPhone, avec un faux HealthKit qui renvoie les
+mesures du profil de démo.
 
-D'autres ajouts natifs renforcent le dossier et servent vraiment l'utilisateur : notifications
-locales (rappel du check-in, heure de coucher conseillée), retour haptique, widget « scores du jour ».
+**Points à vérifier sur iPhone** (impossibles à tester ici, faute de Mac) : la compilation du
+module Swift dans Xcode, la demande d'autorisation, et la durée de la première lecture avec
+une vraie Apple Watch (beaucoup plus de mesures que dans les données de test).
+
+## Autres ajouts natifs possibles
+
+Pour aller plus loin : notifications locales (rappel du check-in, heure de coucher conseillée),
+retour haptique, widget « scores du jour ».

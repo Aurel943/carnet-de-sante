@@ -36,6 +36,7 @@
 </header>
 <main id="sc"><div class="wrap">
 <div id="demobar" hidden><span><b>Démo</b> · profil fictif</span><button type="button" class="btn small" data-act="demoEnd">Utiliser mes données</button></div>
+<div id="syncbar" hidden><span>Lecture d'Apple Santé…</span><div class="bar" style="--c:var(--rec)"><i style="width:0"></i></div></div>
 <div class="daynav" id="dn"><button class="btn icon" data-act="dprev" aria-label="Jour précédent">‹</button><div><h2 id="dtitle"></h2><p id="dsub" class="mute small"></p></div><button class="btn icon" data-act="dnext" aria-label="Jour suivant">›</button></div>
 <div id="dnote"></div>
 
@@ -151,7 +152,11 @@
   <div class="panel"><h2>Aliments favoris</h2><ul class="flist" id="favlist"></ul></div>
  </div>
  <div data-sub="apple" hidden>
-  <div class="panel"><h2>Importer Apple Santé</h2>
+  <div class="panel" id="hkpanel" hidden><h2>Apple Santé</h2>
+   <p id="hkmsg" class="small"></p>
+   <div class="row"><button class="btn pri" id="hkgo" data-act="hkauth">Connecter Apple Santé</button></div>
+   <p class="mute small">L'appli lit, sans jamais rien modifier : sommeil et ses phases, fréquence cardiaque, VFC, respiration, saturation en oxygène, température au poignet, activité, entraînements, VO2 max, poids. Elle se met à jour à chaque ouverture. Pour changer les autorisations : Réglages → Santé → Accès aux données et appareils → Carnet de santé.</p></div>
+  <div class="panel"><h2 id="impt">Importer Apple Santé</h2>
    <p class="small">Sur ton iPhone : app <b>Santé</b> → ta photo en haut à droite → <b>Exporter toutes les données de santé</b>. Choisis le fichier ici : le .zip tel quel, ou le .xml qu'il contient.</p>
    <label class="btn pri filebtn">Choisir le fichier d'export<input type="file" id="hfile" class="vh" accept=".zip,.xml,application/zip,text/xml"></label>
    <div class="bar" id="hbar" hidden style="--c:var(--eff)"><i style="width:0"></i></div><p id="hmsg" class="small"></p>

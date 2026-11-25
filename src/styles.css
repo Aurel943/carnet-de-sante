@@ -339,3 +339,8 @@ label.btn.filebtn:not(.pri){color:var(--ink);margin:0}
 .adv{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
 .adv summary{cursor:pointer;font-weight:700;color:var(--mute);font-size:14px}
 @media(min-width:801px){.ob-in{min-height:0}.ob-cta{margin-top:20px}.ob-note{margin-top:16px}#onb{padding-top:40px;padding-bottom:40px}}
+
+/* ---------- synchronisation Apple Santé ---------- */
+#syncbar{background:var(--panel);border-radius:16px;padding:10px 14px;margin:8px 0 6px;font-size:14px;font-weight:600}
+#syncbar[hidden]{display:none}
+#syncbar .bar{margin:8px 0 0}

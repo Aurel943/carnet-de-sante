@@ -8,10 +8,13 @@ import {$,$$,esc,clone,iso,today,addD,dShort,dLong,dWk,num,has,fx,f2,r0,sg,clamp
 import {BASE_EX,SPORTS,MEALS,WT,MG,SCALES,MEAS,ZC,ZN,IC,DEF} from './constants.js';
 import {readHealth} from './health-import.js';
 import {demoHealthXML,demoManual,DEMO_PROFILE} from './demo.js';
+import {hasHealthKit,authorizeHealth,readHealthKit,useHealthProvider} from './healthkit.js';
 
 const S={set:clone(DEF),sessions:[],days:{},med:[],cur:null,health:{upd:'',d:{}},detail:{d:{}},day:today()};
 let mode='load',resumed=false,histN=15,sv,tt,startMode='mu',medFlt='Tout',psub='',sleepTrend='sl',sleepPer=30;
 const LS='carnet-muscu-v1',pend=[];
+/* Appli iOS : Apple Santé est lu directement (HealthKit) au lieu d'un fichier d'export. */
+let HKN=false,hkBusy=false;const IMP=(web,ios)=>HKN?ios:web;
 
 /* ---------- stockage ---------- */
 function status(k){const m={load:'Chargement…',local:'Sauvegarde locale',err:'Problème de sauvegarde'};const e=$('#st');e.textContent=m[k];e.className='pill '+k}
@@ -214,7 +217,7 @@ const zleg=z=>`<div class="zl">${(z||[]).map((m,i)=>m?`<span><i style="--c:${ZC[
 function renderDayNav(){const d=S.day;$('#dtitle').textContent=d===today()?"Aujourd'hui":dLong(d);$('#dsub').textContent=d===today()?dLong(d):(d===addD(today(),-1)?'Hier':'');$('[data-act=dnext]').disabled=d>=today();
  const L=hLast(),up=S.med.filter(m=>(m.date>=today()&&m.date<=addD(today(),14))||(m.next&&m.next>=today()&&m.next<=addD(today(),14)));const v=cur();
  $('#dn').hidden=!['aujourdhui','sommeil','recuperation','effort'].includes(v);
- $('#dnote').innerHTML=!['aujourdhui','sommeil','recuperation','effort'].includes(v)?'':(!L?`<div class="notice">Importe ton export Apple Santé (onglet <a href="#plus" data-act="psub" data-s="apple">Plus</a>) pour activer les scores, le sommeil détaillé et l'analyse cardiaque.</div>`:d>L?`<div class="notice">Données Apple jusqu'au ${dShort(L)}. Réimporte ton export pour mettre à jour, ou <button class="btn small" data-act="dlast">voir le ${dShort(L)}</button></div>`:'')
+ $('#dnote').innerHTML=!['aujourdhui','sommeil','recuperation','effort'].includes(v)?'':(!L?`<div class="notice">${IMP('Importe ton export Apple Santé','Connecte Apple Santé')} (onglet <a href="#plus" data-act="psub" data-s="apple">Plus</a>) pour activer les scores, le sommeil détaillé et l'analyse cardiaque.</div>`:d>L?`<div class="notice">Données Apple jusqu'au ${dShort(L)}. ${IMP('Réimporte ton export','Synchronise Apple Santé')} pour mettre à jour, ou <button class="btn small" data-act="dlast">voir le ${dShort(L)}</button></div>`:'')
   +(v==='aujourdhui'&&d===today()&&up.length?`<div class="notice med"><b>Dossier :</b> ${up.map(m=>`${esc(m.title)} le ${dShort(m.date>=today()?m.date:m.next)}`).join(' · ')}</div>`:'')}
 
 /* ---------- aujourd'hui ---------- */
@@ -225,7 +228,7 @@ function renderToday(){const d=S.day,h=H(d),D=S.days[d]||{},it=D.items||[],T=day
  const st=num(h.stz),wat=num(D.w)||num(h.wa),vb=nhrvBase(d);
  const tile=(c,k,v,s,extra='')=>`<div class="tile" style="--c:${c}"><span class="k"><i></i>${k}</span><span class="v">${v}</span><span class="s">${s}</span>${extra}</div>`;
  $('#tiles').innerHTML=[
-  tile('var(--str)','Stress estimé',has(h.stz)?`${st}<small> / 100</small>`:'–',has(h.stz)?stressLab(st):'après import Apple'),
+  tile('var(--str)','Stress estimé',has(h.stz)?`${st}<small> / 100</small>`:'–',has(h.stz)?stressLab(st):''+IMP('après import Apple','après synchro Apple Santé')+''),
   tile('var(--mind)','VFC nocturne',nhrv(d)?`${r0(nhrv(d))}<small> ms</small>`:'–',nhrv(d)&&vb?`normale ${r0(vb.m)} ms`:'pendant ton sommeil'),
   tile('var(--hrt)','FC au repos',h.rhr?`${h.rhr}<small> bpm</small>`:'–',h.nmin?`min. nocturne ${h.nmin} bpm`:''),
   tile('var(--eff)','Activité',h.st?`${r0(h.st)}<small> pas</small>`:'–',[h.ac?r0(h.ac)+' kcal actives':'',h.ex?h.ex+' min d\'exercice':''].filter(Boolean).join(' · ')),
@@ -247,7 +250,7 @@ function coach(d,rc,sl,ef,tg){const h=H(d),out=[];
  if(d===today()||d===hLast()){const nd=needOf(addD(d,1)),wa=wakeAvg(d);if(wa!=null)out.push(`Ce soir, vise <b>${fmtSl(nd.need)}</b> de sommeil : couche-toi vers <b>${hhmm(wa-nd.need-15)}</b> pour te lever à ${hhmm(wa)}.`)}
  if(has(h.tp)){const tb=base('tp',d);if(tb!=null&&h.tp-tb>=0.5)out.push('<b>Température au poignet inhabituelle</b> : surveille un éventuel début de maladie.')}
  if(num(h.stz)>=30)out.push('Journée stressante d\'après ta FC : quelques minutes de respiration lente aident à redescendre.');
- return out.join(' ')||'Importe tes données Apple Santé et remplis ton check-in : le coach interprétera ici ta récupération, ton effort et ton besoin de sommeil.'}
+ return out.join(' ')||''+IMP('Importe tes données Apple Santé et remplis ton check-in','Connecte Apple Santé et remplis ton check-in')+' : le coach interprétera ici ta récupération, ton effort et ton besoin de sommeil.'}
 function actsHTML(d,T){T=T||dayTrain(d);const L=[];
  for(const s of T.mu){const w=T.att.filter(isStr)[0];L.push(`<div class="act" style="--c:var(--trn)"><div class="ic"><svg viewBox="0 0 24 24">${IC.lift}</svg></div><div><div class="t">${esc(s.name)}</div><div class="m">${(s.ex||[]).length} exercices · ${fx((s.ex||[]).reduce((a,x)=>a+x.sets.reduce((b,y)=>b+num(y.w)*num(y.r),0),0)/1000)} t${s.dur?' · '+esc(s.dur)+' min':''}${w&&w.hr?' · '+w.hr+' bpm moy.':''}${w&&w.kcal?' · '+w.kcal+' kcal':''}</div>${w?zbar(w.z)+zleg(w.z):''}</div><div class="e">${w&&w.tr?r0(100*(1-Math.exp(-w.tr/110))):''}<small>${w&&w.tr?'effort':''}</small></div></div>`)}
  for(const s of T.sp){const w=T.att.find(x=>(WT[x.ty]||'')===s.type);L.push(`<div class="act" style="--c:var(--eff)"><div class="ic"><svg viewBox="0 0 24 24">${IC.run}</svg></div><div><div class="t">${esc(s.type)}</div><div class="m">${esc(s.min)} min${s.km?' · '+fx(s.km)+' km':''}${s.rpe?' · ressenti '+esc(s.rpe)+'/10':''}${w&&w.hr?' · '+w.hr+' bpm moy.':''}</div>${w?zbar(w.z)+zleg(w.z):''}</div><div class="e">${w&&w.tr?r0(100*(1-Math.exp(-w.tr/110))):''}<small>${w&&w.tr?'effort':''}</small></div></div>`)}
@@ -272,13 +275,13 @@ function renderSleep(){const d=S.day,h=H(d),sl=sleepScore(d),x=X(d),T=num(S.set.
  const xd=X(d)||{},hl=xd.hl||[],hsn=xd.hs||[],inSl=m=>{if(!has(h.sb)||!has(h.sw))return false;const r=m+720;return r>=Math.max(720,h.sb)&&r<=h.sw};
  const lastTxt=S.health.last?`Ton export s'arrête le ${dShort(S.health.last.slice(0,10))} à ${S.health.last.slice(11,16)}. `:'';
  const srcRows=(h.hvsrc||[]).map(([n,v,c])=>`<tr><td><b>Source : ${esc(n)}</b><br><span class="mute small">${c} mesure${c>1?'s':''} ce jour-là</span></td><td class="num"><b>${v} ms</b></td></tr>`).join('');
- const list=hl.length?`<details class="hvl"><summary>Voir les ${hl.length} mesures du ${dShort(d)} une par une</summary><p class="mute small">Compare avec l'app Santé : Parcourir → Cœur → Variabilité du rythme cardiaque → Afficher toutes les données. Chaque ligne doit s'y retrouver avec la même heure et la même valeur.</p><table><tbody>${hl.map(([m,v,i])=>`<tr${inSl(m)?' class="insl"':''}><td class="num">${hhmm(m-720)}</td><td>${inSl(m)?'<span class="mute small">pendant le sommeil</span>':''}${hsn.length>1?` <span class="mute small">${esc(hsn[i]||'')}</span>`:''}</td><td class="num"><b>${r0(v)} ms</b></td></tr>`).join('')}</tbody></table><p class="mute small">Moyenne de ces ${hl.length} mesures : <b>${r0(avg(hl.map(x=>x[1])))} ms</b>.</p></details>`:(h.hrv?'<p class="mute small">Réimporte ton export pour voir chaque mesure de VFC une par une, avec son heure et sa source.</p>':'');
- $('#hvcmp').innerHTML=hvRows.length?`<h3>Toutes les mesures de VFC · nuit du ${dShort(addD(d,-1))} au ${dShort(d)}</h3><p class="mute small">${lastTxt}Si l'app Santé affiche une autre valeur, vérifie d'abord que tu regardes la même date${S.health.last&&S.health.last.slice(0,10)<today()?' : la nuit dernière n\'est pas dans ton export, réimporte-le':''}.</p><table><tbody>${hvRows.map(([l,v,t])=>`<tr><td><b>${l}</b><br><span class="mute small">${t}</span></td><td class="num"><b>${r0(v)} ms</b></td></tr>`).join('')}${srcRows}</tbody></table>${list}<p class="mute small">RMSSD et SDNN mesurent deux choses différentes et ne se comparent pas entre eux. Choisis celle qui sert à tes scores dans Plus → Réglages.</p>`:'';
+ const list=hl.length?`<details class="hvl"><summary>Voir les ${hl.length} mesures du ${dShort(d)} une par une</summary><p class="mute small">Compare avec l'app Santé : Parcourir → Cœur → Variabilité du rythme cardiaque → Afficher toutes les données. Chaque ligne doit s'y retrouver avec la même heure et la même valeur.</p><table><tbody>${hl.map(([m,v,i])=>`<tr${inSl(m)?' class="insl"':''}><td class="num">${hhmm(m-720)}</td><td>${inSl(m)?'<span class="mute small">pendant le sommeil</span>':''}${hsn.length>1?` <span class="mute small">${esc(hsn[i]||'')}</span>`:''}</td><td class="num"><b>${r0(v)} ms</b></td></tr>`).join('')}</tbody></table><p class="mute small">Moyenne de ces ${hl.length} mesures : <b>${r0(avg(hl.map(x=>x[1])))} ms</b>.</p></details>`:(h.hrv?'<p class="mute small">'+IMP('Réimporte ton export','Synchronise Apple Santé')+' pour voir chaque mesure de VFC une par une, avec son heure et sa source.</p>':'');
+ $('#hvcmp').innerHTML=hvRows.length?`<h3>Toutes les mesures de VFC · nuit du ${dShort(addD(d,-1))} au ${dShort(d)}</h3><p class="mute small">${lastTxt}Si l'app Santé affiche une autre valeur, vérifie d'abord que tu regardes la même date${S.health.last&&S.health.last.slice(0,10)<today()?IMP(' : la nuit dernière n\'est pas dans ton export, réimporte-le',' : la nuit dernière n\'est pas encore synchronisée'):''}.</p><table><tbody>${hvRows.map(([l,v,t])=>`<tr><td><b>${l}</b><br><span class="mute small">${t}</span></td><td class="num"><b>${r0(v)} ms</b></td></tr>`).join('')}${srcRows}</tbody></table>${list}<p class="mute small">RMSSD et SDNN mesurent deux choses différentes et ne se comparent pas entre eux. Choisis celle qui sert à tes scores dans Plus → Réglages.</p>`:'';
  const nd=needOf(addD(d,1)),wa=wakeAvg(d);
  $('#slcoach').innerHTML=(sl?`${sl.s>=80?'<b>Excellente nuit.</b> ':sl.s>=60?'<b>Nuit correcte.</b> ':'<b>Nuit insuffisante.</b> '}`+(sl.c.filter(c=>c[1]<50).map(c=>c[0]==='Durée'?`Il t'a manqué ${fmtSl(Math.max(0,sl.nd.need-h.sl))} par rapport à ton besoin.`:c[0]==='Régularité'?'Ton heure de coucher s\'écarte de ton habitude : la régularité améliore la qualité du sommeil.':c[0]==='Récupératrice'?'Peu de sommeil profond et paradoxal : alcool, repas tardif ou écrans peuvent jouer.':c[0]==='Continuité'?'Nuit fragmentée par plusieurs réveils.':'').join(' '))+(has(h.dip)&&h.dip<10?` Ta FC n'a baissé que de ${h.dip} % pendant la nuit (normal : 10 à 20 %) : repas tardif, alcool, stress ou séance du soir peuvent l'expliquer.`:'')+(has(h.lat)&&h.lat>30?` Il t'a fallu ${h.lat} min pour t'endormir : au-delà de 30 min de façon répétée, avance la lumière du matin et réduis les écrans le soir.`:''):'')+
   (wa!=null?` Besoin pour la prochaine nuit : <b>${fmtSl(nd.need)}</b> (base ${fmtSl(nd.T)}${nd.debt?` + ${nd.debt} min de dette`:''}${nd.eff?` + ${nd.eff} min liés à l'effort`:''}). Pour te lever à ${hhmm(wa)}, endors-toi vers <b>${hhmm(wa-nd.need)}</b>.`:'');
  $('#hypsub').textContent=x&&x.hy?`${x.hy.length} phases · ${x.nv?x.nv.length:0} mesures de VFC pendant la nuit`:'';
- setFig('#fhyp',{type:'hyp',segs:x&&x.hy,nh:x&&x.nh,nh0:x&&x.nh0,nv:x&&x.nv,empty:h.sl?'Le détail minute par minute est gardé pour les 35 dernières nuits importées. Réimporte ton export pour l\'obtenir.':'Pas de nuit enregistrée pour ce jour'});
+ setFig('#fhyp',{type:'hyp',segs:x&&x.hy,nh:x&&x.nh,nh0:x&&x.nh0,nv:x&&x.nv,empty:h.sl?'Le détail minute par minute est gardé pour les 35 dernières nuits importées. '+IMP('Réimporte ton export','Synchronise Apple Santé')+' pour l\'obtenir.':'Pas de nuit enregistrée pour ce jour'});
  const L=hLast()||today(),N=[];for(let i=13;i>=0;i--){const k=addD(L,-i);N.push({k,h:H(k)})}
  const mx=Math.max(T*1.2,...N.map(x=>num(x.h.sl))),seg=(v,c)=>v>0?`<i style="width:${v/mx*100}%;background:${c}"></i>`:'';
  $('#s14').innerHTML=N.map(({k,h})=>{const und=Math.max(0,num(h.sl)-num(h.sd)-num(h.sc)-num(h.sr)),ss=sleepScore(k);const tip=h.sl?[dLong(k),`Endormi ${fmtSl(h.sl)}${has(h.sb)?` (${hhmm(h.sb)} → ${hhmm(h.sw)})`:''}`,h.sd?`Profond ${fmtSl(h.sd)} · paradoxal ${fmtSl(h.sr||0)} · léger ${fmtSl(h.sc||0)}`:'',has(h.wu)?`${h.wu} réveil${h.wu>1?'s':''}`:'',nhrv(k)?`VFC ${hvLab()} ${r0(nhrv(k))} ms`:'',h.nmin?`FC min. ${h.nmin} bpm`:'',ss?`Score ${ss.s} / 100`:''].filter(Boolean).join('\n'):dLong(k)+' : pas de nuit enregistrée';return `<div class="hrow" data-tip="${esc(tip)}"><span>${dWk(k)}</span><div class="stk">${seg(num(h.sd),'var(--deep)')}${seg(num(h.sc),'var(--core)')}${seg(num(h.sr),'var(--rem)')}${seg(und,'color-mix(in srgb,var(--slp) 30%,var(--field))')}<b class="tg" style="left:${T/mx*100}%"></b></div><span class="num">${h.sl?fmtSl(h.sl):'–'}${ss?` · <b style="color:var(--slp)">${ss.s}</b>`:''}</span></div>`}).join('');
@@ -302,26 +305,26 @@ function renderSleep(){const d=S.day,h=H(d),sl=sleepScore(d),x=X(d),T=num(S.set.
   case'eff':cfg={unit:'%',ymax:100,series:barsAvg('Efficacité',pts(d=>H(d).ef?H(d).ef*100:null),'var(--slp)')};note='Part du temps passé à dormir entre l\'endormissement et le réveil. Au-dessus de 85 %, c\'est une bonne nuit.';break;
   case'wu':cfg={zero:true,series:barsAvg('Réveils',pts(hk('wu')),'var(--awake)',v=>r0(v)+(v>1?' réveils':' réveil'))};note='Nombre de réveils (éveil d\'au moins 1 min ou interruption de 5 min) dans chaque nuit.';break;
   case'lat':cfg={zero:true,unit:'min',series:barsAvg('Endormissement',pts(hk('lat')),'var(--slp)')};note='Temps entre ton coucher (mise au lit enregistrée par l\'iPhone ou la montre) et l\'endormissement. Normal : 10 à 20 min.';break}
- cfg.empty='Pas de donnée pour cette mesure sur la période (réimporte ton export si besoin)';setFig('#fs',cfg);
+ cfg.empty='Pas de donnée pour cette mesure sur la période ('+IMP('réimporte ton export','synchronise Apple Santé')+' si besoin)';setFig('#fs',cfg);
  const tfk=cfg.tf||(cfg.fmt?cfg.fmt:v=>fx(v)+(cfg.unit?' '+cfg.unit:''));$('#fsk').innerHTML=cfg.series.filter(x=>x.avg&&x.pts.length).map(se=>{const ys=se.pts.map(p=>p.y),tf=se.tf||tfk,mi2=se.pts.reduce((a,b)=>b.y<a.y?b:a),ma2=se.pts.reduce((a,b)=>b.y>a.y?b:a);return `<div class="stat" style="border-left:4px solid ${se.col}"><b>${esc(tf(avg(ys)))}</b><span>${esc(se.name)} · moyenne sur ${se.pts.length} nuit${se.pts.length>1?'s':''}</span><span style="display:block">min. ${esc(tf(mi2.y))} (${dShort(mi2.x)}) · max. ${esc(tf(ma2.y))} (${dShort(ma2.x)})</span></div>`}).join('');$('#fsn').textContent=note+' La bande large représente ta plage habituelle : une valeur qui en sort est inhabituelle pour toi. Survole ou touche le graphique pour la valeur exacte de chaque jour.'}
 
 /* ---------- récupération ---------- */
 function renderRec(){const d=S.day,h=H(d),rc=recovery(d);
  const cb=calib(d);$('#grc').innerHTML=gauge(rc&&rc.s,rc?recLab(rc.s)[1]:'var(--rec)','Récupération',rc?recLab(rc.s)[0]:cb<7&&hKeys().length?`calibrage : ${cb} / 7 nuits`:'en attente de données',null,'%',true);
  $('#rcc').innerHTML=rc?compHTML(rc.c,'var(--rec)'):'<p class="mute small">Il faut au moins ta VFC ou ta FC nocturne de ce jour.</p>';
- $('#rccoach').innerHTML=rc?`${coach(d,rc,null,null,effTarget(rc.s)).split('Ce soir')[0]} La récupération compare ta VFC et ta FC de la nuit à ta propre normale des 30 derniers jours : c'est ton évolution qui compte, pas la valeur brute.`:'La récupération s\'appuie surtout sur la VFC mesurée pendant ton sommeil : importe ton export Apple Santé pour l\'activer.';
+ $('#rccoach').innerHTML=rc?`${coach(d,rc,null,null,effTarget(rc.s)).split('Ce soir')[0]} La récupération compare ta VFC et ta FC de la nuit à ta propre normale des 30 derniers jours : c'est ton évolution qui compte, pas la valeur brute.`:'La récupération s\'appuie surtout sur la VFC mesurée pendant ton sommeil : '+IMP('importe ton export Apple Santé pour l\'activer.','connecte Apple Santé pour l\'activer.')+'';
  const mo=monitor(d),bad=mo.filter(x=>x.warn);$('#mons').textContent=mo.length?(bad.length?`${bad.length} ${bad.length>1?'signaux':'signal'} à surveiller`:'tout est dans ta normale'):'';
  $('#mon').innerHTML=mo.length?mo.map(x=>{const lo=x.m-3*x.sd,hi=x.m+3*x.sd,P=v=>clamp((v-lo)/(hi-lo)*100,2,98);return `<div class="mr" data-tip="${esc(`${x.l}\nCette nuit : ${monFmt(x,x.v)}\nTa normale : ${x.k==='tp'?'± '+f2(1.5*x.sd)+' °C':monFmt(x,x.m-1.5*x.sd)+' à '+monFmt(x,x.m+1.5*x.sd)}\nÉcart : ${sg(Math.round(x.z*10)/10)} écart-type`)}"><div class="n">${x.l}<small>normale ${x.k==='tp'?'± '+f2(1.5*x.sd)+' °C':monFmt(x,x.m)}</small></div><div class="rng"><i class="nb" style="left:${P(x.m-1.5*x.sd)}%;right:${100-P(x.m+1.5*x.sd)}%"></i><i class="pt" style="left:${P(x.v)}%;--c:${x.col}"></i></div><div class="v">${monFmt(x,x.v)}<small><span class="st" style="--c:${x.col}">${x.lab}</span></small></div></div>`}).join(''):'<p class="mute small">Il faut au moins 7 nuits importées avant ce jour pour établir ta normale.</p>';
  const L=hLast()||today(),from=addD(L,-182),vb=nhrvBase(L),pts=[];for(let k=from;k<=L;k=addD(k,1)){if(!nhrv(k))continue;const v=[];for(let i=0;i<7;i++){const y=nhrv(addD(k,-i));if(y)v.push(y)}pts.push({x:k,y:Math.round(avg(v))})}
  const raw=[];for(let k=from;k<=L;k=addD(k,1))if(nhrv(k))raw.push({x:k,y:nhrv(k)});
- setFig('#fhv',{unit:'ms',series:[{name:'VFC de la nuit',avg:true,last:true,pts:raw,col:'var(--mind)',dots:true,r:3,w:1.5,op:.9}],empty:'Réimporte ton export : la VFC nocturne est calculée à partir des mesures prises pendant ton sommeil'});
- const v7=avg(raw.slice(-7).map(p=>p.y));$('#vk2').innerHTML=(hvm()==='rmssd'&&!S.health.rm&&hKeys().length?'<p class="notice" style="width:100%">Ta VFC est encore en SDNN (valeur d\'Apple). Réimporte ton export pour la calculer en RMSSD battement par battement, comme Bevel.</p>':'')+(v7?`<div><b>${r0(v7)} ms</b><span>${hvLab()}, moyenne des 7 dernières nuits</span></div>`+(vb?`<div><b>${r0(vb.m)} ms</b><span>ta normale (30 j)</span></div><div><b class="${v7>=vb.m?'gd':'dn'}">${sg(Math.round((v7/vb.m-1)*100))} %</b><span>écart à ta normale</span></div>`:''):'');
+ setFig('#fhv',{unit:'ms',series:[{name:'VFC de la nuit',avg:true,last:true,pts:raw,col:'var(--mind)',dots:true,r:3,w:1.5,op:.9}],empty:IMP('Réimporte ton export','Synchronise Apple Santé')+' : la VFC nocturne est calculée à partir des mesures prises pendant ton sommeil'});
+ const v7=avg(raw.slice(-7).map(p=>p.y));$('#vk2').innerHTML=(hvm()==='rmssd'&&!S.health.rm&&hKeys().length?'<p class="notice" style="width:100%">Ta VFC est encore en SDNN (valeur d\'Apple). '+IMP('Réimporte ton export pour la calculer en RMSSD battement par battement, comme Bevel.','Le RMSSD battement par battement n\'est disponible qu\'avec un fichier d\'export Apple Santé (Plus → Apple Santé).')+'</p>':'')+(v7?`<div><b>${r0(v7)} ms</b><span>${hvLab()}, moyenne des 7 dernières nuits</span></div>`+(vb?`<div><b>${r0(vb.m)} ms</b><span>ta normale (30 j)</span></div><div><b class="${v7>=vb.m?'gd':'dn'}">${sg(Math.round((v7/vb.m-1)*100))} %</b><span>écart à ta normale</span></div>`:''):'');
  const f90=addD(L,-89);setFig('#fnh',{unit:'bpm',series:[{name:'FC min. nocturne',avg:true,pts:dailyPts(d=>num(H(d).nmin)||null,f90,L),col:'var(--trn)',w:1.8,last:true},{name:'FC au repos',avg:true,pts:dailyPts(d=>num(H(d).rhr)||null,f90,L),col:'var(--hrt)',w:1.8,last:true}],empty:'Pas encore de FC nocturne'});
  const nm=winAvg('nmin',L,7),nb=base('nmin',addD(L,-7));$('#nhk').innerHTML=nm?`<div><b>${r0(nm)} bpm</b><span>FC min. nocturne, 7 j${nb?` · <span class="${nm<=nb?'gd':'dn'}">${sg(Math.round(nm-nb))}</span>`:''}</span></div>`:'';
- const x=X(d),sv=num(h.stz);$('#stk').innerHTML=has(h.stz)?`<div><b style="color:var(--str)">${sv}</b><span>stress du ${dShort(d)} : ${stressLab(sv).toLowerCase()}</span></div><div><b>${r0(winAvg('stz',d,7)||0)}</b><span>moyenne 7 j</span></div>`:'<p class="mute small">Le stress estimé apparaît après un import Apple Santé.</p>';
+ const x=X(d),sv=num(h.stz);$('#stk').innerHTML=has(h.stz)?`<div><b style="color:var(--str)">${sv}</b><span>stress du ${dShort(d)} : ${stressLab(sv).toLowerCase()}</span></div><div><b>${r0(winAvg('stz',d,7)||0)}</b><span>moyenne 7 j</span></div>`:'<p class="mute small">'+IMP('Le stress estimé apparaît après un import Apple Santé.','Le stress estimé apparaît après la synchro Apple Santé.')+'</p>';
  $('#sth').innerHTML=x&&x.sh?`<div style="display:grid;grid-template-columns:repeat(24,minmax(0,1fr));gap:2px;align-items:end;height:80px">${x.sh.map((v,i)=>`<i data-tip="${esc(`${i}h – ${i+1}h : stress ${v} / 100`)}" style="display:block;height:${Math.max(4,v)}%;border-radius:3px;background:${v>=50?'var(--str)':v>0?'color-mix(in srgb,var(--str) 45%,var(--field))':'var(--field)'}"></i>`).join('')}</div><div style="display:flex;justify-content:space-between" class="mute small"><span>0h</span><span>6h</span><span>12h</span><span>18h</span><span>24h</span></div>`:'';
  const vk=(key,lab,f,dev)=>{const v=vals(key,L,7,0);if(!v.length)return'';const a=avg(v),b=base(key,addD(L,-7),30);return `<div><b>${dev&&b!=null?sg(Math.round((a-b)*100)/100)+' °C':f(a)}</b><span>${lab}${dev?' vs normale':''}, 7 j</span></div>`};
- $('#vtk').innerHTML=[vk('o2','SpO2',v=>fx(v)+' %'),vk('rr','respirations / min',fx),vk('tp','température poignet',fx,true),vk('hr','FC moyenne',v=>r0(v)+' bpm'),vk('whr','FC en marchant',v=>r0(v)+' bpm'),vk('hrr','récupération à 1 min',v=>r0(v)+' bpm')].join('')||'<p class="mute small">Réimporte ton export Apple Santé pour ajouter ces mesures.</p>';
+ $('#vtk').innerHTML=[vk('o2','SpO2',v=>fx(v)+' %'),vk('rr','respirations / min',fx),vk('tp','température poignet',fx,true),vk('hr','FC moyenne',v=>r0(v)+' bpm'),vk('whr','FC en marchant',v=>r0(v)+' bpm'),vk('hrr','récupération à 1 min',v=>r0(v)+' bpm')].join('')||'<p class="mute small">'+IMP('Réimporte ton export Apple Santé','Synchronise Apple Santé')+' pour ajouter ces mesures.</p>';
  const m=$('#vtm').value,f9=addD(L,-89);let p2;if(m==='tp'){const tb=avg(hKeys().map(k=>H(k).tp).filter(has).map(num));p2=dailyPts(d=>has(H(d).tp)?num(H(d).tp)-(tb||0):null,f9,L)}else p2=dailyPts(d=>num(H(d)[m])||null,f9,L);
  setFig('#fvt',{series:[{name:$('#vtm').selectedOptions[0].textContent,avg:true,last:true,pts:p2,col:m==='stz'?'var(--str)':'var(--hrt)',dots:true,r:2.5,w:1.5,op:.8}],hline:m==='tp'?0:null,fmt:m==='tp'?v=>sg(Math.round(v*100)/100):m==='o2'?v=>fx(v)+' %':null,empty:'Pas de données pour cette mesure'})}
 
@@ -438,7 +441,7 @@ function renderNutri(){const d=S.day,D=S.days[d]||{},it=D.items||[],Pr=sum(it,'p
  if(!$('#fm').options.length){const hr=new Date().getHours();$('#fm').innerHTML=MEALS.map(m=>`<option>${m}</option>`).join('');$('#fm').value=hr<11?'Petit-déjeuner':hr<15?'Déjeuner':hr<18?'Collation':'Dîner'}
  const Wn=weights(),wkk=Object.keys(Wn).sort(),wtn=wkk.length?wAvg(Wn,wkk[wkk.length-1]):null;
  $('#meters').innerHTML=meter('Protéines',Pr,T,'g',(Pr>=T?'Objectif atteint':'Il reste '+r0(T-Pr)+' g')+(wtn?` · ${fx(Pr/wtn)} g/kg`:''),Pr>=T?'ok':'','var(--nut)')+meter('Calories',K,KT,'kcal',K>KT?r0(K-KT)+' kcal au-dessus':'Il reste '+r0(KT-K)+' kcal',K>KT*1.05?'over':'','var(--nut)')
-  +(out?meter('Dépense Apple',out,out,'kcal',`${r0(num(h.bs))} de base + ${r0(num(h.ac))} actives`+(K?` · bilan <b>${K-out>0?'+':''}${r0(K-out)}</b>`:''),'','var(--eff)'):`<div><span class="eyebrow">Dépense</span><p class="mute small">Ta dépense de ce jour apparaîtra après un import Apple couvrant cette date.</p></div>`);
+  +(out?meter('Dépense Apple',out,out,'kcal',`${r0(num(h.bs))} de base + ${r0(num(h.ac))} actives`+(K?` · bilan <b>${K-out>0?'+':''}${r0(K-out)}</b>`:''),'','var(--eff)'):`<div><span class="eyebrow">Dépense</span><p class="mute small">Ta dépense de ce jour apparaîtra après ${IMP('un import Apple couvrant cette date','la synchro Apple Santé de cette date')}.</p></div>`);
  const mk=Pr*4+G*4+Li*9;$('#macros').innerHTML=mk&&(G||Li)?`<div class="mh small"><span>Macros : <b>${r0(Pr)} g</b> protéines · <b>${r0(G)} g</b> glucides · <b>${r0(Li)} g</b> lipides</span><span class="mute">${r0(Pr*4/mk*100)} / ${r0(G*4/mk*100)} / ${r0(Li*9/mk*100)} % des kcal</span></div><div class="macro"><i style="width:${Pr*4/mk*100}%;background:var(--nut)"></i><i style="width:${G*4/mk*100}%;background:var(--wat)"></i><i style="width:${Li*9/mk*100}%;background:var(--hrt)"></i></div>`:'';
  $('#hday').textContent=h.wa&&!num(D.w)?`Eau notée dans Apple Santé : ${fx(h.wa/1000)} L`:'';
  $('#favs').innerHTML=S.set.foods.map((f,k)=>`<button class="chip" data-act="fav" data-k="${k}"><b>${esc(f.n)}</b><span>${fx(num(f.p))} g · ${r0(kcalOf(f))} kcal</span></button>`).join('')||'<p class="mute small">Coche « Garder dans mes favoris » en ajoutant un aliment.</p>';
@@ -458,10 +461,10 @@ function addFood(f,m){if(!f)return;const d=S.day,o={n:f.n,p:num(f.p),k:Math.roun
 function delFood(k){const d=S.day,D=getDay(d),x=D.items.splice(k,1)[0];put.day(d);renderNutri();toast('Aliment retiré',()=>{getDay(d).items.splice(k,0,x);put.day(d);renderNutri()})}
 
 /* ---------- tendances ---------- */
- function renderMarkers(){const m=markers();$('#mkrs').innerHTML=m.length?m.map(x=>`<div class="mkr"><div class="t2"><span>${x.t}</span><span class="st" style="--c:${x.st[1]}">${x.st[0]}</span></div><b>${esc(x.v)}</b><p>${x.p}</p></div>`).join(''):'<p class="mute small">Importe Apple Santé et note ton poids pour obtenir ton bilan.</p>';
+ function renderMarkers(){const m=markers();$('#mkrs').innerHTML=m.length?m.map(x=>`<div class="mkr"><div class="t2"><span>${x.t}</span><span class="st" style="--c:${x.st[1]}">${x.st[0]}</span></div><b>${esc(x.v)}</b><p>${x.p}</p></div>`).join(''):'<p class="mute small">'+IMP('Importe Apple Santé et note ton poids pour obtenir ton bilan.','Connecte Apple Santé et note ton poids pour obtenir ton bilan.')+'</p>';
  const R14=k=>{let n=0;for(let i=0;i<14;i++)if(k(addD(today(),-i)))n++;return n};let streak=0;for(let i=0;i<400;i++){const d=addD(today(),-i);const j=J(d);if(j.mood||j.energy||j.stress||j.sore)streak++;else if(i>0)break}
  const W=weights(),L=hLast(),rs=[['Nuits suivies',R14(d=>H(d).sl),'montre portée la nuit'],['Repas notés',R14(d=>dayIt(d).length),'jours avec nutrition'],['Check-ins',R14(d=>J(d).mood||J(d).energy),'jours remplis'],['Pesées',R14(d=>W[d]),'jours pesés']];
- $('#rig').innerHTML=rs.map(([t,n,s])=>`<div class="stat"><b style="color:${n>=11?'var(--rec)':n>=6?'var(--str)':'var(--bad)'}">${n} <small>/ 14</small></b><span>${t} · ${s}</span></div>`).join('')+`<div class="stat"><b>${streak} <small>j</small></b><span>série de check-ins en cours</span></div>`+(L?`<div class="stat"><b>${dShort(L)}</b><span>dernières données Apple${today()>addD(L,3)?' : pense à réimporter':''}</span></div>`:'')}
+ $('#rig').innerHTML=rs.map(([t,n,s])=>`<div class="stat"><b style="color:${n>=11?'var(--rec)':n>=6?'var(--str)':'var(--bad)'}">${n} <small>/ 14</small></b><span>${t} · ${s}</span></div>`).join('')+`<div class="stat"><b>${streak} <small>j</small></b><span>série de check-ins en cours</span></div>`+(L?`<div class="stat"><b>${dShort(L)}</b><span>dernières données Apple${today()>addD(L,3)?IMP(' : pense à réimporter',' : synchronise Apple Santé'):''}</span></div>`:'')}
 function renderTrends(){renderMarkers();const e=today(),s0=addD(e,-6),p0=addD(e,-13),p1=addD(e,-7);$('#wkr').textContent=`du ${dShort(s0)} au ${dShort(e)}, vs les 7 jours d'avant`;
  const rng=(a,b)=>{const r=[];for(let d=a;d<=b;d=addD(d,1))r.push(d);return r},A=rng(s0,e),B=rng(p0,p1);
  const hv=(ds,k)=>avg(ds.map(d=>num(H(d)[k])).filter(x=>x>0)),sc=(ds,f)=>avg(ds.map(f).filter(x=>x!=null));
@@ -470,7 +473,7 @@ function renderTrends(){renderMarkers();const e=today(),s0=addD(e,-6),p0=addD(e,
  const W=weights(),jm=(ds,k)=>avg(ds.map(d=>J(d)[k]).filter(Boolean)),ta=tr(A),tb=tr(B);
  const rows=[['Récupération',sc(A,d=>recovery(d)?.s),sc(B,d=>recovery(d)?.s),v=>r0(v)+' %',1,3],['Effort moyen',sc(A,effortOf),sc(B,effortOf),r0,0,3],['Score de sommeil',sc(A,d=>sleepScore(d)?.s),sc(B,d=>sleepScore(d)?.s),r0,1,3],['Sommeil moyen',hv(A,'sl'),hv(B,'sl'),fmtSl,1,15],['VFC nocturne',avg(A.map(nhrv).filter(Boolean)),avg(B.map(nhrv).filter(Boolean)),v=>r0(v)+' ms',1,2],['FC au repos',hv(A,'rhr'),hv(B,'rhr'),v=>r0(v)+' bpm',-1,1],['Stress estimé',hv(A,'stz'),hv(B,'stz'),r0,-1,5],['Pas par jour',hv(A,'st'),hv(B,'st'),r0,1,500],['Séances',ta.n,tb.n,r0,1,1],['Temps d\'entraînement',ta.m,tb.m,v=>r0(v)+' min',1,20],['Tonnage muscu',ta.t,tb.t,v=>fx(v/1000)+' t',1,500],['Protéines / jour',nut(A,d=>sum(dayIt(d),'p')),nut(B,d=>sum(dayIt(d),'p')),v=>r0(v)+' g',1,5],['Calories / jour',nut(A,d=>dayIt(d).reduce((a,x)=>a+kcalOf(x),0)),nut(B,d=>dayIt(d).reduce((a,x)=>a+kcalOf(x),0)),r0,0,100],['Poids (moy. 7 j)',wAvg(W,e),wAvg(W,p1),v=>fx(v)+' kg',0,.2],['Humeur',jm(A,'mood'),jm(B,'mood'),v=>fx(v)+' / 5',1,.3],['Énergie',jm(A,'energy'),jm(B,'energy'),v=>fx(v)+' / 5',1,.3],['Stress ressenti',jm(A,'stress'),jm(B,'stress'),v=>fx(v)+' / 5',-1,.3]];
  $('#week').innerHTML=`<table><thead><tr><th>Mesure</th><th class="num">Cette semaine</th><th class="num">Semaine d'avant</th><th class="num">Évolution</th></tr></thead><tbody>${rows.filter(r=>r[1]!=null||r[2]!=null).map(([l,a,b,f,dir,th])=>{let ev='–';if(a!=null&&b!=null){const df=a-b;ev=Math.abs(df)<th?'stable':`<span class="${dir===0?'':(df*dir>0?'gd':'dn')}">${df>0?'▲':'▼'} ${f(Math.abs(df))}</span>`}return `<tr><td>${l}</td><td class="num" data-l="Cette semaine">${a!=null?f(a):'–'}</td><td class="num" data-l="Semaine d'avant">${b!=null?f(b):'–'}</td><td class="num" data-l="Évolution">${ev}</td></tr>`}).join('')}</tbody></table>`;
- const ins=insights();$('#insights').innerHTML=ins.length?ins.map(x=>`<li style="--c:${x.c}"><div><b>${x.t}</b><span>${x.s}</span></div></li>`).join(''):'<li style="--c:var(--line)"><div><b>Pas encore assez de données croisées.</b><span>Importe Apple Santé et remplis ton check-in quelques semaines.</span></div></li>';
+ const ins=insights();$('#insights').innerHTML=ins.length?ins.map(x=>`<li style="--c:${x.c}"><div><b>${x.t}</b><span>${x.s}</span></div></li>`).join(''):'<li style="--c:var(--line)"><div><b>Pas encore assez de données croisées.</b><span>'+IMP('Importe Apple Santé et remplis ton check-in quelques semaines.','Connecte Apple Santé et remplis ton check-in quelques semaines.')+'</span></div></li>';
  const fr=addD(e,-60),js=k=>{const o=[];for(let d=fr;d<=e;d=addD(d,1)){const v=[];for(let i=0;i<7;i++){const x=J(addD(d,-i))[k];if(x)v.push(x)}if(J(d)[k]&&v.length)o.push({x:d,y:Math.round(avg(v)*100)/100})}return o};
  setFig('#fj',{tf:v=>fx(v)+' / 5',series:[{name:'Humeur',avg:true,pts:js('mood'),col:'var(--mind)',last:true},{name:'Énergie',avg:true,pts:js('energy'),col:'var(--nut)',last:true},{name:'Stress ressenti',pts:js('stress'),col:'var(--bad)',last:true}],ymin:1,ymax:5,empty:'Remplis ton check-in pour voir cette courbe'});
  renderBody()}
@@ -503,7 +506,7 @@ function insights(){const e=hLast()||today(),from=addD(e,-120),out=[],T=num(S.se
  const tb=base('tp',e,30),t3=[0,1,2].map(i=>H(addD(e,-i)).tp).filter(has);if(tb!=null&&t3.length>=2){const dv=avg(t3.map(num))-tb;if(dv>=0.4)out.push({c:'var(--hrt)',t:`Température au poignet en hausse : ${sg(Math.round(dv*100)/100)} °C.`,s:'Peut signaler un début d\'infection, une fatigue ou un repas tardif.'})}
  return out}
 function renderBody(){const W=weights(),wk=Object.keys(W).sort(),L=hLast()||today(),gw=num(S.set.goalw);
- setFig('#fw',{unit:'kg',series:[{name:'Pesée',pts:wk.map(x=>({x,y:W[x]})),col:'var(--bod)',dots:true,line:false,r:2.5,op:.4},{name:'Moyenne 7 j',pts:wk.map(x=>({x,y:Math.round(wAvg(W,x)*10)/10})),col:'var(--bod)',last:true}],hline:gw||null,fmt:v=>fx(v),empty:'Note ton poids (Nutrition) ou importe Apple Santé'});
+ setFig('#fw',{unit:'kg',series:[{name:'Pesée',pts:wk.map(x=>({x,y:W[x]})),col:'var(--bod)',dots:true,line:false,r:2.5,op:.4},{name:'Moyenne 7 j',pts:wk.map(x=>({x,y:Math.round(wAvg(W,x)*10)/10})),col:'var(--bod)',last:true}],hline:gw||null,fmt:v=>fx(v),empty:''+IMP('Note ton poids (Nutrition) ou importe Apple Santé','Note ton poids (Nutrition) ou connecte Apple Santé')+''});
  if(wk.length){const ld=wk[wk.length-1],a=wAvg(W,ld),b=wAvg(W,addD(ld,-28)),c=wAvg(W,addD(ld,-84)),rate=b?(a-b)/4:null;let proj='';
   if(gw&&rate){const left=gw-a;if(Math.abs(left)<0.3)proj=`<div><b class="gd">Atteint</b><span>objectif ${fx(gw)} kg</span></div>`;else if(left*rate>0){const w=left/rate;proj=`<div><b>${w>104?'> 2 ans':dShort(addD(ld,Math.round(w*7)))}</b><span>objectif ${fx(gw)} kg au rythme actuel</span></div>`}else proj=`<div><b class="dn">${fx(Math.abs(left))} kg</b><span>de l'objectif, tendance inverse</span></div>`}
   $('#bk').innerHTML=`<div><b>${fx(a)} kg</b><span>moyenne 7 j au ${dShort(ld)}</span></div>`+(b?`<div><b>${sg(a-b)} kg</b><span>4 semaines (${sg(rate)} kg/sem.)</span></div>`:'')+(c?`<div><b>${sg(a-c)} kg</b><span>12 semaines</span></div>`:'')+proj}else $('#bk').innerHTML='';
@@ -529,10 +532,10 @@ function quick(q){$('#sheet').hidden=true;setTimeout(()=>document.documentElemen
  else if(q==='water'){const o=getDay(today());o.w=num(o.w)+250;put.day(today());renderView(cur());toast(`Eau : ${fx(o.w/1000)} L aujourd'hui`)}
  else if(q==='ci'){S.day=today();go('aujourdhui',()=>$('#checkin').scrollIntoView({behavior:'smooth',block:'start'}))}
  else if(q==='med'){psub='dossier';go('plus',()=>{renderPlus();$('#mti').focus({preventScroll:true})})}
- else if(q==='apple'){psub='apple';go('plus',renderPlus)}}
+ else if(q==='apple'){if(HKN&&S.health.src==='hk'){hkSync();return}psub='apple';go('plus',renderPlus)}}
 
 function renderPlus(){$('#hub').hidden=!!psub;$('#subbar').hidden=!psub;$('#subt').textContent=SUBT[psub]||'';$$('[data-sub]').forEach(x=>x.hidden=x.dataset.sub!==psub);
- const L=hLast();$('#hubapple').textContent=S.set.demo?"Données de démo pour l'instant":L?`Données jusqu'au ${dShort(L)}${today()>addD(L,3)?' : pense à réimporter':''}`:'Importer tes données (pas encore fait)';
+ const L=hLast();$('#hubapple').textContent=S.set.demo?"Données de démo pour l'instant":HKN?(S.health.src==='hk'?'Connecté · '+syncWhen():'Connecter Apple Santé'):L?`Données jusqu'au ${dShort(L)}${today()>addD(L,3)?' : pense à réimporter':''}`:'Importer tes données (pas encore fait)';
  if(psub==='dossier')renderMed();else if(psub)renderSettings()}
 function renderMed(){const t=today(),L=S.med.slice().sort((a,b)=>b.date.localeCompare(a.date)),types=['Tout','Rendez-vous','Vaccin','Analyse','Blessure','Note'];
  if(!$('#md').value)$('#md').value=t;
@@ -549,7 +552,9 @@ function renderSettings(){const a=document.activeElement;
  $('#suplist').innerHTML=lst(S.set.sups,'delSup');$('#taglist').innerHTML=lst(S.set.tags,'delTag');
  $('#favlist').innerHTML=S.set.foods.length?S.set.foods.map((f,k)=>`<li><span>${esc(f.n)}</span><span class="num">${fx(num(f.p))} g</span><span class="num">${r0(kcalOf(f))} kcal</span><button class="x" data-act="delFav" data-k="${k}" aria-label="Supprimer le favori">×</button></li>`).join(''):'<li class="mute empty">Aucun favori.</li>';
  $('#savenote').textContent=S.set.bk?`Dernière sauvegarde enregistrée le ${dShort(S.set.bk)}/${S.set.bk.slice(0,4)}.`:"Aucune sauvegarde enregistrée pour l'instant : pense à en faire une de temps en temps.";
- const L=hLast();if(L&&!$('#hmsg').dataset.busy&&!$('#hmsg').dataset.keep)$('#hmsg').textContent=`Dernier import le ${dShort(S.health.upd)} · données jusqu'au ${dShort(L)} · ${hKeys().length} jours.`;
+ if(HKN)$('#hkmsg').textContent=S.health.src==='hk'?`Connecté, ${syncWhen()} · ${hKeys().length} jours de données, jusqu'au ${dShort(hLast())}.`:"Pas encore connecté : touche « Connecter » pour autoriser la lecture.";
+ if(HKN)$('#hkgo').textContent=S.health.src==='hk'?'Synchroniser maintenant':'Connecter Apple Santé',$('#hkgo').dataset.act=S.health.src==='hk'?'hksync':'hkauth';
+ const L=hLast();if(L&&S.health.src!=='hk'&&!$('#hmsg').dataset.busy&&!$('#hmsg').dataset.keep)$('#hmsg').textContent=`Dernier import le ${dShort(S.health.upd)} · données jusqu'au ${dShort(L)} · ${hKeys().length} jours.`;
  const dk=Object.keys(S.detail.d||{}).length,nn=hKeys().filter(k=>H(k).nhv).length,nr=hKeys().filter(k=>H(k).nrm).length;
  $('#hstat').innerHTML=L?`<div class="stat"><b>${hKeys().length}</b><span>jours résumés</span></div><div class="stat"><b>${dk}</b><span>jours détaillés</span></div><div class="stat"><b>${nn}</b><span>nuits avec VFC nocturne</span></div><div class="stat"><b>${nr}</b><span>nuits avec RMSSD (battements)</span></div>${S.health.hrmax?`<div class="stat"><b>${S.health.hrmax} <small>bpm</small></b><span>FC max. déduite</span></div>`:''}`:'';
  if(a!==$('#exp'))$('#exp').value=JSON.stringify({v:4,set:S.set,sessions:done(),days:S.days,med:S.med})}
@@ -594,6 +599,8 @@ document.addEventListener('click',ev=>{unlockAudio();if(matchMedia('(max-width:8
  case'onbGo':return onbGo(b.dataset.go2);
  case'demoEnd':clearDemo();renderSoft();return showOnb(2);
  case'bksave':return saveBackup();
+ case'hksync':return hkSync();
+ case'hkauth':return hkConnect();
  case'bkok':{const t=pendingBk;pendingBk='';if(t)doImport(t,$('#bkmsg'));return}
  case'wipe':{if(b.classList.contains('armed'))return resetAll();b.classList.add('armed');b.textContent='Confirmer : tout effacer définitivement';setTimeout(()=>{b.classList.remove('armed');b.textContent='Effacer toutes mes données'},6000);return}
  case'dprev':S.day=addD(S.day,-1);return renderView(cur());
@@ -675,10 +682,13 @@ document.addEventListener('keydown',e=>{if(e.metaKey||e.ctrlKey||e.altKey)return
  document.addEventListener('pointermove',e=>{if(!T.hidden)place(e)});const hideT=e=>{if(e.pointerType!=='mouse')T.hidden=true};document.addEventListener('pointerup',hideT);document.addEventListener('pointercancel',hideT);document.addEventListener('scroll',()=>{T.hidden=true;$$('.ov').forEach(o=>o.innerHTML='')},{passive:true,capture:true})}
 
 /* ---------- données Apple Santé : fusion d'un import ---------- */
-function applyHealth(R){
+function applyHealth(R,inc=false){
+ /* Synchro incrémentale : le premier jour lu est incomplet (sa nuit commence la veille), on le laisse de côté. */
+ if(inc){const d={...R.d},x={...R.det};delete d[R.from];delete x[R.from];R={...R,d,det:x}}
+ const hrmax=!inc||!S.health.hrmax?R.hmax:Object.values(R.d).some(o=>o.wk)?Math.max(S.health.hrmax,R.hmax):S.health.hrmax;
  const all={...S.health.d,...R.d};let ks=Object.keys(all).sort().slice(-400),keep;
  for(;;){keep={};ks.forEach(k=>keep[k]=all[k]);if(JSON.stringify(keep).length<235000||ks.length<=60)break;ks=ks.slice(20)}
- S.health={upd:today(),last:R.last||S.health.last||'',hrmax:R.hmax,rm:R.rm||!!S.health.rm,chk:R.chk||S.health.chk||null,d:keep};put.health();
+ S.health={upd:today(),last:R.last||S.health.last||'',hrmax,rm:R.rm||!!S.health.rm,chk:R.chk||S.health.chk||null,d:keep};put.health();
  const det={...(S.detail.d||{}),...R.det},dk=Object.keys(det).sort().slice(-35);let dkeep;
  for(let n2=dk.length;;n2-=3){dkeep={};dk.slice(-n2).forEach(k=>dkeep[k]=det[k]);if(JSON.stringify(dkeep).length<235000||n2<=6)break}
  S.detail={d:dkeep};put.detail()}
@@ -702,6 +712,33 @@ function clearDemo(){
  delete S.set.demo;S.health={upd:'',d:{}};S.detail={d:{}};S.sessions=[];S.days={};S.med=[];S.cur=null;
  put.set();put.health();renderEditor()}
 
+/* ---------- Apple Santé en direct (appli iOS) ---------- */
+const syncWhen=()=>{const t=S.health.sync;if(!t)return'';const d=new Date(t),ds=iso(d),hm2=d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});return ds===today()?'synchronisé à '+hm2:ds===addD(today(),-1)?'synchronisé hier à '+hm2:'synchronisé le '+dShort(ds)};
+async function hkConnect(){
+ try{await authorizeHealth()}catch(e){toast(String(e&&e.message||e));return}
+ return hkSync({full:true})}
+async function hkSync({full=false,quiet=false}={}){
+ if(!HKN||hkBusy)return;hkBusy=true;
+ const inc=!full&&S.health.src==='hk'&&!!S.health.sync&&hKeys().length>0,from=inc?addD(iso(new Date(S.health.sync)),-3):addD(today(),-395);
+ const bar=$('#syncbar'),bi=bar.querySelector('i'),lab=bar.querySelector('span');
+ const prog=p=>{bi.style.width=Math.round(p)+'%';lab.textContent=(inc?'Mise à jour depuis Apple Santé… ':'Lecture d\'Apple Santé… ')+Math.round(p)+' %'};
+ bar.hidden=quiet&&inc;prog(0);
+ try{
+  if(S.set.demo)clearDemo();
+  const R=await readHealthKit({from,sex:S.set.sex,onProgress:prog});
+  if(!Object.keys(R.d).length){if(!inc)toast("Aucune donnée reçue d'Apple Santé. Vérifie l'accès : Réglages → Santé → Accès aux données et appareils → Carnet de santé.");return}
+  applyHealth(R,inc);S.health.src='hk';S.health.sync=Date.now();put.health();
+  if(!inc)toast(`Apple Santé connecté : ${Object.keys(R.d).length} jours lus.`);else if(!quiet)toast('Apple Santé à jour.')
+ }catch(e){console.error(e);toast("Lecture d'Apple Santé impossible : "+String(e&&e.message||e))}
+ finally{hkBusy=false;bar.hidden=true;renderSoft()}}
+/* Textes et boutons propres à l'appli iOS */
+function setupHK(){
+ document.documentElement.classList.add('hk');
+ const ch=$('#onb [data-go2="apple"]');ch.dataset.go2='hk';ch.querySelector('b').textContent='Connecter Apple Santé';ch.querySelector('small').textContent='Lecture seule : sommeil, cœur, activité, entraînements';
+ const qa=$('#sheet [data-q="apple"]');qa.lastChild.textContent='Synchro Santé';
+ $('#hkpanel').hidden=false;$('#impt').textContent="Importer un fichier d'export (facultatif)";$('#hkmsg').after($('#hstat'));
+ addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S.health.src==='hk'&&!S.set.demo&&Date.now()-(S.health.sync||0)>15*6e4)hkSync({quiet:true})})}
+
 /* ---------- premier lancement ---------- */
 const needOnb=()=>!S.set.onb&&!hKeys().length&&!S.sessions.length&&!Object.keys(S.days).length&&!S.med.length;
 function showOnb(step=0){const o=$('#onb');o.hidden=false;document.documentElement.style.overflow='hidden';
@@ -714,6 +751,7 @@ function saveProfile(){const y=new Date().getFullYear(),b=Math.round(num($('#ob-
 function onbGo(to){S.set.onb=1;put.set();
  if(to==='demo')return loadDemo();
  hideOnb();
+ if(to==='hk'){if(location.hash!=='#aujourdhui')location.hash='aujourdhui';else renderSoft();return hkConnect()}
  if(to==='apple'){psub='apple';if(location.hash!=='#plus')location.hash='plus';else renderPlus();return}
  if(location.hash!=='#aujourdhui')location.hash='aujourdhui';else renderSoft();toast('Touche « Noter » pour ta première séance, ton repas ou ton check-in.')}
 
@@ -726,12 +764,15 @@ async function saveBackup(){const name=`carnet-sante-${today()}.json`,file=new F
   try{await navigator.share({files:[file],title:'Sauvegarde Carnet de santé'});mark();return}catch(e){if(e&&e.name==='AbortError')return}}
  const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();a.parentNode.removeChild(a);setTimeout(()=>URL.revokeObjectURL(a.href),4000);
  mark();toast('Sauvegarde enregistrée : '+name)}
-function resetAll(){mode='wiped';try{localStorage.removeItem(LS)}catch(e){}history.replaceState(null,'',location.pathname);location.reload()}
+function resetAll(){mode='wiped';try{localStorage.removeItem(LS)}catch(e){}history.replaceState(null,'',location.pathname+location.search);location.reload()}
 
-function init(){
+async function init(){
+ if(new URLSearchParams(location.search).has('ios')){const m=await import('./healthkit-mock.js');useHealthProvider(m.healthKitMock)}
+ HKN=hasHealthKit();if(HKN)setupHK();
  route();renderEditor();status('load');
  mode='local';lsLoad();bump();pend.splice(0).forEach(f=>f());status('local');resumeOnce();renderSoft();
  if(needOnb())showOnb(0);
+ if(HKN&&S.health.src==='hk'&&!S.set.demo)hkSync({quiet:true});
  $('#appver').textContent='version '+__APP_VERSION__;
  /* Accès pour le simulateur iPhone (simulateur.html). */
  window.carnet={loadDemo,resetAll,hasRealData};

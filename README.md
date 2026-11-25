@@ -66,6 +66,8 @@ Ouvre le **simulateur iPhone** (`simulateur.html`) : l'appli dans un cadre d'iPh
 Le panneau de gauche change d'appareil, passe en clair ou sombre, saute d'un onglet à
 l'autre, charge les données de démo ou revient au premier lancement.
 Il est aussi en ligne : `https://<compte>.github.io/carnet-de-sante/simulateur.html`.
+La case **Appli iOS (Apple Santé simulé)** montre l'appli comme sur iPhone : connexion directe
+à Apple Santé, avec un faux HealthKit qui renvoie les mesures du profil de démo.
 
 ## Appli iOS
 
@@ -80,7 +82,12 @@ npm run captures    # captures d'écran App Store (1320 × 2868) avec les donné
 Tout le parcours de publication (compte développeur, Xcode, fiche App Store, points de
 vigilance de la revue d'Apple) est décrit dans [docs/APP_STORE.md](docs/APP_STORE.md).
 
-## Importer ses données Apple Santé
+## Apple Santé
+
+**Dans l'appli iOS**, Apple Santé est lu directement (HealthKit, lecture seule) : on autorise
+l'accès une fois, puis les données se mettent à jour à chaque ouverture.
+
+**Sur le web**, on importe le fichier d'export :
 
 1. Sur l'iPhone : app **Santé** → photo de profil en haut à droite → **Exporter toutes les données de santé**.
 2. Récupérer le fichier `export.zip` (AirDrop, Fichiers, mail…).
@@ -98,6 +105,8 @@ src/
   utils.js              Utilitaires : DOM, dates, nombres, statistiques
   constants.js          Exercices, sports, repas, groupes musculaires, réglages par défaut
   health-import.js      Analyse de l'export Apple Santé (sommeil, FC, VFC/RMSSD, zones, stress…)
+  healthkit.js          Lecture directe d'Apple Santé dans l'appli iOS (conversion vers l'analyseur)
+  healthkit-mock.js     HealthKit simulé, pour le simulateur
   demo.js               Données de démo : faux export Apple Santé + saisies, sur 60 jours
   main.js               État, stockage, moteur d'interprétation (scores, coach), graphiques SVG,
                         rendu des vues, premier lancement, sauvegarde et gestion des événements
