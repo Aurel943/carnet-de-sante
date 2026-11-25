@@ -26,3 +26,5 @@ export const hhmm=rel=>{const m=((Math.round(rel+720)%1440)+1440)%1440;return St
 export const hm=m=>{m=((Math.round(m)%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')};
 export const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
 export const sdv=a=>{const m=avg(a);return a.length>1?Math.sqrt(avg(a.map(x=>(x-m)**2))):0};
+/* Date au format de l'export Apple Santé, en heure locale : « 2026-11-24 23:12:00 +0100 » */
+export const appleDate=ms=>{const d=new Date(ms),o=-d.getTimezoneOffset(),a=Math.abs(o),p=n=>String(n).padStart(2,'0');return`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())} ${o>=0?'+':'-'}${p(Math.floor(a/60))}${p(a%60)}`};

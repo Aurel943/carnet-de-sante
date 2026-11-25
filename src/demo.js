@@ -2,7 +2,7 @@
    (et pour la revue App Store). Les mesures de la montre sont produites sous forme d'export
    Apple Santé, puis analysées par le même moteur que les vraies données : tous les écrans
    (scores, hypnogrammes, zones, tendances, analyses) se remplissent comme en vrai. */
-import {addD,today,nid} from './utils.js';
+import {addD,today,nid,appleDate} from './utils.js';
 import {MEALS} from './constants.js';
 
 const DAYS = 60;
@@ -20,11 +20,7 @@ function rng(seed) {
 }
 
 const pad = (n) => String(n).padStart(2, '0');
-// Date au format de l'export Apple : « 2026-11-24 23:12:00 +0100 »
-function fmt(ms) {
-  const d = new Date(ms), o = -d.getTimezoneOffset(), s = o >= 0 ? '+' : '-', a = Math.abs(o);
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())} ${s}${pad(Math.floor(a / 60))}${pad(a % 60)}`;
-}
+const fmt = appleDate;
 const at = (ds, h, m = 0) => new Date(`${ds}T${pad(h)}:${pad(m)}:00`).getTime(); // heure locale
 const MIN = 6e4;
 

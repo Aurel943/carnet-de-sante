@@ -11,7 +11,7 @@ function rmssd(b,bp){let rr=[];if(b.length>=10){for(let i=1;i<b.length;i++){let 
  const val=x=>x>=300&&x<=2000,ok=rr.map((x,i)=>{if(!val(x))return null;const w=rr.slice(Math.max(0,i-3),i+4).filter(val).sort((p,q)=>p-q),m=w[w.length>>1];return Math.abs(x-m)>0.45*m?null:x});
  const df=[];for(let i=1;i<ok.length;i++){const a=ok[i-1],c=ok[i];if(a==null||c==null)continue;df.push((c-a)**2)}
  const good=ok.filter(x=>x!=null);return df.length>=8?{v:Math.round(Math.sqrt(avg(df))*10)/10,q:good.length/rr.length,sd:Math.round(sdv(good)*10)/10}:null}
-function healthParser(cut,sex){
+export function healthParser(cut,sex){
  const CHK=[],days={},mean={},lastv={},wk=[],slp={},QT='HKQuantityTypeIdentifier',HRB={},STB={},HV={},HVL={},RRS={},O2S={};let cw=null,ch=null,lastSd='';
  const KEEP=new Set(['StepCount','ActiveEnergyBurned','BasalEnergyBurned','AppleExerciseTime','DistanceWalkingRunning','FlightsClimbed','AppleStandTime','DietaryWater','RestingHeartRate','HeartRate','WalkingHeartRateAverage','HeartRateRecoveryOneMinute','HeartRateVariabilitySDNN','RespiratoryRate','OxygenSaturation','AppleSleepingWristTemperature','VO2Max','BodyMass','BodyFatPercentage']);
  const add=(d,k,s,v)=>{const o=days[d]||(days[d]={}),m=o[k]||(o[k]={});m[s]=(m[s]||0)+v};
