@@ -61,6 +61,7 @@ a{color:var(--tint)}
 .pop{position:relative;height:0;overflow:visible}
 button,a,.gauge,.hr,.qa,.chip,.tabs a{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .tabs,.gauge,.hr,.qa,.seg,.daynav{-webkit-user-select:none;user-select:none}
+b,strong{font-weight:600}
 .mute{color:var(--mute)}.small{font-size:14px;line-height:1.4}
 .gd{color:var(--ok)}.dn{color:var(--bad)}
 .num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -461,3 +462,39 @@ td.num,th.num{text-align:right}
 .privacy{margin:0 0 14px;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:15px}
 .adv{margin-top:14px;border-top:.5px solid var(--line);padding-top:10px}
 .adv summary{cursor:pointer;font-weight:500;color:var(--tint);font-size:15px}
+
+/* ---------- finitions façon Apple ---------- */
+a{text-decoration:none}
+/* rendez-vous à venir : ligne de liste avec icône */
+.upnext{display:grid;grid-template-columns:30px minmax(0,1fr) 14px;gap:12px;align-items:center;width:100%;text-align:left;background:var(--panel);border:0;border-radius:var(--r-in);padding:11px 16px;margin:0 0 14px;color:var(--ink);font:400 15px/1.35 var(--font);cursor:pointer}
+.upnext i{width:30px;height:30px;border-radius:8px;background:var(--hrt);display:grid;place-items:center}
+.upnext svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.upnext b{font-weight:500}.upnext span{color:var(--mute)}.upnext span b{color:var(--ink)}
+.upnext em{font-style:normal;color:var(--mute2);font-size:22px;line-height:1}
+@supports (corner-shape:squircle){.upnext,.upnext i{corner-shape:squircle}}
+/* chiffres : petit libellé gris au-dessus, comme dans Santé et Forme */
+.stat,.kpis div{display:flex;flex-direction:column-reverse;justify-content:flex-end;gap:3px}
+.stat span,.kpis span{font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.02em;line-height:1.3}
+/* interrupteurs iOS */
+.chk{flex-direction:row-reverse;justify-content:space-between;min-height:44px}
+.chk input[type=checkbox]{-webkit-appearance:none;appearance:none;width:51px;height:31px;min-height:31px;padding:0;border-radius:99px;background:var(--field);position:relative;flex:none;cursor:pointer;transition:background .2s}
+.chk input[type=checkbox]::before{content:'';position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 3px 8px rgba(0,0,0,.15),0 3px 1px rgba(0,0,0,.06);transition:transform .2s}
+.chk input[type=checkbox]:checked{background:var(--rec)}.chk input[type=checkbox]:checked::before{transform:translateX(20px)}
+/* formulaires en lignes de réglages : libellé à gauche, valeur à droite */
+:is([data-sub=reglages] .grid3,#medf .grid3,.ob-form){display:block;margin:0 0 6px}
+:is([data-sub=reglages] .grid3,#medf .grid3,.ob-form)>label{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:50px;padding:3px 0;border-top:.5px solid var(--line);font-size:17px;color:var(--ink);letter-spacing:-.02em}
+:is([data-sub=reglages] .grid3,#medf .grid3,.ob-form)>label:first-child{border-top:0}
+:is([data-sub=reglages] .grid3,#medf .grid3,.ob-form)>label>:is(input,select){flex:0 1 52%;width:auto;min-height:36px;padding:6px 0;background-color:transparent;border-radius:0;text-align:right;text-align-last:right;color:var(--mute)}
+:is([data-sub=reglages] .grid3,#medf .grid3,.ob-form)>label>select{padding-right:20px;background-position:right 0 center}
+:is([data-sub=reglages] .grid3,#medf .grid3,.ob-form)>label>:is(input,select):focus{color:var(--ink)}
+:is([data-sub=reglages] .grid3,#medf .grid3,.ob-form)>label>input::placeholder{color:var(--mute2)}
+[data-sub=reglages] .grid3>label:has(#s-hvm){display:grid;gap:8px;padding:12px 0}
+[data-sub=reglages] .grid3>label:has(#s-hvm)>select{flex:none;width:100%;text-align:left;text-align-last:left;background-color:var(--field);border-radius:var(--r-ctl);padding:10px 36px 10px 14px;background-position:right 12px center;color:var(--ink)}
+.ob-form{padding:4px 18px}
+@media(max-width:800px){
+ /* explications : coupées à deux lignes, « plus » pour lire la suite */
+ .panel>p.mute.small{position:relative}
+ .panel>p.mute.small.more:not(.open)::after{content:'plus';position:absolute;right:0;bottom:0;padding-left:34px;color:var(--tint);background:linear-gradient(90deg,transparent,var(--panel) 30px)}
+ /* records : colonne « série la plus lourde » masquée sur téléphone, faute de place */
+ #recs th:nth-child(2),#recs td:nth-child(2){display:none}
+}
