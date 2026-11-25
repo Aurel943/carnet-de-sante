@@ -722,3 +722,16 @@ label.btn.filebtn:not(.pri){color:var(--ink)}
 #recs:not(.all) tbody tr:nth-child(n+7){display:none}
 #recs .mall{margin-top:10px}
 .all .mall{display:none}
+
+/* ---------- sommeil : la nuit en listes groupées ---------- */
+#sls{display:block;margin-top:16px}
+.sgh{font-size:13px;font-weight:500;color:var(--mute);text-transform:uppercase;letter-spacing:.02em;margin:18px 0 4px}
+.sgh:first-child{margin-top:4px}
+.sgrp .mrow{font-size:16px;min-height:44px}
+.sgrp .mrow span{display:flex;align-items:center;gap:10px}
+.pdot{width:10px;height:10px;border-radius:3px;flex:none}
+.phbar{display:flex;gap:2px;height:14px;border-radius:7px;overflow:hidden;margin:8px 0 6px}
+.phbar i{display:block;min-width:3px}
+/* Tendances sans données : l'écran d'attente, le poids et les mensurations seulement */
+#v-tendances.nohd>:not(.vhead):not(#tnote):not(:has(#fw)):not(:has(#mf)){display:none!important}
+#tnote:empty{display:none}
