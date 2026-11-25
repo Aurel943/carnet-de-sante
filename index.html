@@ -73,7 +73,7 @@
 
 <section id="v-effort" class="view" hidden>
  <div class="panel g12"><div class="two" style="align-items:center"><div class="gauge big" id="gef"></div><div><div class="eyebrow">Zones cardiaques de la journée</div><div id="dz"></div><div class="stats" id="efs"></div></div></div><div class="coach" id="efcoach"></div></div>
- <div class="g12" id="editor"></div>
+ <div class="g12" id="sesscard"></div>
  <div class="panel g6"><h2>Effort et récupération, 30 jours</h2><div class="fig sm" id="fer"><svg></svg></div><div class="lg"><span><i style="--c:var(--eff)"></i>Effort</span><span><i style="--c:var(--rec)"></i>Récupération</span></div></div>
  <div class="panel g6"><div class="ph"><h2>Zones cardiaques, 28 jours</h2><span class="mute small">entraînements enregistrés par la montre</span></div><div id="z28"></div></div>
  <div class="panel g12"><div class="ph"><h2>Charge d'entraînement</h2><span class="mute small">7 jours comparés aux 28 derniers</span></div><div class="kpis" id="lk"></div><div class="fig sm" id="fl"><svg></svg></div><p class="mute small">Charge = effort cardiaque (TRIMP) des séances avec la montre, ou minutes × intensité ressentie sans montre. Un ratio entre 0,8 et 1,3 est la zone habituellement conseillée ; au-dessus de 1,5, le risque de blessure augmente.</p></div>
@@ -90,10 +90,7 @@
  <div class="panel g7">
   <div class="grid2"><label>Jour<input id="nday" type="date"></label><label>Poids du matin (kg)<input id="bw" inputmode="decimal" placeholder="ex. 74,2"></label></div>
   <div class="meters" id="meters"></div><div id="macros"></div><p id="hday"></p>
-  <h3>Favoris</h3><div class="chips" id="favs"></div>
-  <h3>Ajouter un aliment</h3>
-  <form id="ff"><div class="addrow"><label>Aliment<input id="fn" autocomplete="off" placeholder="ex. Riz 200 g cuit"></label><label>Prot. (g)<input id="fp" inputmode="decimal"></label><label>Gluc. (g)<input id="fg" inputmode="decimal" placeholder="option"></label><label>Lip. (g)<input id="fl2" inputmode="decimal" placeholder="option"></label><label>Kcal<input id="fk" inputmode="numeric" placeholder="auto"></label><label>Repas<select id="fm"></select></label><button class="btn pri">Ajouter</button></div>
-  <label class="chk"><input type="checkbox" id="fsave"> Garder dans mes favoris</label></form>
+  <h3 class="mealt">Repas</h3>
   <div id="flist"></div><div class="row"><button class="btn small" data-act="copyY">Copier les repas de la veille</button></div>
  </div>
  <div class="two g5 st"><div class="panel"><h2>Hydratation</h2><div id="water"></div></div><div class="panel"><h2>Compléments</h2><div id="sups"></div></div></div>
@@ -185,6 +182,22 @@
 </section>
 </div></main>
 
+<div id="msheet" hidden>
+ <div class="ms-dim" data-act="msclose"></div>
+ <section class="ms" role="dialog" aria-modal="true" aria-labelledby="mstitle">
+  <header class="ms-bar"><button type="button" class="ms-btn" id="msl" data-act="msclose">Annuler</button><h3 id="mstitle"></h3><span id="msr"></span></header>
+  <div class="ms-body" data-k="seance"><div id="editor"></div></div>
+  <div class="ms-body" data-k="food" hidden>
+   <div class="panel">
+    <form id="ff"><div class="addrow"><label>Aliment<input id="fn" autocomplete="off" placeholder="ex. Riz 200 g cuit"></label><label>Protéines (g)<input id="fp" inputmode="decimal" placeholder="0"></label><label>Glucides (g)<input id="fg" inputmode="decimal" placeholder="option"></label><label>Lipides (g)<input id="fl2" inputmode="decimal" placeholder="option"></label><label>Calories<input id="fk" inputmode="numeric" placeholder="auto"></label><label class="fmeal">Repas<select id="fm"></select></label></div>
+    <label class="chk"><input type="checkbox" id="fsave"> Garder dans mes favoris</label>
+    <button class="btn pri ms-main">Ajouter</button></form>
+   </div>
+   <h3 class="ms-sec">Favoris</h3>
+   <div class="panel favp"><div class="chips" id="favs"></div></div>
+  </div>
+ </section>
+</div>
 <div id="onb" hidden role="dialog" aria-modal="true" aria-labelledby="onbt">
  <div class="ob-in">
   <section class="ob" data-step="0">
