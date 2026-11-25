@@ -1,0 +1,28 @@
+/* Petites fonctions utilitaires : DOM, dates, nombres, statistiques. */
+export const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+export const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export const clone=o=>JSON.parse(JSON.stringify(o));
+export const iso=d=>new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);
+export const today=()=>iso(new Date());
+export const addD=(ds,n)=>{const d=new Date(ds+'T12:00');d.setDate(d.getDate()+n);return iso(d)};
+export const dShort=s=>{const p=String(s||'').split('-');return p.length===3?p[2]+'/'+p[1]:''};
+export const dLong=s=>new Date(s+'T12:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+export const dWk=s=>new Date(s+'T12:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric'});
+export const num=v=>{const n=parseFloat(String(v??'').replace(',','.'));return isFinite(n)?n:0};
+export const has=v=>v!=null&&v!=='';
+export const fx=n=>(Math.round(n*10)/10).toLocaleString('fr-FR');
+export const f2=n=>(Math.round(n*100)/100).toLocaleString('fr-FR');
+export const r0=n=>Math.round(n).toLocaleString('fr-FR');
+export const sg=n=>(n>0?'+':'')+fx(n);
+export const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+export const nid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+export const norm=s=>String(s||'').trim().toLowerCase();
+export const plain=s=>norm(s).normalize('NFD').replace(/[̀-ͯ]/g,'');
+export const e1=(w,r)=>(w>0&&r>0)?w*(1+r/30):0;
+export const sortDesc=(a,b)=>String(b.date).localeCompare(String(a.date))||(b.t||0)-(a.t||0);
+export const setTxt=x=>num(x.w)>0?fx(num(x.w))+'×'+num(x.r):num(x.r)+' reps';
+export const fmtSl=m=>{m=Math.round(m);return m>0&&m<60?m+' min':Math.floor(m/60)+' h '+String(m%60).padStart(2,'0')};
+export const hhmm=rel=>{const m=((Math.round(rel+720)%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')};
+export const hm=m=>{m=((Math.round(m)%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')};
+export const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+export const sdv=a=>{const m=avg(a);return a.length>1?Math.sqrt(avg(a.map(x=>(x-m)**2))):0};

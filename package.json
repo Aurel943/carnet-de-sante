@@ -1,0 +1,21 @@
+{
+  "name": "carnet-de-sante",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Carnet de santé personnel : sommeil, récupération, effort, nutrition et tendances, à partir des données Apple Santé.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint src"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.5",
+    "globals": "^15.15.0",
+    "vite": "^6.4.6"
+  },
+  "dependencies": {
+    "jszip": "^3.10.1"
+  }
+}
