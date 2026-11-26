@@ -996,7 +996,7 @@ button.ritual{cursor:pointer}
 .pk-ed{display:block}
 .pk-ed>label,.pk-q{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:50px;border-top:.5px solid var(--line);font-size:1.0625rem;color:var(--ink);letter-spacing:-.02em}
 .pk-ed>label:first-child{border-top:0}
-.pk-ed>label>input{flex:0 1 55%;width:auto;min-height:36px;padding:6px 0;background:transparent;border-radius:0;text-align:right}
+.pk-ed>label>input{flex:0 1 50%;width:auto;min-height:36px;padding:6px 0;background:transparent;border-radius:0;text-align:right}
 .pk-q span{display:flex;align-items:center;gap:6px;color:var(--mute)}
 .pk-q input{width:5.5em;text-align:right;font:600 1.25rem var(--round);background:var(--field)}
 .pk-r{margin:0;font-size:1rem;line-height:1.4}.pk-r b{font:600 1.25rem var(--round)}
@@ -1025,3 +1025,16 @@ button.ritual{cursor:pointer}
 @media(prefers-reduced-motion:reduce){.sc-box i{animation:none}}
 /* bouton d'effacement de la recherche en gris, comme le reste de l'interface (pas de bleu système) */
 input[type=search]::-webkit-search-cancel-button{filter:grayscale(1) opacity(.55);cursor:pointer}
+
+/* ---------- alerte (produit inconnu, pas de connexion…) ---------- */
+#dlg{position:fixed;inset:0;z-index:90;display:grid;place-items:center;padding:24px;background:rgba(0,0,0,.32);animation:msdim .2s ease-out}
+.dlg{width:min(100%,330px);background:var(--glass);-webkit-backdrop-filter:blur(30px) saturate(1.8);backdrop-filter:blur(30px) saturate(1.8);border-radius:30px;padding:22px 18px 16px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.25),inset 0 0 0 .5px var(--glass-edge);animation:dlgin .28s cubic-bezier(.2,.9,.3,1.2)}
+.dlg h3{margin:0 0 6px;font:600 1.375rem/1.2 var(--serif);font-variation-settings:'SOFT' 60}
+.dlg p{margin:0 0 16px;color:color-mix(in srgb,var(--ink) 78%,transparent);font-size:0.9375rem;line-height:1.42}
+.dlgb{display:grid;gap:8px}
+.dlgb .btn{width:100%;min-height:46px}
+.dlgb .btn.ghost{color:var(--mute)}
+:root.dlg-open{overflow:hidden}
+@keyframes dlgin{from{opacity:0;transform:scale(1.08)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){#dlg,.dlg{animation:none}}
+@supports (corner-shape:squircle){.dlg{corner-shape:squircle}}

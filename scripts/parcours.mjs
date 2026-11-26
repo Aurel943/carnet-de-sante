@@ -256,11 +256,30 @@ try {
       offline = false;
     });
 
-    await step('code tapé à la main, produit inconnu à compléter', async () => {
+    const typeCode = async (c) => {
       await page.click('.tplus'); await page.click('#sheet [data-q="scan"]');
       await page.waitForSelector('#scan:not([hidden])');
-      await page.fill('#sccode', '12345670');
+      await page.fill('#sccode', c);
       await page.press('#sccode', 'Enter');
+      await page.waitForSelector('#dlg:not([hidden])', { timeout: 8000 });
+    };
+    await step('produit inconnu : alerte, puis « Annuler » sans rien ouvrir', async () => {
+      await typeCode('12345670');
+      expect(/Produit inconnu/.test(await text(page, '#dlgt')), 'alerte attendue : ' + await text(page, '#dlgt'));
+      expect(await page.isHidden('#msheet'), 'la fiche ne doit pas s\'ouvrir avant le choix');
+      await page.click('[data-dlg="cancel"]');
+      await page.waitForSelector('#dlg', { state: 'hidden' });
+      expect(await page.isHidden('#msheet'), 'rien ne doit s\'ouvrir après « Annuler »');
+    });
+
+    await step('pas de connexion : « Réessayer », puis « Ajouter moi-même »', async () => {
+      offline = true;
+      await typeCode('12345670');
+      expect(/Pas de connexion/.test(await text(page, '#dlgt')), 'alerte hors connexion attendue');
+      offline = false;
+      await page.click('[data-dlg="retry"]');
+      await page.waitForFunction(() => /Produit inconnu/.test(document.querySelector('#dlgt').textContent) && !document.querySelector('#dlg').hidden);
+      await page.click('[data-dlg="add"]');
       await page.waitForSelector('#pk-n', { timeout: 8000 });
       expect(asked.includes('12345670'), 'seul le code-barres devait partir vers Open Food Facts');
       await page.fill('#pk-n', 'Yaourt maison');

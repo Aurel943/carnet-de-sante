@@ -715,7 +715,7 @@ const SUBT={dossier:'Dossier médical',reglages:'Réglages',apple:'Apple Santé'
 function quick(q){$('#sheet').hidden=true;setTimeout(()=>document.documentElement.style.setProperty('--hh',$('.top').offsetHeight+'px'),0);if(q==='close')return;const go=(h,fn)=>{if(location.hash!=='#'+h)location.hash=h;else route();setTimeout(fn||(()=>{}),150)};
  if(q==='mu'||q==='sp'){if(!S.cur){startMode=q;renderStart()}openSheet('seance')}
  else if(q==='food'){S.day=today();openFood(mealNow())}
- else if(q==='scan'){S.day=today();openFood(mealNow());openScan()}
+ else if(q==='scan'){S.day=today();openScan()}
  else if(q==='bw'){S.day=today();go('nutrition',()=>{$('#bw').scrollIntoView({behavior:'smooth',block:'center'});$('#bw').focus({preventScroll:true})})}
  else if(q==='water'){const o=getDay(today());o.w=num(o.w)+250;put.day(today());renderView(cur());toast(`Eau : ${fx(o.w/1000)} L aujourd'hui`)}
  else if(q==='ci'){S.day=today();renderCheckin();openSheet('checkin')}
@@ -779,7 +779,7 @@ $('#editor').addEventListener('change',ev=>{const t=ev.target,c=S.cur;if(!c)retu
  if(t.dataset.f==='r'&&num(t.value)>0&&S.set.auto!==false)startTimer();
  if(!t.classList.contains('exn'))return;const a=t.closest('.ex'),i=+a.dataset.i,e=c.ex[i];
  if(e.sets.every(s=>s.w===''&&s.r==='')&&suggest(e.n,c.id)){e.sets=prefill(e.n,c.id);a.outerHTML=exHTML(e,i);dirty()}updateHint(i)});
-document.addEventListener('click',ev=>{unlockAudio();if(ev.target.closest('#cele')){hideCele();return}if(matchMedia('(max-width:800px)').matches){const nt=ev.target.closest('.panel>p.mute.small,.mkr p');if(nt&&!ev.target.closest('a,button')){nt.classList.toggle('open');return}}if(ev.target.id==='sheet'){quick('close');return}const go=ev.target.closest('[data-go]');if(go){location.hash=go.dataset.go;return}
+document.addEventListener('click',ev=>{unlockAudio();if(ev.target.closest('#cele')){hideCele();return}{const db=ev.target.closest('[data-dlg]');if(db){closeDlg(db.dataset.dlg);return}if(ev.target.id==='dlg'){closeDlg('cancel');return}}if(matchMedia('(max-width:800px)').matches){const nt=ev.target.closest('.panel>p.mute.small,.mkr p');if(nt&&!ev.target.closest('a,button')){nt.classList.toggle('open');return}}if(ev.target.id==='sheet'){quick('close');return}const go=ev.target.closest('[data-go]');if(go){location.hash=go.dataset.go;return}
  const b=ev.target.closest('[data-act]');if(!b)return;const act=b.dataset.act,c=S.cur,a=b.closest('.ex'),i=a?+a.dataset.i:-1;
  switch(act){
  case'sheet':{const sh=$('#sheet');sh.hidden=!sh.hidden;setTimeout(()=>{document.documentElement.style.setProperty('--hh',$('.top').offsetHeight+'px')},0);return}
@@ -886,7 +886,7 @@ $('#hfile').addEventListener('change',async ev=>{const f=ev.target.files[0];ev.t
 addEventListener('hashchange',()=>{$('#sheet').hidden=true;buzz();route();scrollTo(0,0)});
 document.addEventListener('keydown',e=>{if(e.metaKey||e.ctrlKey||e.altKey)return;const t=e.target;if(t.closest&&t.closest('input,textarea,select,[contenteditable]'))return;
  const tabs=['aujourdhui','sommeil','recuperation','effort','nutrition','tendances','plus'];
- if(e.key==='Escape'){if(!$('#scan').hidden)return closeScan();$('#sheet').hidden=true;closeSheet();if(!$('#brief').hidden)hideBrief();hideCele();return}
+ if(e.key==='Escape'){if(!$('#dlg').hidden)return closeDlg('cancel');if(!$('#scan').hidden)return closeScan();$('#sheet').hidden=true;closeSheet();if(!$('#brief').hidden)hideBrief();hideCele();return}
  if(/^[1-7]$/.test(e.key)){location.hash=tabs[+e.key-1];return}
  if(e.key==='n'||e.key==='N'){e.preventDefault();$('.tplus').click();return}
  if(!$('#dn').hidden){if(e.key==='ArrowLeft'){S.day=addD(S.day,-1);renderView(cur())}else if(e.key==='ArrowRight'&&S.day<today()){S.day=addD(S.day,1);renderView(cur())}}});
@@ -987,7 +987,8 @@ function openPick(f,note=''){if(msKind!=='food')openFood(mealNow());pick={f:{...
 function renderPick(){const el=$('#fpick');$('#fsearch').hidden=!!pick;$('.fsr').hidden=!!pick;el.hidden=!pick;if(!pick){el.innerHTML='';return}const f=pick.f;
  const qs=[...new Set([f.sv,50,100,150,200].filter(Boolean))];
  el.innerHTML=`<div class="panel pick">${pick.note?`<p class="vd">${esc(pick.note)}</p>`:''}
-  ${pick.edit?`<div class="pk-ed"><label>Nom<input id="pk-n" value="${esc(f.n)}" placeholder="ex. Yaourt grec nature"></label><label>Calories pour 100 g<input id="pk-k" inputmode="decimal" value="${f.k??''}"></label><label>Protéines pour 100 g<input id="pk-p" inputmode="decimal" value="${f.p??''}"></label><label>Glucides pour 100 g<input id="pk-g" inputmode="decimal" value="${f.g??''}"></label><label>Lipides pour 100 g<input id="pk-l" inputmode="decimal" value="${f.l??''}"></label></div>`
+  ${pick.edit?`<div class="pk-h"><b>${f.src==='mine'?'Nouveau produit':'À compléter'}</b><small>Code-barres ${esc(f.id)} · valeurs pour 100 g, sur l'emballage</small></div>`:''}
+  ${pick.edit?`<div class="pk-ed"><label>Nom<input id="pk-n" value="${esc(f.n)}" placeholder="ex. Yaourt grec nature"></label><label>Calories (kcal)<input id="pk-k" inputmode="decimal" value="${f.k??''}"></label><label>Protéines (g)<input id="pk-p" inputmode="decimal" value="${f.p??''}"></label><label>Glucides (g)<input id="pk-g" inputmode="decimal" value="${f.g??''}"></label><label>Lipides (g)<input id="pk-l" inputmode="decimal" value="${f.l??''}"></label></div>`
    :`<div class="pk-h"><b>${esc(f.n)}</b><small>${esc([f.b,SRC[f.src]].filter(Boolean).join(' · '))}<br>Pour 100 g : ${per100(f)}</small></div>`}
   <label class="pk-q">Quantité<span><input id="pq" inputmode="decimal" value="${esc(String(pick.q).replace('.',','))}" aria-label="Quantité en grammes"> g</span></label>
   <div class="chips pk-c">${qs.map(q=>`<button type="button" class="chip${num(pick.q)===q?' on':''}" data-act="pickq" data-q="${q}">${q===f.sv?`1 portion (${q} g)`:q+' g'}</button>`).join('')}</div>
@@ -1007,13 +1008,28 @@ async function openScan(){const sc=$('#scan');sc.hidden=false;document.documentE
  try{scanStop=await startScanner($('#scv'),c=>{scanStop=null;buzz('ok');closeScan();handleCode(c)});if(sc.hidden&&scanStop){scanStop();scanStop=null}}
  catch(e){sc.classList.add('nocam');$('#scmsg').textContent=e&&e.name==='NotAllowedError'?'Arden n\'a pas accès à la caméra (Réglages → Arden → Appareil photo). Tu peux taper le code :':'Caméra indisponible : tape les chiffres sous le code-barres.';setTimeout(()=>$('#sccode').focus(),60)}}
 function closeScan(){if(scanStop){scanStop();scanStop=null}$('#scan').hidden=true;document.documentElement.classList.remove('scan-open')}
+/* Alerte façon iOS : un titre, une phrase, des choix. Renvoie la clé du bouton touché (null si fermée). */
+let dlgDone=null;
+function ask(title,msg,btns){const d=$('#dlg');if(dlgDone)dlgDone(null);
+ $('#dlgt').textContent=title;$('#dlgm').textContent=msg;
+ $('#dlgb').innerHTML=btns.map(([k,l,cls])=>`<button type="button" class="btn${cls?' '+cls:''}" data-dlg="${k}">${esc(l)}</button>`).join('');
+ d.hidden=false;document.documentElement.classList.add('dlg-open');buzz('warn');setTimeout(()=>$('#dlgb .btn')?.focus({preventScroll:true}),60);
+ return new Promise(res=>{dlgDone=k=>{dlgDone=null;d.hidden=true;document.documentElement.classList.remove('dlg-open');res(k)}})}
+const closeDlg=k=>{if(dlgDone)dlgDone(k)};
+/* Code lu : produit déjà connu, trouvé sur Open Food Facts, ou alerte (inconnu, incomplet, hors connexion) */
 async function handleCode(code){const known=prods().find(x=>x.id===code);if(known)return openPick(known);
- if(msKind!=='food')openFood(mealNow());toast('Recherche du produit…');
- try{const r=await lookupOFF(code);$('#toast').classList.remove('on');
-  if(!r.found)return openPick({id:code,n:'',k:null,src:'mine'},'Produit inconnu d\'Open Food Facts : saisis ses valeurs pour 100 g, Arden s\'en souviendra au prochain scan.');
-  const f={...r.prod,src:'off'};if(f.k==null||!f.n)return openPick(f,'Valeurs incomplètes sur Open Food Facts : complète-les une fois, Arden s\'en souviendra.');
-  saveProd(f);openPick(f)}
- catch(e){$('#toast').classList.remove('on');openPick({id:code,n:'',k:null,src:'mine'},'Pas de connexion pour trouver ce produit : saisis ses valeurs pour 100 g, ou réessaie plus tard.')}}
+ toast('Recherche du produit…');let r=null,f=null,err=false;
+ try{r=await lookupOFF(code)}catch(e){err=true}
+ $('#toast').classList.remove('on');
+ if(r&&r.found){f={...r.prod,src:'off'};if(f.k!=null&&f.n){saveProd(f);return openPick(f)}}
+ const blank={id:code,n:'',k:null,src:'mine'};
+ const [t,m]=err?['Pas de connexion',`Impossible de chercher le code ${code} sur Open Food Facts pour l'instant. Tu peux réessayer, ou saisir le produit toi-même.`]
+  :f?['Produit incomplet',`${f.n||'Ce produit'} est connu d'Open Food Facts, mais sans ses valeurs nutritionnelles. Complète-les une fois : Arden s'en souviendra au prochain scan.`]
+  :['Produit inconnu',`Le code ${code} n'est pas encore dans Open Food Facts. Ajoute-le toi-même avec les valeurs de l'emballage : Arden s'en souviendra au prochain scan.`];
+ const k=await ask(t,m,[['add',f?'Compléter moi-même':'Ajouter moi-même','pri'],[err?'retry':'rescan',err?'Réessayer':'Scanner à nouveau'],['cancel','Annuler','ghost']]);
+ if(k==='add')return openPick(f||blank);
+ if(k==='retry')return handleCode(code);
+ if(k==='rescan')return openScan()}
 function renderSessCard(){const c=S.cur,el=$('#sesscard');if(!el)return;
  const row=(m,col,ic,t,s2)=>`<button type="button" class="hr" data-act="msopen" data-m="${m}" style="--c:${col}"><i><svg viewBox="0 0 24 24">${ic}</svg></i><span><b>${t}</b><small>${s2}</small></span><em>›</em></button>`;
  if(c){const n=c.ex.filter(e=>norm(e.n)).length,h0=new Date(c.t||Date.now()).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
