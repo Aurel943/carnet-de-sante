@@ -2,8 +2,6 @@
 // Police : SF Pro (police système) sur les appareils Apple ; ailleurs Inter, intégrée à l'appli
 // (aucun appel à un service de polices). Chargée seulement si SF Pro est absent.
 import '@fontsource-variable/inter/opsz.css'; // graisse + taille optique (comme SF Pro Text / Display)
-/* Fraunces : la voix d'Arden (grands titres, titre du jour, titres de cartes), intégrée elle aussi. */
-import '@fontsource-variable/fraunces/full.css';
 import {$,$$,esc,clone,iso,today,addD,dShort,dLong,dWk,num,has,fx,f2,r0,sg,clamp,nid,norm,plain,e1,sortDesc,setTxt,fmtSl,hhmm,hm,avg,sdv} from './utils.js';
 import {BASE_EX,SPORTS,MEALS,WT,MG,SCALES,MEAS,ZC,ZN,IC,DEF} from './constants.js';
 import {readHealth} from './health-import.js';
@@ -24,12 +22,14 @@ let HKN=false,hkBusy=false;const IMP=(web,ios)=>HKN?ios:web;
    et une jauge touchée s'agrandit jusqu'à sa page. Rien de tout cela avec « Réduire les animations ». */
 const calm=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
 let zoomFrom=null;
+let vtNow=null;
 function vt(update,dir='tab'){const r=document.documentElement;
+ if(vtNow){try{vtNow.skipTransition()}catch(e){/* déjà finie */}vtNow=null;update();zoomFrom=null;return}
  if(!document.startViewTransition||calm()||document.visibilityState!=='visible'){update();zoomFrom=null;return}
  r.dataset.vt=dir;const src=zoomFrom;zoomFrom=null;if(src)src.style.viewTransitionName='gz';
  const t=document.startViewTransition(()=>{if(src)src.style.viewTransitionName='';update();
   if(src){const big=$('.view:not([hidden]) .gauge.big svg');if(big)big.style.viewTransitionName='gz'}});
- t.finished.finally(()=>{if(r.dataset.vt===dir)r.dataset.vt='';$$('[style*="view-transition-name"]').forEach(e=>{if(e.id!=='tabs')e.style.viewTransitionName=''})})}
+ vtNow=t;t.finished.finally(()=>{if(vtNow===t)vtNow=null;if(r.dataset.vt===dir)r.dataset.vt='';$$('[style*="view-transition-name"]').forEach(e=>{if(e.id!=='tabs')e.style.viewTransitionName=''})})}
 function goDay(n){if(n>0&&S.day>=today())return;pageTo(addD(S.day,n))}
 /* Changer de jour comme on tourne une page : la page part du côté où l'on glisse (en gardant l'élan du doigt),
    le nouveau jour arrive de l'autre côté avec un ressort. Seulement transform et opacité : fluide sur iPhone. */
@@ -890,21 +890,24 @@ function tabInd(){const nav=$('#tabs');let ind=nav.querySelector('.tabind');if(!
  if(first){void ind.offsetWidth;ind.style.transition=''}}
 addEventListener('resize',()=>requestAnimationFrame(tabInd));
 let tabOn=null;
-/* Barre d'onglets (téléphone) : appuyer fait gonfler la pastille, qui suit le doigt d'un onglet à l'autre ;
-   on relâche sur l'onglet voulu. L'onglet visé s'éclaire, avec un tic haptique à chaque passage. */
+/* Barre d'onglets (téléphone) : un appui creuse l'onglet, puis la pastille glisse jusqu'à lui.
+   Si l'on fait glisser le doigt le long de la barre, la pastille suit le doigt (sans jamais sortir de la barre),
+   prend la couleur de l'onglet survolé, avec un tic à chaque passage ; on relâche sur l'onglet voulu. */
 {const nav=$('#tabs');let drag=null,mute=0;
  const tabs=()=>[...nav.querySelectorAll('a')].filter(a=>a.offsetWidth);
- const at=x=>{const L=tabs();return L.find(a=>{const r=a.getBoundingClientRect();return x>=r.left&&x<r.right})||(x<L[0].getBoundingClientRect().left?L[0]:L[L.length-1])};
+ const at=x=>{const L=tabs();if(!L.length)return null;return L.find(a=>{const r=a.getBoundingClientRect();return x>=r.left&&x<r.right})||(x<L[0].getBoundingClientRect().left?L[0]:L[L.length-1])};
  const hot=a=>tabs().forEach(x=>x.classList.toggle('hot',x===a));
- const follow=x=>{const ind=nav.querySelector('.tabind');if(!ind||!drag)return;const r=nav.getBoundingClientRect(),w=drag.a.offsetWidth;
-  ind.style.transform=`translateX(${clamp(x-r.left-w/2,4,r.width-w-4)}px)`};
+ const follow=x=>{const ind=nav.querySelector('.tabind');if(!ind||!drag)return;const L=tabs(),r=nav.getBoundingClientRect(),w=drag.a.offsetWidth,lo=L[0].offsetLeft,hi=L[L.length-1].offsetLeft;
+  ind.style.transform=`translateX(${clamp(x-r.left-w/2,lo,hi)}px)`;ind.style.setProperty('--tc',getComputedStyle(drag.a).getPropertyValue('--tc'))};
  const phone=()=>matchMedia('(max-width:800px)').matches;
+ /* un lien se « glisse-dépose » par défaut, ce qui annulerait le geste */
+ nav.querySelectorAll('a').forEach(a=>a.setAttribute('draggable','false'));nav.addEventListener('dragstart',e=>e.preventDefault());
  nav.addEventListener('pointerdown',e=>{if(!phone()||e.button>0||e.target.closest('.tplus'))return;const a=at(e.clientX);if(!a)return;
-  drag={a,x0:e.clientX,id:e.pointerId,moved:false};try{nav.setPointerCapture(e.pointerId)}catch(_){/* rien */}
-  nav.classList.add('press');hot(a);follow(e.clientX)});
- nav.addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id)return;if(Math.abs(e.clientX-drag.x0)>6)drag.moved=true;
-  const a=at(e.clientX);if(a!==drag.a){drag.a=a;hot(a);buzz()}follow(e.clientX)});
- const up=e=>{if(!drag||e.pointerId!==drag.id)return;const a=drag.a,ok=e.type==='pointerup';drag=null;nav.classList.remove('press');hot(null);
+  drag={a,x0:e.clientX,id:e.pointerId,moved:false};try{nav.setPointerCapture(e.pointerId)}catch(_){/* rien */}a.classList.add('down')});
+ nav.addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id)return;
+  if(!drag.moved&&Math.abs(e.clientX-drag.x0)>8){drag.moved=true;nav.classList.add('press');tabs().forEach(x=>x.classList.remove('down'));hot(drag.a)}
+  if(!drag.moved)return;const a=at(e.clientX);if(a&&a!==drag.a){drag.a=a;hot(a);buzz()}follow(e.clientX)});
+ const up=e=>{if(!drag||e.pointerId!==drag.id)return;const a=drag.a,ok=e.type==='pointerup';drag=null;nav.classList.remove('press');hot(null);tabs().forEach(x=>x.classList.remove('down'));
   if(ok&&a){mute=performance.now();a.click()}requestAnimationFrame(tabInd)};
  nav.addEventListener('pointerup',up);nav.addEventListener('pointercancel',up);
  /* le clic natif qui suit le relâcher (déjà traité ci-dessus) est ignoré */
@@ -950,7 +953,7 @@ document.addEventListener('click',ev=>{unlockAudio();
  case'bkok':{const t=pendingBk;pendingBk='';if(t)doImport(t,$('#bkmsg'));return}
  case'wipe':{if(b.classList.contains('armed'))return resetAll();b.classList.add('armed');b.textContent='Confirmer : tout effacer définitivement';setTimeout(()=>{b.classList.remove('armed');b.textContent='Effacer toutes mes données'},6000);return}
  case'wktoggle':buzz();return vt(()=>{S.set.wkc=!S.set.wkc;put.set();renderDayNav()},'tab');
- case'absync':buzz();if(HKN)return hkSync();psub='apple';scrollTo(0,0);location.hash='plus';return;
+ case'absync':buzz();if(HKN)return syncSpin();psub='apple';scrollTo(0,0);location.hash='plus';return;
  case'dprev':return goDay(-1);
  case'dnext':return goDay(1);
  case'dlast':S.day=hLast()||today();return renderView(cur());
@@ -1071,12 +1074,17 @@ document.addEventListener('keydown',e=>{if(e.metaKey||e.ctrlKey||e.altKey)return
    const n=dx>0?-1:1,can=n<0||S.day<today(),fling=Math.abs(vx)>.45&&Math.sign(vx)===Math.sign(dx)&&Math.abs(dx)>24;
    if(can&&(Math.abs(dx)>innerWidth*.22||fling))pageTo(addD(S.day,n),{dx:tx,v:vx});
    else{const from=tx;wrap.style.transform='';wrap.style.opacity='';if(Math.abs(from)>1&&!calm())wrap.animate([{transform:`translate3d(${from}px,0,0)`},{transform:'translate3d(0,0,0)'}],{duration:520,easing:'cubic-bezier(.25,1.45,.4,1)'})}}
-  else if(lock==='pull'){if(armed){ptr.classList.add('spin');ptr.style.transform='translate(-50%,12px)';ptr.style.opacity=1;
-    try{await hkSync()}finally{ptr.classList.remove('spin')}}
-   ptr.style.transition='transform .3s,opacity .3s';ptr.style.transform='translate(-50%,-40px)';ptr.style.opacity=0;setTimeout(()=>{ptr.style.transition=''},320)}
+  else if(lock==='pull'){if(armed){buzz('ok');await syncSpin()}else{ptr.style.transition='transform .35s cubic-bezier(.2,.8,.2,1),opacity .25s';ptr.style.transform='translate(-50%,-40px)';ptr.style.opacity=0;setTimeout(()=>{ptr.style.transition=''},360)}}
   lock=null};
  sc.addEventListener('touchend',end);sc.addEventListener('touchcancel',end)}
 
+/* Synchronisation : le logo d'Arden se dessine puis tourne sous la barre du haut, au moins un tour complet
+   (assez pour qu'on le voie), puis disparaît ; la mise à jour se confirme d'un mot. */
+async function syncSpin(){const ptr=$('#ptr');if(hkBusy)return;ptr.style.transition='transform .35s cubic-bezier(.25,1.4,.4,1),opacity .2s';ptr.style.setProperty('--p',1);
+ ptr.style.transform='translate(-50%,0)';ptr.style.opacity=1;ptr.classList.add('spin');const t0=performance.now();
+ try{await hkSync({spin:true})}finally{const left=Math.max(0,1100-(performance.now()-t0));await new Promise(r=>setTimeout(r,left));
+  ptr.style.transition='transform .4s cubic-bezier(.4,0,.2,1),opacity .3s';ptr.style.transform='translate(-50%,-40px) scale(.6)';ptr.style.opacity=0;
+  setTimeout(()=>{ptr.classList.remove('spin');ptr.style.transition='';ptr.style.setProperty('--p',0)},420)}}
 /* ---------- données Apple Santé : fusion d'un import ---------- */
 function applyHealth(R,inc=false){
  /* Synchro incrémentale : le premier jour lu est incomplet (sa nuit commence la veille), on le laisse de côté. */
@@ -1113,18 +1121,18 @@ const syncWhen=()=>{const t=S.health.sync;if(!t)return'';const d=new Date(t),ds=
 async function hkConnect(){
  try{await authorizeHealth()}catch(e){toast(String(e&&e.message||e));return}
  return hkSync({full:true})}
-async function hkSync({full=false,quiet=false}={}){
+async function hkSync({full=false,quiet=false,spin=false}={}){
  if(!HKN||hkBusy)return;hkBusy=true;
  const inc=!full&&S.health.src==='hk'&&!!S.health.sync&&hKeys().length>0,from=inc?addD(iso(new Date(S.health.sync)),-3):addD(today(),-395);
  const bar=$('#syncbar'),bi=bar.querySelector('i'),lab=bar.querySelector('span');
  const prog=p=>{bi.style.width=Math.round(p)+'%';lab.textContent=(inc?'Mise à jour depuis Apple Santé… ':'Lecture d\'Apple Santé… ')+Math.round(p)+' %'};
- bar.hidden=quiet&&inc;prog(0);
+ bar.hidden=(quiet||spin)&&inc;prog(0);
  try{
   if(S.set.demo)clearDemo();
   const R=await readHealthKit({from,sex:S.set.sex,age:ageOf(),onProgress:prog});
   if(!Object.keys(R.d).length){if(!inc)toast("Aucune donnée reçue d'Apple Santé. Vérifie l'accès : Réglages → Santé → Accès aux données et appareils → Arden.");return}
   applyHealth(R,inc);S.health.src='hk';S.health.sync=Date.now();put.health();
-  if(!inc)toast(`Apple Santé connecté : ${Object.keys(R.d).length} jours lus.`);else if(!quiet)toast('Apple Santé à jour.')
+  if(!inc)toast(`Apple Santé connecté : ${Object.keys(R.d).length} jours lus`);else if(!quiet)toast('Données mises à jour')
  }catch(e){console.error(e);toast("Lecture d'Apple Santé impossible : "+String(e&&e.message||e))}
  finally{hkBusy=false;bar.hidden=true;renderSoft();maybeBrief()}}
 /* Textes et boutons propres à l'appli iOS */
@@ -1288,8 +1296,8 @@ function renderRecap(){const w=weekRecap(),el=$('#recap');if(!w){el.hidden=true;
  <div class="row"><button type="button" class="btn pri" data-act="share">Partager ma semaine</button>${w.best?`<span class="mute small">Meilleure forme : ${esc(dLong(w.best))}</span>`:''}</div>`}
 /* Image de la semaine (1080 × 1350, format des réseaux sociaux), dessinée sur place : rien n'est envoyé ailleurs. */
 async function shareWeek(){const w=weekRecap();if(!w)return;
- try{await Promise.all(['600 100px "Fraunces Variable"','600 30px "Inter Variable"'].map(f=>document.fonts.load(f)))}catch(e){}
- const W=1080,HH=1350,cv=document.createElement('canvas');cv.width=W;cv.height=HH;const g=cv.getContext('2d'),SANS='-apple-system,"Inter Variable",system-ui,sans-serif',SER='"Fraunces Variable",Georgia,serif',ROUND='ui-rounded,-apple-system,"Inter Variable",system-ui,sans-serif';
+ try{await Promise.all(['700 100px "Inter Variable"','600 30px "Inter Variable"'].map(f=>document.fonts.load(f)))}catch(e){}
+ const W=1080,HH=1350,cv=document.createElement('canvas');cv.width=W;cv.height=HH;const g=cv.getContext('2d'),SANS='-apple-system,"Inter Variable",system-ui,sans-serif',SER='-apple-system,"SF Pro Display","Inter Variable",system-ui,sans-serif',ROUND='ui-rounded,-apple-system,"Inter Variable",system-ui,sans-serif';
  const ink='#1b1813',mute='#6c645a',cols=['#f2553d','#0aa898','#3651d4'],rgba=(h,a)=>`rgba(${parseInt(h.slice(1,3),16)},${parseInt(h.slice(3,5),16)},${parseInt(h.slice(5,7),16)},${a})`;
  const rr=(x,y,w2,h2,r)=>{g.beginPath();g.roundRect?g.roundRect(x,y,w2,h2,r):g.rect(x,y,w2,h2);g.fill()};
  g.fillStyle='#f4f1eb';g.fillRect(0,0,W,HH);

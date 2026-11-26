@@ -19,7 +19,7 @@ https://aurel943.github.io/carnet-de-sante/ : rien ne doit rester seulement en l
   pas de boutons ni de liens en bleu système. Actions principales en capsules graphite (`--tint`),
   secondaires en capsules grises (`--field`), icônes d'onglets aux couleurs de chaque section.
 - Âme d'Arden (« ardeur », l'arc comme la courbe du jour) : fond ivoire chaud le jour (`#f4f1eb`) et nuit
-  bleutée en sombre (`#0b0d12`), jamais le gris d'iOS ; police Fraunces (`--serif`) pour ce qui parle
+  bleutée en sombre (`#0b0d12`), jamais le gris d'iOS ; police SF Pro Display (`--serif`, la police des titres d'iOS ; Inter hors appareils Apple) pour ce qui parle
   (grands titres, titre du jour, titres de cartes), SF Pro pour l'interface, SF Pro Rounded pour les
   chiffres ; ciel vivant (`#sky`) derrière les grands titres, qui suit l'heure et l'état du jour ;
   puces et icônes tirées de l'arc (bouts ronds, point-curseur au bout).

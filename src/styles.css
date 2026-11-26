@@ -10,7 +10,8 @@
  color-scheme:light dark;
  --font:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro','Inter Variable','Helvetica Neue','Segoe UI',Roboto,system-ui,sans-serif;
  --round:ui-rounded,'SF Pro Rounded',-apple-system,BlinkMacSystemFont,'Inter Variable',system-ui,sans-serif;
- --serif:'Fraunces Variable',ui-serif,'New York',Georgia,serif;
+ /* titres : SF Pro Display (police des titres d'iOS) ; Inter ailleurs */
+ --serif:-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter Variable','Helvetica Neue',system-ui,sans-serif;
  /* fonds et textes d'Arden : ivoire chaud le jour, nuit bleutée le soir (et non le gris d'iOS) ;
     gris secondaires opaques pour un contraste d'au moins 4,5:1 même en petit */
  --bg:light-dark(#f4f1eb,#0b0d12);
@@ -813,7 +814,7 @@ label.btn.filebtn:not(.pri){color:var(--ink)}
 
 /* =====================================================================
    Identité d'Arden : une voix, une lumière, une écriture
-   - Fraunces (serif douce) pour tout ce qui parle : grands titres, titre du jour, titres de cartes ;
+   - SF Pro Display (police des titres d'iOS) pour tout ce qui parle : grands titres, titre du jour, titres de cartes ;
      SF Pro pour l'interface, SF Pro Rounded pour les chiffres
    - ciel vivant derrière les grands titres : aube, jour, crépuscule ou nuit, teinté par l'état du jour
    - conclusion d'abord : une phrase en tête de chaque carte, l'analyse détaillée repliée
@@ -1170,9 +1171,7 @@ input[type=search]::-webkit-search-cancel-button{filter:grayscale(1) opacity(.55
  .appbar{display:flex;position:fixed;top:0;left:0;right:0;z-index:31;height:calc(var(--sat) + var(--ab));padding:var(--sat) 16px 0;align-items:center;justify-content:space-between;gap:12px;view-transition-name:appbar}
  .appbar[hidden]{display:none}
  .appbar::before{content:'';position:absolute;inset:0 0 -22px;z-index:-1;pointer-events:none;opacity:0;transition:opacity .25s;
-  background:linear-gradient(var(--bg) 0,color-mix(in srgb,var(--bg) 80%,transparent) 55%,transparent);
-  -webkit-backdrop-filter:blur(14px) saturate(1.6);backdrop-filter:blur(14px) saturate(1.6);
-  -webkit-mask:linear-gradient(#000 62%,transparent);mask:linear-gradient(#000 62%,transparent)}
+  background:linear-gradient(var(--bg) calc(100% - 28px),color-mix(in srgb,var(--bg) 55%,transparent) calc(100% - 12px),transparent)}
  :root.scrolled .appbar::before{opacity:1}
  :root.ms-open .appbar{visibility:hidden;pointer-events:none}
  :root.dayv .navc,:root.dayv .top::before{display:none}
@@ -1325,6 +1324,7 @@ input[type=search]::-webkit-search-cancel-button{filter:grayscale(1) opacity(.55
  #tabs{left:14px;right:calc(14px + 60px + 8px);padding:4px;bottom:max(calc(var(--sab) - 6px),12px);
   box-shadow:0 12px 34px rgba(0,0,0,.18),0 1px 3px rgba(0,0,0,.08),inset 0 0 0 .5px var(--glass-edge),inset 0 1px 0 light-dark(rgba(255,255,255,.7),rgba(255,255,255,.08))}
  #tabs{touch-action:none;-webkit-user-select:none;user-select:none}
+ #tabs a{-webkit-user-drag:none}
  .tabs a{position:relative;z-index:1;min-height:58px;gap:2px;padding:6px 3px 5px;background:none!important;container-type:inline-size;transition:color .25s}
  .tabs a:active{transform:none}
  .tabs a svg{width:24px;height:24px;stroke-width:2;transition:transform .45s var(--spring),stroke .25s,fill .25s}
@@ -1333,9 +1333,11 @@ input[type=search]::-webkit-search-cancel-button{filter:grayscale(1) opacity(.55
  .tabs a.hot{color:var(--ink)}
  .tabs a.hot svg{stroke:var(--tc);transform:scale(1.1) translateY(-1px)}
  .tabs a svg.pop{animation:tabpop .55s var(--spring)}
- #tabs.press .tabind{scale:1.14 1.2;transition:transform .16s cubic-bezier(.2,.8,.2,1),width .5s var(--spring),scale .35s var(--spring),background .2s,box-shadow .2s;
-  background:light-dark(color-mix(in srgb,var(--tc,var(--ink)) 12%,rgba(255,255,255,.85)),color-mix(in srgb,var(--tc,var(--ink)) 22%,rgba(255,255,255,.12)));
-  box-shadow:0 6px 18px rgba(0,0,0,.18),inset 0 0 0 .5px var(--glass-edge),inset 0 1px 0 rgba(255,255,255,.25)}
+ .tabs a.down svg{transform:scale(.84);transition-duration:.12s}
+ .tabs a.down .lb{opacity:.6}
+ #tabs.press .tabind{scale:1.04 1.06;transition:transform .14s cubic-bezier(.2,.8,.2,1),width .5s var(--spring),scale .3s var(--spring),background .25s,box-shadow .25s;
+  background:light-dark(color-mix(in srgb,var(--tc,var(--ink)) 14%,rgba(255,255,255,.9)),color-mix(in srgb,var(--tc,var(--ink)) 24%,rgba(255,255,255,.1)));
+  box-shadow:0 2px 10px rgba(0,0,0,.12),inset 0 0 0 .5px var(--glass-edge)}
  @media(hover:hover){
   .tabs a:hover{color:var(--ink)}
   .tabs a:hover svg{stroke:var(--tc);transform:translateY(-2px)}
@@ -1356,3 +1358,15 @@ input[type=search]::-webkit-search-cancel-button{filter:grayscale(1) opacity(.55
 @keyframes tabpop{0%{transform:scale(.78)}55%{transform:scale(1.16) translateY(-1px)}100%{transform:none}}
 .tabs .tplus .pi{transition:transform .35s var(--spring)}
 @media(prefers-reduced-motion:reduce){.tabind,.abdate svg{transition:none!important}}
+
+/* ---------- titres en SF Pro (graisses et approches des titres d'iOS) ---------- */
+:is(.daynav h2,.ltitle,.hub h2,.subbar h2,.ob h1,.ob h2,.emptyv h3,.panel>h2,.panel>.ph>h2,.rt,#brief h1,#cele b,.ob-demo-h,.mealt,.sech h2){font-variation-settings:normal}
+.daynav h2,.ltitle,.hub>h2,#hub>h2,.ob h1,.ob h2,#brief h1{font-weight:700;letter-spacing:.004em}
+.subbar h2{font-weight:700;letter-spacing:.002em}
+.panel>h2,.panel>.ph>h2,.mealt{font-weight:600;letter-spacing:-.016em}
+.rt,#cele b,.ob-demo-h,.emptyv h3{font-weight:700;letter-spacing:-.012em}
+.sech h2{font-weight:700;letter-spacing:-.012em;font-size:1.375rem}
+/* message court : marges égales quand il n'a pas de bouton */
+#toast:not(:has(button)){padding:11px 20px}
+/* logo de synchronisation : posé sous la barre du haut, sur une pastille de verre */
+#ptr{top:calc(var(--sat) + var(--ab,56px) + 4px);background:var(--glass);-webkit-backdrop-filter:blur(16px) saturate(1.8);backdrop-filter:blur(16px) saturate(1.8);box-shadow:0 6px 18px rgba(0,0,0,.14),inset 0 0 0 .5px var(--glass-edge)}
