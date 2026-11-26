@@ -37,6 +37,10 @@ Au premier lancement, un accueil en trois écrans présente l'appli, demande le 
 (facultatif) et propose d'importer Apple Santé, d'explorer **des données de démo** (deux mois
 d'un profil fictif) ou de commencer sans données.
 
+Le texte suit la taille choisie dans les Réglages de l'iPhone (Dynamic Type), jusqu'aux tailles
+d'accessibilité ; sur ordinateur, c'est la taille de police du navigateur qui s'applique. Le simulateur
+propose les mêmes tailles (« Taille du texte »).
+
 Raccourcis clavier sur ordinateur : `←` `→` changer de jour, `1`–`7` onglets, `N` noter, `Échap` fermer.
 
 ## Démarrer

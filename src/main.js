@@ -18,6 +18,22 @@ const LS='carnet-muscu-v1',pend=[];
 /* Appli iOS : Apple Santé est lu directement (HealthKit) au lieu d'un fichier d'export. */
 let HKN=false,hkBusy=false;const IMP=(web,ios)=>HKN?ios:web;
 
+/* ---------- Dynamic Type ---------- */
+/* Sur iPhone et iPad, la taille de texte choisie dans Réglages (Luminosité et affichage → Taille du texte,
+   ou Accessibilité → Affichage et taille du texte → Police plus grande) est celle de la police système
+   « -apple-system-body » : 17 pt par défaut. Toutes les tailles de texte de l'appli sont en rem : on règle
+   la racine sur ce rapport (16 px × taille choisie / 17), relu à chaque retour sur l'appli. Ailleurs, c'est
+   la taille de police du navigateur qui s'applique. ?dt=1.3 force un rapport (simulateur, tests). */
+const isIOS=()=>Capacitor.getPlatform()==='ios'||/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+function sysBody(){const p=document.createElement('span');p.style.cssText='font:-apple-system-body;position:absolute;visibility:hidden';p.textContent='x';document.body.appendChild(p);const px=parseFloat(getComputedStyle(p).fontSize);p.parentNode.removeChild(p);return px}
+function dynType(){const r=document.documentElement,q=parseFloat(new URLSearchParams(location.search).get('dt'));let k=null;
+ if(q>0)k=q;else if(isIOS()){const px=sysBody();if(px>0)k=px/17}
+ if(k==null){r.style.fontSize='';r.dataset.dt='';return}
+ k=clamp(k,.82,1.6);const fs=(16*k).toFixed(2)+'px';if(r.style.fontSize===fs)return;
+ r.style.fontSize=fs;r.dataset.dt=k<.97?'sm':k>1.3?'xxl':k>1.1?'xl':'';
+ setTimeout(()=>$$('.fig').forEach(f=>f._d&&drawFig(f)),50)}
+dynType();addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')dynType()});
+
 /* ---------- stockage ---------- */
 function status(k){const m={load:'Chargement…',local:'Sauvegarde locale',err:'Problème de sauvegarde'};const e=$('#st');e.textContent=m[k];e.className='pill '+k}
 function lsSave(){if(mode==='wiped')return;try{localStorage.setItem(LS,JSON.stringify({set:S.set,sessions:S.sessions,days:S.days,health:S.health,med:S.med,detail:S.detail}));if(mode!=='load')status('local')}catch(e){console.warn(e);status('err');toast('Stockage plein : supprime des données anciennes ou exporte une sauvegarde.')}}
@@ -385,7 +401,7 @@ function renderToday(){const d=S.day,h=H(d),D=S.days[d]||{},it=D.items||[],T=day
  const hs=x&&x.h?x.h.filter(Boolean):[];$('#daysum').textContent=hs.length?`FC ${Math.min(...hs)}–${Math.max(...hs)} bpm${h.hr?' · moyenne '+r0(h.hr):''}`:'';
  $('#acts').innerHTML=actsHTML(d,T)||`<div class="emptyst"><p>Aucune activité ce jour</p><button type="button" class="btn small" data-act="msopen" data-m="mu">Noter une séance</button></div>`;
  const mo=monitor(d),bad=mo.filter(x=>x.warn);
- $('#monmini').innerHTML=mo.length?`<div class="mm" data-go="recuperation"><div><div class="eyebrow">Moniteur de santé</div><b style="font-size:17px">${bad.length?`${bad.length} ${bad.length>1?'signaux':'signal'} inhabituel${bad.length>1?'s':''} : ${bad.map(x=>x.l).join(', ')}`:'Tous tes signes vitaux sont dans ta normale'}</b></div><div class="dots" style="margin-left:auto">${mo.map(x=>`<i style="--c:${x.col}" data-tip="${esc(x.l+' : '+monFmt(x,x.v)+'\n'+x.lab)}"></i>`).join('')}</div></div>`:'<div class="eyebrow">Moniteur de santé</div><p class="mute small" style="margin:4px 0 0">Il faut au moins 7 nuits importées pour établir ta normale.</p>';
+ $('#monmini').innerHTML=mo.length?`<div class="mm" data-go="recuperation"><div><div class="eyebrow">Moniteur de santé</div><b style="font-size:1.0625rem">${bad.length?`${bad.length} ${bad.length>1?'signaux':'signal'} inhabituel${bad.length>1?'s':''} : ${bad.map(x=>x.l).join(', ')}`:'Tous tes signes vitaux sont dans ta normale'}</b></div><div class="dots" style="margin-left:auto">${mo.map(x=>`<i style="--c:${x.col}" data-tip="${esc(x.l+' : '+monFmt(x,x.v)+'\n'+x.lab)}"></i>`).join('')}</div></div>`:'<div class="eyebrow">Moniteur de santé</div><p class="mute small" style="margin:4px 0 0">Il faut au moins 7 nuits importées pour établir ta normale.</p>';
  $('#upn').innerHTML=upNextHTML();
  renderCheckin()}
 function coach(d,rc,sl,ef,tg){const h=H(d),out=[];
@@ -682,7 +698,7 @@ function renderBody(){const W=weights(),wk=Object.keys(W).sort(),L=hLast()||toda
   $('#bk').innerHTML=`<div><b>${fx(a)} kg</b><span>moyenne 7 j au ${dShort(ld)}</span></div>`+(b?`<div><b>${sg(a-b)} kg</b><span>4 semaines (${sg(rate)} kg/sem.)</span></div>`:'')+(c?`<div><b>${sg(a-c)} kg</b><span>12 semaines</span></div>`:'')+proj}else $('#bk').innerHTML='';
  const md=$('#mdate');if(!md.value)md.value=today();
  const ms=Object.keys(S.days).filter(d=>S.days[d].m&&Object.keys(S.days[d].m).length).sort().reverse();
- $('#mtab').innerHTML=ms.length?`<table><thead><tr><th>Date</th>${MEAS.map(([,l])=>`<th class="num">${l}</th>`).join('')}</tr></thead><tbody>${ms.slice(0,8).map((d,i)=>{const m=S.days[d].m,p=ms[i+1]?S.days[ms[i+1]].m:null;return `<tr><td>${dShort(d)}<button class="x" data-act="delM" data-d="${d}" aria-label="Supprimer" style="width:32px;height:32px;font-size:18px">×</button></td>${MEAS.map(([k])=>`<td class="num">${m[k]?fx(m[k]):'–'}${m[k]&&p&&p[k]?` <span class="mute small">(${sg(m[k]-p[k])})</span>`:''}</td>`).join('')}</tr>`}).join('')}</tbody></table>`:'';
+ $('#mtab').innerHTML=ms.length?`<table><thead><tr><th>Date</th>${MEAS.map(([,l])=>`<th class="num">${l}</th>`).join('')}</tr></thead><tbody>${ms.slice(0,8).map((d,i)=>{const m=S.days[d].m,p=ms[i+1]?S.days[ms[i+1]].m:null;return `<tr><td>${dShort(d)}<button class="x" data-act="delM" data-d="${d}" aria-label="Supprimer" style="width:32px;height:32px;font-size:1.125rem">×</button></td>${MEAS.map(([k])=>`<td class="num">${m[k]?fx(m[k]):'–'}${m[k]&&p&&p[k]?` <span class="mute small">(${sg(m[k]-p[k])})</span>`:''}</td>`).join('')}</tr>`}).join('')}</tbody></table>`:'';
  const bf=hKeys().filter(d=>H(d).bf).map(d=>({x:d,y:H(d).bf})),vo=hKeys().filter(d=>H(d).vo2).map(d=>({x:d,y:H(d).vo2}));
  setFig('#fb',{series:[{name:'Masse grasse',pts:bf,col:'var(--bod)',dots:bf.length<=40,last:true}],fmt:v=>fx(v)+' %',empty:'Pas de mesure de masse grasse'});
  $('#fk2').innerHTML=bf.length?`<div><b>${fx(bf[bf.length-1].y)} %</b><span>dernière mesure (${dShort(bf[bf.length-1].x)})</span></div>`+(wk.length?`<div><b>${fx((wAvg(W,bf[bf.length-1].x)||W[wk[wk.length-1]])*(1-bf[bf.length-1].y/100))} kg</b><span>masse maigre estimée</span></div>`:''):'<p class="mute small">Une balance connectée qui écrit dans Apple Santé remplit cette courbe.</p>';

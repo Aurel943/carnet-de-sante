@@ -55,6 +55,7 @@ iframe{border:0;width:100%;height:100%;display:block;background:#f4f1eb}
  <div><h1>Simulateur iPhone</h1><p>L'appli telle qu'elle s'affiche sur un téléphone : encoche, barre d'état, barre d'accueil et zones sûres comprises.</p></div>
  <div class="grp"><span>Appareil</span><select id="dev"></select></div>
  <div class="grp"><span>Apparence</span><div class="seg" id="theme"><button data-t="">Auto</button><button data-t="light">Clair</button><button data-t="dark">Sombre</button></div></div>
+ <div class="grp"><span>Taille du texte</span><select id="dt"><option value="0.82">Très petite</option><option value="0.88">Petite</option><option value="1">Par défaut</option><option value="1.12">Grande</option><option value="1.24">Très grande</option><option value="1.35">Énorme (XXL)</option><option value="1.6">Accessibilité</option></select></div>
  <div class="grp"><span>Aller à</span><div class="tabs" id="go">
   <button data-h="aujourdhui">Accueil</button><button data-h="sommeil">Sommeil</button><button data-h="recuperation">Énergie</button><button data-h="effort">Dépense</button><button data-h="nutrition">Nutrition</button><button data-h="tendances">Tendances</button><button data-h="plus">Plus</button>
  </div></div>
@@ -97,8 +98,9 @@ const DEVICES = {
 const $ = (s) => document.querySelector(s);
 const frame = $('#app'), phone = $('#phone');
 const pref = (() => { try { return JSON.parse(localStorage.getItem('simulateur') || '{}'); } catch { return {}; } })();
-const st = { dev: DEVICES[pref.dev] ? pref.dev : 'iphone-16', theme: pref.theme || '', fit: pref.fit !== false, ios: !!pref.ios };
-const appSrc = () => './index.html' + (st.ios ? '?ios=1' : '');
+const st = { dev: DEVICES[pref.dev] ? pref.dev : 'iphone-16', theme: pref.theme || '', fit: pref.fit !== false, ios: !!pref.ios, dt: pref.dt || '1' };
+/* Taille du texte (Dynamic Type) : la même échelle que les Réglages d'iOS, transmise à l'appli par ?dt= */
+const appSrc = () => { const q = []; if (st.ios) q.push('ios=1'); if (st.dt !== '1') q.push('dt=' + st.dt); return './index.html' + (q.length ? '?' + q.join('&') : ''); };
 frame.src = appSrc();
 const keep = () => { try { localStorage.setItem('simulateur', JSON.stringify(st)); } catch {} };
 
@@ -169,6 +171,8 @@ $('#reset').addEventListener('click', () => {
   const api = frame.contentWindow.carnet;
   if (api && api.resetAll) api.resetAll(); else { frame.contentWindow.localStorage.clear(); frame.contentWindow.location.reload(); }
 });
+$('#dt').value = st.dt;
+$('#dt').addEventListener('change', (e) => { st.dt = e.target.value; keep(); frame.src = appSrc() + (frame.contentWindow.location.hash || ''); });
 $('#ios').checked = st.ios;
 $('#ios').addEventListener('change', (e) => { st.ios = e.target.checked; keep(); frame.src = appSrc(); });
 $('#fit').checked = st.fit;

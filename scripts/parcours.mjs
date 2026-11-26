@@ -158,6 +158,32 @@ try {
     }
     await ctx.close();
   }
+
+  console.log('\nParcours en grande taille de texte (Dynamic Type)');
+  for (const dt of [1.35, 1.6]) {
+    const ctx = await browser.newContext({ viewport: { width: 375, height: 667 }, isMobile: true, hasTouch: true, locale: 'fr-FR', timezoneId: 'Europe/Paris' });
+    const page = await ctx.newPage();
+    page.on('pageerror', (e) => errs.push(`[texte ×${dt}] ${e.message}`));
+    await page.goto(url + '?dt=' + dt);
+    await step(`texte ×${dt} : tout suit la taille, rien ne déborde`, async () => {
+      const fs = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize));
+      expect(Math.abs(fs - 16 * dt) < 0.1, `taille racine ${fs} px au lieu de ${16 * dt}`);
+      await page.evaluate(() => window.carnet.loadDemo());
+      await page.waitForFunction(() => document.querySelector('#plan li'), null, { timeout: 30000 });
+      for (const h of ['aujourdhui', 'sommeil', 'recuperation', 'effort', 'tendances', 'nutrition', 'plus']) {
+        await page.evaluate((x) => { location.hash = x; }, h);
+        await page.waitForSelector(`#v-${h}:not([hidden])`);
+        const over = await page.evaluate(() => {
+          const W = document.documentElement.clientWidth;
+          return [...document.querySelectorAll('.view:not([hidden]) *')]
+            .filter((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.right > W + 1 && !e.closest('.scroll,.seg,#favs,.fig,.chips'); })
+            .slice(0, 3).map((e) => e.tagName.toLowerCase() + (e.id ? '#' + e.id : '') + '.' + String(e.className).split(' ')[0]);
+        });
+        expect(!over.length, `${h} : ${over.join(', ')} dépasse de l'écran`);
+      }
+    });
+    await ctx.close();
+  }
 } finally {
   await browser.close();
   await server.close();

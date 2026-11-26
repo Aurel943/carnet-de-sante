@@ -27,6 +27,10 @@ https://aurel943.github.io/carnet-de-sante/ : rien ne doit rester seulement en l
   je vais » (titre du jour), « que faire » (jauges + plan), « que noter » (une action principale).
   Chaque carte commence par sa conclusion (`<p class="vd">`) ; les cartes pour experts portent la classe
   `adv` et restent repliées derrière « Analyse détaillée ».
+- Dynamic Type : toutes les tailles de texte sont en `rem` (jamais en px), pour suivre la taille choisie
+  dans les Réglages d'iOS (lue par `dynType()` dans `src/main.js`). Restent en px, comme dans les applis
+  d'Apple : texte des SVG (jauges, graphiques), barre d'onglets, frise de la semaine. Les colonnes de
+  libellés sont en `rem` aussi. `?dt=1.35` force une taille (simulateur, `npm run parcours`).
 - Unités des jauges : Dépense et Sommeil sur `/100`, Énergie en `%` ; la jauge Dépense montre sa zone
   conseillée sur l'arc.
 - Identité d'Arden (nom de l'appli), à garder distincte des applis concurrentes : scores « Dépense »
