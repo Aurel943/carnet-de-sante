@@ -21,7 +21,9 @@ https://aurel943.github.io/carnet-de-sante/ : rien ne doit rester seulement en l
 - Identité d'Arden (nom de l'appli), à garder distincte des applis concurrentes : scores « Dépense »
   (corail, `--eff`), « Énergie » (turquoise, `--rec`) et « Sommeil » (bleu nuit, `--slp`) ; jauges en
   arc ouvert de 270° (jamais d'anneaux complets) ; frise de la semaine en mini-barres ; logo en arc
-  tricolore sur tuile graphite (généré par script, voir l'historique git).
+  tricolore sur tuile graphite aux couleurs fixes, identique à l'icône App Store (`npm run icones`
+  régénère `public/icon.svg` et les icônes PNG du site ; le SVG du logo dans `index.html` s'obtient
+  avec `node scripts/icones.mjs --svg`).
 - Après une modification du code web destinée à l'appli iOS : `npx cap sync ios`.
 - Après une modification visuelle : régénérer les captures App Store (`npm run captures`).
 - Détails : `README.md` et `docs/APP_STORE.md`.
