@@ -1536,3 +1536,19 @@ input[type=search]::-webkit-search-cancel-button{filter:grayscale(1) opacity(.55
 }
 /* barre d'onglets : la pastille ne grossit pas en glissant, elle reste dans la barre */
 @media(max-width:800px){#tabs.press .tabind{scale:1}}
+/* chiffre au centre du cercle de l'arc (et non de la boîte) ; calories dépensées en petit dessous */
+.kmid{inset:auto 0 auto 0;top:56.2%;transform:translateY(-50%);gap:3px}
+.kburn{display:inline-flex;align-items:center;gap:4px;margin-top:4px;font:500 0.8125rem var(--round);color:light-dark(color-mix(in srgb,var(--eff) 80%,#000),var(--eff));font-variant-numeric:tabular-nums}
+.kburn svg{width:13px;height:13px;fill:currentColor}
+/* listes de la feuille Repas : toute la ligne s'éclaire à l'appui, dans l'arrondi de la liste */
+.fres li{transition:background .15s}
+.fr:active{background:none}
+.fres li:has(.fr:active){background:color-mix(in srgb,var(--ink) 7%,transparent)}
+.fr{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+ul#favs{display:block;margin:0 0 6px;padding:0;overflow:hidden;flex-wrap:nowrap}
+/* feuille ouverte : la page derrière recule un peu, comme sur iPhone (rien ne passe sous l'heure) */
+@media(max-width:800px){
+ #sc{transition:transform .38s cubic-bezier(.2,.9,.3,1),opacity .3s;transform-origin:50% var(--sy,0px)}
+ :root.ms-open #sc{transform:translateY(calc(var(--sat) * .5)) scale(.93);opacity:.75}
+}
+@media(prefers-reduced-motion:reduce){#sc{transition:none}}

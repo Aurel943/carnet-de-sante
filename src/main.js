@@ -762,8 +762,8 @@ const MEALDEF=[...MEALS];
 function renderNutri(){const d=S.day,D=S.days[d]||{},it=D.items||[],Pr=sum(it,'p'),G=sum(it,'g'),Li=sum(it,'l'),K=it.reduce((a,x)=>a+kcalOf(x),0),T=num(S.set.prot),KT=num(S.set.kcal),isT=d===today();
  const left=KT-K,bn=burnOf(d),rest=Math.max(0,KT-T*4),cRef=rest*.55/4,lRef=rest*.45/9;
  const mbar=(lab,v,ref,c,txt)=>`<div class="mac" style="--c:${c}"><span>${lab}</span><i><b style="width:${ref?clamp(v/ref*100,0,100).toFixed(1):0}%"></b></i><em>${txt}</em></div>`;
- $('#nhero').innerHTML=`<div class="kwrap">${kcalArc(K,KT)}<div class="kmid"><b class="kv">${K&&left<0?'+'+r0(-left):r0(Math.max(0,left))}</b><span>${!KT?'kcal':left<0?'kcal au-dessus':isT?'kcal restantes':'kcal sous l\'objectif'}</span></div></div>
-  <div class="kst"><div><b>${r0(K)}</b><span>mangé</span></div><div><b>${r0(KT)}</b><span>objectif</span></div><div><b>${bn?r0(bn.total):'–'}</b><span>brûlé</span></div></div>
+ $('#nhero').innerHTML=`<div class="kwrap">${kcalArc(K,KT)}<div class="kmid"><b class="kv">${K&&left<0?'+'+r0(-left):r0(Math.max(0,left))}</b><span>${!KT?'kcal':left<0?'kcal au-dessus':isT?'kcal restantes':'kcal sous l\'objectif'}</span>${bn?`<small class="kburn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5c.8 3.8 5.5 5.6 5.5 11a5.5 5.5 0 0 1-11 0c0-2.8 1.6-4.2 2.4-6 .9 1.3 1.8 1.9 2.9 2.2-.3-2.5-.6-4.6.2-7.2z"/></svg>${r0(bn.total)} dépensées</small>`:''}</div></div>
+  <div class="kst"><div><b>${r0(K)}</b><span>mangé</span></div><div><b>${r0(KT)}</b><span>objectif</span></div><div><b>${bn?(K-bn.total>0?'+':K-bn.total<0?'−':'')+r0(Math.abs(K-bn.total)):'–'}</b><span>bilan</span></div></div>
   <div class="macs">${mbar('Protéines',Pr,T,'var(--nut)',`<b>${r0(Pr)}</b> / ${r0(T)} g`)}${mbar('Glucides',G,cRef,'var(--wat)',`<b>${r0(G)}</b> g`)}${mbar('Lipides',Li,lRef,'var(--str)',`<b>${r0(Li)}</b> g`)}</div>`;
  const byM={};it.forEach((x,k)=>{const m=MEALS.includes(x.m)?x.m:'Collation';(byM[m]||(byM[m]=[])).push([x,k])});
  const y=dayIt(addD(d,-1));
@@ -1202,7 +1202,7 @@ function msBar(){const t=$('#mstitle'),l=$('#msl'),r=$('#msr');
  else if(msKind==='checkin'){t.textContent=S.day===today()?"Check-in du jour":'Check-in du '+dShort(S.day);l.textContent='';r.innerHTML='<button type="button" class="ms-btn ms-done" data-act="msclose">OK</button>'}
  else if(msKind==='metric'){t.textContent=(MET[metK]||{}).t||'';l.textContent='';r.innerHTML='<button type="button" class="ms-btn ms-done" data-act="msclose">OK</button>'}
  l.style.visibility=l.textContent?'':'hidden'}
-function openSheet(k){msKind=k;const m=$('#msheet');$$('#msheet .ms-body').forEach(b=>b.hidden=b.dataset.k!==k);msBar();m.hidden=false;document.documentElement.classList.add('ms-open');m.querySelector('.ms-body:not([hidden])').scrollTop=0}
+function openSheet(k){msKind=k;document.documentElement.style.setProperty('--sy',scrollY+'px');const m=$('#msheet');$$('#msheet .ms-body').forEach(b=>b.hidden=b.dataset.k!==k);msBar();m.hidden=false;document.documentElement.classList.add('ms-open');m.querySelector('.ms-body:not([hidden])').scrollTop=0}
 function closeSheet(){if(!msKind)return;msKind='';pick=null;const a=document.activeElement;if(a&&$('#msheet').contains(a))a.blur();$('#msheet').hidden=true;document.documentElement.classList.remove('ms-open');setTimeout(renderSoft,0)}
 function openFood(m){foodMeal=MEALS.includes(m)?m:mealNow();fAdded=[];$('#fq').value='';pick=null;renderPick();renderFoodSearch();openSheet('food');
  loadCiqual().then(()=>{if(msKind==='food')renderFoodSearch()});if(matchMedia('(pointer:fine)').matches)$('#fq').focus()}
