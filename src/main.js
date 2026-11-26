@@ -30,7 +30,17 @@ function vt(update,dir='tab'){const r=document.documentElement;
  const t=document.startViewTransition(()=>{if(src)src.style.viewTransitionName='';update();
   if(src){const big=$('.view:not([hidden]) .gauge.big svg');if(big)big.style.viewTransitionName='gz'}});
  t.finished.finally(()=>{if(r.dataset.vt===dir)r.dataset.vt='';$$('[style*="view-transition-name"]').forEach(e=>{if(e.id!=='tabs')e.style.viewTransitionName=''})})}
-function goDay(n){if(n>0&&S.day>=today())return;buzz();vt(()=>{S.day=addD(S.day,n);renderView(cur())},n>0?'next':'prev')}
+function goDay(n){if(n>0&&S.day>=today())return;pageTo(addD(S.day,n))}
+/* Changer de jour comme on tourne une page : la page part du côté où l'on glisse (en gardant l'élan du doigt),
+   le nouveau jour arrive de l'autre côté avec un ressort. Seulement transform et opacité : fluide sur iPhone. */
+let paging=false;
+function pageTo(t,{dx=0,v=0}={}){const w=$('#sc>.wrap');if(!t||t===S.day||t>today())return;const dir=t>S.day?1:-1,W=innerWidth;
+ buzz();w.getAnimations().forEach(a=>a.cancel());w.style.transform='';w.style.opacity='';
+ if(calm()||!w.animate){S.day=t;renderView(cur());return}
+ paging=true;const end=-dir*W*.42,dur=clamp(Math.abs(end-dx)/Math.max(1,Math.abs(v)),90,200);
+ const a=w.animate([{transform:`translate3d(${dx}px,0,0)`,opacity:1},{transform:`translate3d(${end}px,0,0)`,opacity:0}],{duration:dur,easing:'cubic-bezier(.3,0,.8,.4)',fill:'forwards'});
+ a.finished.then(()=>{S.day=t;renderView(cur());
+  w.animate([{transform:`translate3d(${dir*W*.3}px,0,0)`,opacity:0},{transform:'translate3d(0,0,0)',opacity:1}],{duration:460,easing:'cubic-bezier(.2,1,.3,1)'});a.cancel();paging=false}).catch(()=>{paging=false})}
 /* Chiffres des jauges : ils défilent de 0 à leur valeur pendant que l'arc se remplit. */
 function countUp(){if(calm())return;$$('.cnt:not([data-done])').forEach(el=>{el.dataset.done='1';const to=+el.dataset.to,t0=performance.now(),D=950;
  const f=t=>{const k=Math.min(1,(t-t0)/D),e=1-Math.pow(1-k,3);el.textContent=Math.round(to*e);if(k<1&&el.isConnected)requestAnimationFrame(f)};requestAnimationFrame(f)})}
@@ -876,8 +886,29 @@ function route(){const v=cur();views.forEach(n=>$('#v-'+n).hidden=n!==v);$$('#ta
 function tabInd(){const nav=$('#tabs');let ind=nav.querySelector('.tabind');if(!ind){ind=document.createElement('i');ind.className='tabind';ind.setAttribute('aria-hidden','true');nav.prepend(ind)}
  const a=nav.querySelector('a[aria-current=page]:not(.dsk),a.sub-on');if(!a||!a.offsetWidth){ind.classList.add('off');return}
  const first=!ind.style.width;if(first)ind.style.transition='none';ind.classList.remove('off');ind.style.width=a.offsetWidth+'px';ind.style.transform=`translateX(${a.offsetLeft}px)`;ind.style.setProperty('--tc',getComputedStyle(a).getPropertyValue('--tc'));
+ if(tabOn&&tabOn!==a&&!calm()){const g=a.querySelector('svg');g.classList.remove('pop');void g.getBoundingClientRect();g.classList.add('pop')}tabOn=a;
  if(first){void ind.offsetWidth;ind.style.transition=''}}
 addEventListener('resize',()=>requestAnimationFrame(tabInd));
+let tabOn=null;
+/* Barre d'onglets (téléphone) : appuyer fait gonfler la pastille, qui suit le doigt d'un onglet à l'autre ;
+   on relâche sur l'onglet voulu. L'onglet visé s'éclaire, avec un tic haptique à chaque passage. */
+{const nav=$('#tabs');let drag=null,mute=0;
+ const tabs=()=>[...nav.querySelectorAll('a')].filter(a=>a.offsetWidth);
+ const at=x=>{const L=tabs();return L.find(a=>{const r=a.getBoundingClientRect();return x>=r.left&&x<r.right})||(x<L[0].getBoundingClientRect().left?L[0]:L[L.length-1])};
+ const hot=a=>tabs().forEach(x=>x.classList.toggle('hot',x===a));
+ const follow=x=>{const ind=nav.querySelector('.tabind');if(!ind||!drag)return;const r=nav.getBoundingClientRect(),w=drag.a.offsetWidth;
+  ind.style.transform=`translateX(${clamp(x-r.left-w/2,4,r.width-w-4)}px)`};
+ const phone=()=>matchMedia('(max-width:800px)').matches;
+ nav.addEventListener('pointerdown',e=>{if(!phone()||e.button>0||e.target.closest('.tplus'))return;const a=at(e.clientX);if(!a)return;
+  drag={a,x0:e.clientX,id:e.pointerId,moved:false};try{nav.setPointerCapture(e.pointerId)}catch(_){/* rien */}
+  nav.classList.add('press');hot(a);follow(e.clientX)});
+ nav.addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id)return;if(Math.abs(e.clientX-drag.x0)>6)drag.moved=true;
+  const a=at(e.clientX);if(a!==drag.a){drag.a=a;hot(a);buzz()}follow(e.clientX)});
+ const up=e=>{if(!drag||e.pointerId!==drag.id)return;const a=drag.a,ok=e.type==='pointerup';drag=null;nav.classList.remove('press');hot(null);
+  if(ok&&a){mute=performance.now();a.click()}requestAnimationFrame(tabInd)};
+ nav.addEventListener('pointerup',up);nav.addEventListener('pointercancel',up);
+ /* le clic natif qui suit le relâcher (déjà traité ci-dessus) est ignoré */
+ document.addEventListener('click',e=>{if(e.isTrusted&&performance.now()-mute<600&&e.target.closest&&e.target.closest('#tabs')&&!e.target.closest('.tplus')){e.preventDefault();e.stopImmediatePropagation()}},true)}
 
 $('#editor').addEventListener('input',ev=>{const t=ev.target,c=S.cur;if(!c)return;
  if(t.id==='cn'){c.name=t.value;return dirty()}if(t.id==='cd'){c.date=t.value;return dirty()}if(t.id==='crpe'){c.rpe=num(t.value)||'';return dirty()}
@@ -891,7 +922,7 @@ document.addEventListener('click',ev=>{unlockAudio();
  /* onglet Plus : toujours le menu Plus, jamais la sous-page laissée la dernière fois (comme sur iPhone) ;
     déjà sur une sous-page de Plus, le toucher ramène au menu */
  {const tl=ev.target.closest('#tabs a');if(tl&&tl.getAttribute('href')==='#plus')psub='';if(tl&&tl.getAttribute('href')==='#'+cur()){ev.preventDefault();buzz();const v=cur(),top=()=>scrollTo({top:0,behavior:calm()?'auto':'smooth'});
-  if(v==='plus'){psub='';renderPlus();top()}else if(DAYV.includes(v)&&S.day!==today()){scrollTo(0,0);vt(()=>{S.day=today();renderView(v)},'next')}else top();return}}if(ev.target.closest('#cele')){hideCele();return}{const db=ev.target.closest('[data-dlg]');if(db){closeDlg(db.dataset.dlg);return}if(ev.target.id==='dlg'){closeDlg('cancel');return}}if(matchMedia('(max-width:800px)').matches){const nt=ev.target.closest('.panel>p.mute.small,.mkr p');if(nt&&!ev.target.closest('a,button')){nt.classList.toggle('open');return}}if(ev.target.id==='sheet'){quick('close');return}const go=ev.target.closest('[data-go]');if(go){if(go.classList.contains('gauge')&&location.hash!=='#'+go.dataset.go)zoomFrom=go.querySelector('svg');location.hash=go.dataset.go;return}
+  if(v==='plus'){psub='';renderPlus();top()}else if(DAYV.includes(v)&&S.day!==today()){scrollTo(0,0);pageTo(today())}else top();return}}if(ev.target.closest('#cele')){hideCele();return}{const db=ev.target.closest('[data-dlg]');if(db){closeDlg(db.dataset.dlg);return}if(ev.target.id==='dlg'){closeDlg('cancel');return}}if(matchMedia('(max-width:800px)').matches){const nt=ev.target.closest('.panel>p.mute.small,.mkr p');if(nt&&!ev.target.closest('a,button')){nt.classList.toggle('open');return}}if(ev.target.id==='sheet'){quick('close');return}const go=ev.target.closest('[data-go]');if(go){if(go.classList.contains('gauge')&&location.hash!=='#'+go.dataset.go)zoomFrom=go.querySelector('svg');location.hash=go.dataset.go;return}
  const b=ev.target.closest('[data-act]');if(!b)return;const act=b.dataset.act,c=S.cur,a=b.closest('.ex'),i=a?+a.dataset.i:-1;
  switch(act){
  case'sheet':{const sh=$('#sheet');sh.hidden=!sh.hidden;setTimeout(()=>{document.documentElement.style.setProperty('--hh',$('.top').offsetHeight+'px')},0);return}
@@ -900,7 +931,7 @@ document.addEventListener('click',ev=>{unlockAudio();
  case'share':return shareWeek();
  case'briefok':return hideBrief();
  case'briefopen':return showBrief();
- case'dpick':{if(b.dataset.d===S.day)return;const n=b.dataset.d>S.day?1:-1;buzz();return vt(()=>{S.day=b.dataset.d;renderView(cur())},n>0?'next':'prev')}
+ case'dpick':return pageTo(b.dataset.d);
  case'msclose':return closeSheet();
  case'showall':buzz();$(b.dataset.t).classList.add('all');return;
  case'demoTry':return loadDemo();
@@ -1020,19 +1051,26 @@ document.addEventListener('keydown',e=>{if(e.metaKey||e.ctrlKey||e.altKey)return
 
 /* ---------- gestes : glisser d'un jour à l'autre, tirer pour synchroniser ---------- */
 {const sc=$('#sc'),wrap=$('#sc>.wrap'),ptr=$('#ptr'),dayV=()=>['aujourdhui','sommeil','recuperation','effort'].includes(cur());
- let x0=null,y0=0,dx=0,dy=0,lock=null,armed=false;const PULL=86;
+ let x0=null,y0=0,dx=0,dy=0,tx=0,vx=0,hist=[],past=false,lock=null,armed=false;const PULL=86;
  const skip=t=>t.closest('.fig,.scroll,.seg,.chips,input,textarea,select,label,#wk,.rc-d,.dial,#tabs,#sheet');
  const setPull=d=>{const p=Math.min(1,d/PULL);ptr.style.setProperty('--p',p);ptr.style.transform=`translate(-50%,${Math.min(d,PULL*1.3)*.6-40}px)`;ptr.style.opacity=Math.min(1,p*1.6);
   if(p>=1&&!armed){armed=true;buzz('light')}else if(p<1)armed=false};
  sc.addEventListener('touchstart',e=>{x0=null;if(e.touches.length!==1||!dayV()||skip(e.target)||msKind||!$('#brief').hidden)return;
-  x0=e.touches[0].clientX;y0=e.touches[0].clientY;dx=dy=0;lock=null;armed=false},{passive:true});
+  x0=e.touches[0].clientX;y0=e.touches[0].clientY;dx=dy=0;tx=0;vx=0;lock=null;armed=false;past=false;hist=[[performance.now(),x0]]},{passive:true});
+ const band=x=>x/(1+Math.abs(x)/90)*.55;
  sc.addEventListener('touchmove',e=>{if(x0==null)return;const t=e.touches[0];dx=t.clientX-x0;dy=t.clientY-y0;
-  if(!lock&&(Math.abs(dx)>12||Math.abs(dy)>12))lock=Math.abs(dx)>Math.abs(dy)*1.3?'x':dy>0&&scrollY<=0&&HKN&&!hkBusy?'pull':'y';
-  if(lock==='x'){const stop=dx<0&&S.day>=today();wrap.style.transform=`translateX(${dx*(stop?.12:.32)}px)`}
-  else if(lock==='pull')setPull(Math.max(0,dy*.55))},{passive:true});
+  if(!lock&&(Math.abs(dx)>10||Math.abs(dy)>10)){lock=Math.abs(dx)>Math.abs(dy)*1.2&&!paging?'x':dy>0&&scrollY<=0&&HKN&&!hkBusy?'pull':'y';
+   if(lock==='x'){wrap.getAnimations().forEach(a=>a.cancel());wrap.style.willChange='transform,opacity';x0+=dx>0?10:-10;dx=t.clientX-x0}}
+  if(lock==='x'){e.preventDefault();const stop=dx<0&&S.day>=today(),W=innerWidth;tx=stop?band(dx):dx;
+   wrap.style.transform=`translate3d(${tx}px,0,0)`;wrap.style.opacity=stop?'':String(1-Math.min(.35,Math.abs(dx)/W*.5));
+   const now=performance.now();hist.push([now,t.clientX]);while(hist.length>2&&now-hist[0][0]>90)hist.shift();
+   const go=!stop&&Math.abs(dx)>W*.22;if(go!==past){past=go;if(go)buzz('light')}}
+  else if(lock==='pull')setPull(Math.max(0,dy*.55))},{passive:false});
  const end=async()=>{if(x0==null)return;x0=null;
-  if(lock==='x'){wrap.style.transition='transform .22s cubic-bezier(.2,.8,.2,1)';wrap.style.transform='';setTimeout(()=>{wrap.style.transition=''},240);
-   if(Math.abs(dx)>70)goDay(dx>0?-1:1)}
+  if(lock==='x'){wrap.style.willChange='';const [t0,p0]=hist[0],[t1,p1]=hist[hist.length-1];vx=t1>t0?(p1-p0)/(t1-t0):0;
+   const n=dx>0?-1:1,can=n<0||S.day<today(),fling=Math.abs(vx)>.45&&Math.sign(vx)===Math.sign(dx)&&Math.abs(dx)>24;
+   if(can&&(Math.abs(dx)>innerWidth*.22||fling))pageTo(addD(S.day,n),{dx:tx,v:vx});
+   else{const from=tx;wrap.style.transform='';wrap.style.opacity='';if(Math.abs(from)>1&&!calm())wrap.animate([{transform:`translate3d(${from}px,0,0)`},{transform:'translate3d(0,0,0)'}],{duration:520,easing:'cubic-bezier(.25,1.45,.4,1)'})}}
   else if(lock==='pull'){if(armed){ptr.classList.add('spin');ptr.style.transform='translate(-50%,12px)';ptr.style.opacity=1;
     try{await hkSync()}finally{ptr.classList.remove('spin')}}
    ptr.style.transition='transform .3s,opacity .3s';ptr.style.transform='translate(-50%,-40px)';ptr.style.opacity=0;setTimeout(()=>{ptr.style.transition=''},320)}
