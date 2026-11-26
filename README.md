@@ -83,8 +83,14 @@ La case **Appli iOS (Apple Santé simulé)** montre l'appli comme sur iPhone : c
 
 ## Appli iOS
 
+Le projet Xcode (`ios/`) contient déjà, sur GitHub, la dernière version du site : `npm run build`
+compile le site **et** le recopie dans `ios/App/App/public`, et cette copie est versionnée.
+Sur le Mac, il suffit donc de récupérer le dépôt et d'ouvrir Xcode :
+
 ```bash
-npm run ios         # compile, copie dans ios/ et ouvre Xcode (sur Mac)
+git pull
+npm install         # la première fois, puis seulement si package.json a changé
+open ios/App/App.xcodeproj    # ou : npx cap open ios
 ```
 
 ```bash

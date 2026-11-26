@@ -24,6 +24,9 @@ https://aurel943.github.io/carnet-de-sante/ : rien ne doit rester seulement en l
   tricolore sur tuile graphite aux couleurs fixes, identique à l'icône App Store (`npm run icones`
   régénère `public/icon.svg` et les icônes PNG du site ; le SVG du logo dans `index.html` s'obtient
   avec `node scripts/icones.mjs --svg`).
-- Après une modification du code web destinée à l'appli iOS : `npx cap sync ios`.
+- Le site et l'appli iOS doivent toujours être identiques : le propriétaire code sur le site, puis
+  ouvre Xcode chez lui après un simple `git pull`, sans rien compiler. `npm run build` compile le site
+  **et** le recopie dans `ios/App/App/public` (versionné) : committer ces fichiers avec chaque
+  modification. Ne jamais remettre `ios/App/App/public` dans `.gitignore`.
 - Après une modification visuelle : régénérer les captures App Store (`npm run captures`).
 - Détails : `README.md` et `docs/APP_STORE.md`.

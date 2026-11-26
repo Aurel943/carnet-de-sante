@@ -43,10 +43,11 @@ cd carnet-de-sante && npm install
 ```
 
 ```bash
-npm run ios
+open ios/App/App.xcodeproj
 ```
 
-`npm run ios` compile l'appli, la copie dans le projet iOS et ouvre Xcode. Ensuite, dans Xcode :
+Le projet iOS contient déjà la dernière version du site (`ios/App/App/public`, mise à jour par
+`npm run build` et versionnée) : pas besoin de compiler sur le Mac. Ensuite, dans Xcode :
 
 1. Cible **App** → onglet **Signing & Capabilities** → **Team** : choisir ton compte développeur.
    La capacité **HealthKit** doit apparaître dans la liste (elle vient de `App.entitlements`) ;
@@ -56,7 +57,8 @@ npm run ios
    d'autorisation, puis l'appli lit 13 mois de données (quelques secondes à une minute).
 3. Pour publier : **Product → Archive**, puis **Distribute App → App Store Connect**.
 
-Après chaque modification du code web : `npm run ios:sync` (compile et recopie dans `ios/`).
+Après chaque modification du code web, `npm run build` recopie le site dans `ios/` ; il suffit de
+committer et pousser. Sur le Mac : `git pull` (et `npm install` si `package.json` a changé), puis ▶ dans Xcode.
 
 ## Fiche App Store Connect
 

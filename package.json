@@ -8,11 +8,11 @@
     "icones": "node scripts/icones.mjs",
     "dev": "vite",
     "sim": "vite --open /simulateur.html",
-    "build": "vite build",
+    "build": "vite build && cap sync ios",
     "preview": "vite preview",
     "lint": "eslint src",
-    "ios": "vite build && cap sync ios && cap open ios",
-    "ios:sync": "vite build && cap sync ios",
+    "ios": "npm run build && cap open ios",
+    "ios:sync": "npm run build",
     "captures": "node scripts/captures-app-store.mjs"
   },
   "devDependencies": {
