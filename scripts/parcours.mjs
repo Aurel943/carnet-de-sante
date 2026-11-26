@@ -89,6 +89,40 @@ try {
       }
     });
 
+    await step('onglet Plus : toujours le menu, même après une sous-page', async () => {
+      await tab(page, 'plus');
+      await page.click('#hub [data-s="reglages"]');
+      await page.waitForSelector('[data-sub="reglages"]:not([hidden])');
+      await tab(page, 'sommeil');
+      await tab(page, 'plus');
+      expect(await page.isVisible('#hub'), 'Plus rouvre la sous-page au lieu du menu');
+      await page.click('#hub [data-s="dossier"]');
+      await page.waitForSelector('[data-sub="dossier"]:not([hidden])');
+      await page.click('#tabs a[href="#plus"]');
+      await page.waitForSelector('#hub:not([hidden])');
+      expect(await page.isHidden('[data-sub="dossier"]'), 'la sous-page reste affichée');
+      await tab(page, 'aujourdhui');
+      await page.click('.tplus'); await page.click('#sheet [data-q="med"]');
+      await page.waitForSelector('[data-sub="dossier"]:not([hidden])');
+      expect(await page.isHidden('#hub'), 'un raccourci vers une sous-page de Plus doit l\'ouvrir directement');
+    });
+
+    await step('onglets de jour : aujourd\'hui au retour, jour gardé entre eux, toucher = revenir', async () => {
+      await tab(page, 'sommeil');
+      await page.click('[data-act="dprev"]');
+      await page.waitForFunction(() => /^Hier/.test(document.querySelector('#dsub').textContent));
+      await tab(page, 'effort');
+      expect(/^Hier/.test(await text(page, '#dsub')), 'le jour choisi doit suivre entre Sommeil et Dépense');
+      await page.click('#tabs a[href="#effort"]');
+      await page.waitForFunction(() => /^Aujourd/.test(document.querySelector('#dsub').textContent));
+      await page.click('[data-act="dprev"]');
+      await page.waitForFunction(() => /^Hier/.test(document.querySelector('#dsub').textContent));
+      await tab(page, 'tendances');
+      await tab(page, 'sommeil');
+      expect(/^Aujourd/.test(await text(page, '#dsub')), 'au retour, l\'onglet doit rouvrir aujourd\'hui');
+      await tab(page, 'aujourdhui');
+    });
+
     await step('Énergie : depuis la jauge du Résumé, puis retour', async () => {
       await tab(page, 'aujourdhui');
       await page.click('#g3 [data-go="recuperation"]');

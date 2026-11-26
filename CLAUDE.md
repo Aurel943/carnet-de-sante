@@ -36,6 +36,11 @@ https://aurel943.github.io/carnet-de-sante/ : rien ne doit rester seulement en l
   tirer pour synchroniser (appli iOS), tic haptique en parcourant un graphique. Ressorts à l'appui
   (`cubic-bezier(.25,1.6,.4,1)`). Tout s'arrête avec « Réduire les animations » ; les captures App Store
   sont faites dans ce mode pour montrer les valeurs finales.
+- Navigation (comme sur iPhone) : un onglet rouvert depuis une autre partie de l'appli repart de son
+  point de départ (aujourd'hui pour les onglets de jour, menu pour Plus) ; toucher l'onglet où l'on est
+  déjà y ramène aussi. Entre onglets de jour (Résumé, Sommeil, Énergie, Dépense), le jour choisi est
+  gardé. Les raccourcis vers une sous-page de Plus (Noter → Rendez-vous, Importer Apple Santé…) l'ouvrent
+  directement.
 - Unités des jauges : Dépense et Sommeil sur `/100`, Énergie en `%` ; la jauge Dépense montre sa zone
   conseillée sur l'arc.
 - Identité d'Arden (nom de l'appli), à garder distincte des applis concurrentes : scores « Dépense »

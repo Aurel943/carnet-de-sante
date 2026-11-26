@@ -827,7 +827,11 @@ $('#editor').addEventListener('change',ev=>{const t=ev.target,c=S.cur;if(!c)retu
  if(t.dataset.f==='r'&&num(t.value)>0&&S.set.auto!==false)startTimer();
  if(!t.classList.contains('exn'))return;const a=t.closest('.ex'),i=+a.dataset.i,e=c.ex[i];
  if(e.sets.every(s=>s.w===''&&s.r==='')&&suggest(e.n,c.id)){e.sets=prefill(e.n,c.id);a.outerHTML=exHTML(e,i);dirty()}updateHint(i)});
-document.addEventListener('click',ev=>{unlockAudio();if(ev.target.closest('#cele')){hideCele();return}{const db=ev.target.closest('[data-dlg]');if(db){closeDlg(db.dataset.dlg);return}if(ev.target.id==='dlg'){closeDlg('cancel');return}}if(matchMedia('(max-width:800px)').matches){const nt=ev.target.closest('.panel>p.mute.small,.mkr p');if(nt&&!ev.target.closest('a,button')){nt.classList.toggle('open');return}}if(ev.target.id==='sheet'){quick('close');return}const go=ev.target.closest('[data-go]');if(go){if(go.classList.contains('gauge')&&location.hash!=='#'+go.dataset.go)zoomFrom=go.querySelector('svg');location.hash=go.dataset.go;return}
+document.addEventListener('click',ev=>{unlockAudio();
+ /* onglet Plus : toujours le menu Plus, jamais la sous-page laissée la dernière fois (comme sur iPhone) ;
+    déjà sur une sous-page de Plus, le toucher ramène au menu */
+ {const tl=ev.target.closest('#tabs a');if(tl&&tl.getAttribute('href')==='#plus')psub='';if(tl&&tl.getAttribute('href')==='#'+cur()){ev.preventDefault();buzz();const v=cur(),top=()=>scrollTo({top:0,behavior:calm()?'auto':'smooth'});
+  if(v==='plus'){psub='';renderPlus();top()}else if(DAYV.includes(v)&&S.day!==today()){scrollTo(0,0);vt(()=>{S.day=today();renderView(v)},'next')}else top();return}}if(ev.target.closest('#cele')){hideCele();return}{const db=ev.target.closest('[data-dlg]');if(db){closeDlg(db.dataset.dlg);return}if(ev.target.id==='dlg'){closeDlg('cancel');return}}if(matchMedia('(max-width:800px)').matches){const nt=ev.target.closest('.panel>p.mute.small,.mkr p');if(nt&&!ev.target.closest('a,button')){nt.classList.toggle('open');return}}if(ev.target.id==='sheet'){quick('close');return}const go=ev.target.closest('[data-go]');if(go){if(go.classList.contains('gauge')&&location.hash!=='#'+go.dataset.go)zoomFrom=go.querySelector('svg');location.hash=go.dataset.go;return}
  const b=ev.target.closest('[data-act]');if(!b)return;const act=b.dataset.act,c=S.cur,a=b.closest('.ex'),i=a?+a.dataset.i:-1;
  switch(act){
  case'sheet':{const sh=$('#sheet');sh.hidden=!sh.hidden;setTimeout(()=>{document.documentElement.style.setProperty('--hh',$('.top').offsetHeight+'px')},0);return}
@@ -935,7 +939,12 @@ $('#hfile').addEventListener('change',async ev=>{const f=ev.target.files[0];ev.t
   msg.dataset.keep='1';msg.textContent=`Analyse terminée : ${n} jours, ${ns} nuits (dont ${nv} avec VFC nocturne, ${nrm} recalculées en RMSSD) et ${w} entraînements. ${R.chk?` Contrôle de lecture des battements : le SDNN recalculé vaut ${Math.round(R.chk.med*100)} % de la valeur Apple (sur ${R.chk.n} mesures).`:''} FC max. déduite : ${R.hmax} bpm.`}
  catch(e){console.error(e);msg.textContent="Impossible de lire ce fichier. Choisis le export.zip d'Apple Santé, ou le fichier .xml qu'il contient (pas celui qui contient « cda »)."}
  finally{bar.hidden=true;delete msg.dataset.busy;renderSoft()}});
-addEventListener('hashchange',()=>{$('#sheet').hidden=true;buzz();vt(()=>{route();scrollTo(0,0)},zoomFrom?'zoom':'tab')});
+/* Revenir sur un onglet depuis une autre partie de l'appli le rouvre à son point de départ (aujourd'hui,
+   menu Plus) ; entre onglets de jour (Résumé, Sommeil, Énergie, Dépense), le jour choisi est gardé. */
+const DAYV=['aujourdhui','sommeil','recuperation','effort'];let lastV=cur();
+addEventListener('hashchange',()=>{$('#sheet').hidden=true;buzz();const v=cur(),from=lastV;lastV=v;
+ if(DAYV.includes(v)&&!DAYV.includes(from))S.day=today();
+ vt(()=>{route();scrollTo(0,0)},zoomFrom?'zoom':'tab')});
 document.addEventListener('keydown',e=>{if(e.metaKey||e.ctrlKey||e.altKey)return;const t=e.target;if(t.closest&&t.closest('input,textarea,select,[contenteditable]'))return;
  const tabs=['aujourdhui','sommeil','recuperation','effort','nutrition','tendances','plus'];
  if(e.key==='Escape'){if(!$('#breath').hidden)return closeBreath();if(!$('#dlg').hidden)return closeDlg('cancel');if(!$('#scan').hidden)return closeScan();$('#sheet').hidden=true;closeSheet();if(!$('#brief').hidden)hideBrief();hideCele();return}
