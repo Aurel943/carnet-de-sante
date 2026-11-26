@@ -72,6 +72,18 @@ npm run lint      # ESLint
 ```
 
 ```bash
+npm run aliments  # (ré)importe la table Ciqual de l'ANSES dans src/data/ciqual.json
+```
+
+La feuille **Repas** cherche dans la banque d'aliments (table Ciqual de l'ANSES, embarquée, valeurs
+pour 100 g), tes favoris et tes produits déjà scannés ; tu choisis la quantité en grammes ou en
+portions. **Scanner** lit le code-barres avec la caméra (décodage sur l'appareil) et cherche le
+produit sur Open Food Facts : seul le numéro du code-barres est envoyé, et le produit est gardé sur
+l'appareil. Un produit inconnu se complète une fois et reste mémorisé. Si le site de l'ANSES ne
+répond pas, télécharger « Table au format XML » sur https://ciqual.anses.fr puis
+`npm run aliments -- chemin/vers/l-archive.zip`.
+
+```bash
 npm run parcours  # tests de parcours : l'appli parcourue comme sur un iPhone, le matin et le soir
 ```
 

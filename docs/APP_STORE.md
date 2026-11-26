@@ -14,6 +14,8 @@ le dossier `ios/` contient le projet Xcode, qui embarque la version compilée de
   pas de questionnaire d'export à remplir à chaque envoi.
 - Interface iOS : barre d'onglets en bas, encoche et barre d'accueil prises en compte,
   police intégrée (aucun appel réseau).
+- Scan des aliments : caméra lue dans la vue web (`NSCameraUsageDescription` dans `Info.plist`),
+  décodage sur l'appareil ; seul le numéro du code-barres part vers Open Food Facts.
 - Premier lancement, données de démo, sauvegarde en fichier, suppression de toutes les données.
 - Politique de confidentialité : `confidentialite.html` (publiée avec le site sur GitHub Pages).
 - Captures d'écran au format iPhone 6,9 pouces : `docs/app-store/captures/` (`npm run captures`).
@@ -73,7 +75,7 @@ Sur [App Store Connect](https://appstoreconnect.apple.com/) → **Mes apps → +
 | URL de confidentialité | https://aurel943.github.io/carnet-de-sante/confidentialite.html |
 | URL d'assistance | la page GitHub du projet, ou une adresse de contact |
 | Classification par âge | 4+ (aucun contenu sensible) |
-| Confidentialité de l'app | **Données non collectées** (rien ne quitte l'appareil) |
+| Confidentialité de l'app | **Données non collectées** : rien ne quitte l'appareil, sauf le numéro du code-barres d'un aliment scanné, envoyé sans identifiant à Open Food Facts (base publique) pour trouver le produit ; ce n'est ni une donnée personnelle ni une donnée liée à l'utilisateur |
 | Mots-clés (100 car.) | sommeil,récupération,VFC,fréquence cardiaque,muscu,coach,santé,Apple Watch,entraînement,nutrition |
 
 **Description proposée :**
@@ -87,7 +89,7 @@ Sur [App Store Connect](https://appstoreconnect.apple.com/) → **Mes apps → +
 > • Sommeil : score détaillé, phases de la nuit, fréquence cardiaque et VFC nocturnes, dette de sommeil.
 > • Énergie : VFC, FC au repos, respiration, température au poignet, comparées à ta propre normale.
 > • Dépense : zones cardiaques, charge d'entraînement, journal de muscu, records et 1RM estimé.
-> • Nutrition : repas, protéines, hydratation, compléments, besoins caloriques réels.
+> • Nutrition : banque de 3 000 aliments (table Ciqual de l'ANSES), scan des codes-barres (Open Food Facts), repas, protéines, hydratation, besoins caloriques réels.
 > • Tendances : bilan santé, VO2 max, poids, mensurations, et ce que révèlent tes données.
 > • Dossier médical : rendez-vous, vaccins, analyses, avec rappels.
 >
@@ -100,7 +102,9 @@ Sur [App Store Connect](https://appstoreconnect.apple.com/) → **Mes apps → +
 > Aucun compte n'est nécessaire. Au premier lancement, « Connecter Apple Santé » lit les données
 > Santé de l'appareil (lecture seule). Sur un appareil sans données Santé, choisir « Explorer avec
 > des données de démo » pour voir toutes les fonctions avec deux mois de données fictives.
-> Toutes les données restent sur l'appareil ; rien n'est envoyé sur un serveur.
+> Toutes les données restent sur l'appareil ; rien n'est envoyé sur un serveur. Seule exception :
+> le scan d'un aliment (Nutrition → Scanner) envoie le numéro du code-barres à Open Food Facts
+> pour trouver le produit, sans aucune autre information.
 
 **Captures** : envoyer les fichiers de `docs/app-store/captures/` (1320 × 2868, iPhone 6,9 pouces) ;
 Apple les réduit automatiquement pour les autres tailles d'iPhone. Clair ou sombre, au choix.

@@ -63,6 +63,8 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Arden utilise l'appareil photo uniquement pour lire le code-barres des aliments que tu scannes. Aucune image n'est enregistrée ni envoyée.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Arden lit ton sommeil, ta fréquence cardiaque, ta VFC, ton activité et tes entraînements pour calculer tes scores d'effort, de récupération et de sommeil. Ces données restent sur ton iPhone.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>

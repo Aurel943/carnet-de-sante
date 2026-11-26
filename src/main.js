@@ -7,6 +7,7 @@ import '@fontsource-variable/fraunces/full.css';
 import {$,$$,esc,clone,iso,today,addD,dShort,dLong,dWk,num,has,fx,f2,r0,sg,clamp,nid,norm,plain,e1,sortDesc,setTxt,fmtSl,hhmm,hm,avg,sdv} from './utils.js';
 import {BASE_EX,SPORTS,MEALS,WT,MG,SCALES,MEAS,ZC,ZN,IC,DEF} from './constants.js';
 import {readHealth} from './health-import.js';
+import {loadCiqual,ciqualCount,searchFoods,forGrams,lookupOFF,validCode,startScanner} from './foods.js';
 import {demoHealthXML,demoManual,DEMO_PROFILE} from './demo.js';
 import {hasHealthKit,authorizeHealth,readHealthKit,useHealthProvider} from './healthkit.js';
 import {Capacitor} from '@capacitor/core';
@@ -714,6 +715,7 @@ const SUBT={dossier:'Dossier médical',reglages:'Réglages',apple:'Apple Santé'
 function quick(q){$('#sheet').hidden=true;setTimeout(()=>document.documentElement.style.setProperty('--hh',$('.top').offsetHeight+'px'),0);if(q==='close')return;const go=(h,fn)=>{if(location.hash!=='#'+h)location.hash=h;else route();setTimeout(fn||(()=>{}),150)};
  if(q==='mu'||q==='sp'){if(!S.cur){startMode=q;renderStart()}openSheet('seance')}
  else if(q==='food'){S.day=today();openFood(mealNow())}
+ else if(q==='scan'){S.day=today();openFood(mealNow());openScan()}
  else if(q==='bw'){S.day=today();go('nutrition',()=>{$('#bw').scrollIntoView({behavior:'smooth',block:'center'});$('#bw').focus({preventScroll:true})})}
  else if(q==='water'){const o=getDay(today());o.w=num(o.w)+250;put.day(today());renderView(cur());toast(`Eau : ${fx(o.w/1000)} L aujourd'hui`)}
  else if(q==='ci'){S.day=today();renderCheckin();openSheet('checkin')}
@@ -795,7 +797,7 @@ document.addEventListener('click',ev=>{unlockAudio();if(ev.target.closest('#cele
  case'mper':buzz();metP=+b.dataset.n;return renderMetric();
  case'msopen':if(!S.cur){startMode=b.dataset.m||'mu';renderStart()}return openSheet('seance');
  case'foodadd':return openFood(b.dataset.m);
- case'foodsave':return $('#ff').requestSubmit();
+ case'foodsave':return pick?addPicked():$('#ff').requestSubmit();
  case'onb':if(b.dataset.to==='2'&&!b.dataset.skip)saveProfile();return showOnb(+b.dataset.to);
  case'onbGo':return onbGo(b.dataset.go2);
  case'demoEnd':clearDemo();renderSoft();return showOnb(2);
@@ -830,6 +832,13 @@ document.addEventListener('click',ev=>{unlockAudio();if(ev.target.closest('#cele
  case'edit':return editSess(b.dataset.id);
  case'delSess':return delSess(b.dataset.id);
  case'more':histN+=20;return renderHist();
+ case'fpick':return openPick(fres[+b.dataset.i]);
+ case'mprod':return openPick(prods()[+b.dataset.i]);
+ case'pickq':pick.q=+b.dataset.q;$('#pq').value=String(pick.q);return pickTotal();
+ case'pickadd':return addPicked();
+ case'pickback':pick=null;renderPick();msBar();return;
+ case'scan':return openScan();
+ case'scanclose':return closeScan();
  case'fav':{const f=S.set.foods[+b.dataset.k],m=$('#fm').value;addFood(f);if(msKind==='food'){closeSheet();toast(f.n+' ajouté · '+m)}return}
  case'delFood':return delFood(+b.dataset.k);
  case'delM':{const d=b.dataset.d,o=S.days[d],old=o&&o.m;if(!o)return;delete o.m;put.day(d);renderBody();toast('Mensurations supprimées',()=>{getDay(d).m=old;put.day(d);renderBody()});return}
@@ -842,6 +851,10 @@ document.addEventListener('click',ev=>{unlockAudio();if(ev.target.closest('#cele
  case'import':{if(b.dataset.c){delete b.dataset.c;b.textContent='Importer (remplace tout)';return doImport()}b.dataset.c='1';b.textContent='Confirmer : tout remplacer ?';setTimeout(()=>{if(b.dataset.c){delete b.dataset.c;b.textContent='Importer (remplace tout)'}},6000);return}
  }});
 document.addEventListener('change',ev=>{if(ev.target.id==='jnote')setJ({note:ev.target.value.trim()})});
+document.addEventListener('input',ev=>{const t=ev.target;if(t.id==='fq')return renderFoodSearch();if(t.id==='fn')delete t.dataset.auto;
+ if(!pick)return;if(t.id==='pq'){pick.q=num(t.value);return pickTotal()}
+ const k={'pk-n':'n','pk-k':'k','pk-p':'p','pk-g':'g','pk-l':'l'}[t.id];if(k){pick.f[k]=k==='n'?t.value:(t.value.trim()===''?(k==='k'?null:0):num(t.value));pickTotal()}});
+$('#scf').addEventListener('submit',ev=>{ev.preventDefault();const c=$('#sccode').value.replace(/\D/g,'');if(!validCode(c)){$('#scmsg').textContent='Un code-barres compte 8 ou 13 chiffres.';return}closeScan();handleCode(c)});
 $('#ff').addEventListener('submit',ev=>{ev.preventDefault();const n=$('#fn').value.trim(),p=num($('#fp').value),g=num($('#fg').value),l=num($('#fl2').value),k=num($('#fk').value);if(!n&&!p&&!k&&!g&&!l)return $('#fn').focus();
  const f={n:n||'Aliment',p,g,l,k:k||Math.round(p*4+g*4+l*9)};addFood(f);if($('#fsave').checked&&!S.set.foods.some(x=>norm(x.n)===norm(f.n))){S.set.foods.push(f);put.set()}
  const m=$('#fm').value;$('#ff').reset();$('#fm').value=m;renderNutri();buzz('ok');if(msKind==='food'){closeSheet();toast(f.n+' ajouté · '+m)}else $('#fn').focus()});
@@ -873,7 +886,7 @@ $('#hfile').addEventListener('change',async ev=>{const f=ev.target.files[0];ev.t
 addEventListener('hashchange',()=>{$('#sheet').hidden=true;buzz();route();scrollTo(0,0)});
 document.addEventListener('keydown',e=>{if(e.metaKey||e.ctrlKey||e.altKey)return;const t=e.target;if(t.closest&&t.closest('input,textarea,select,[contenteditable]'))return;
  const tabs=['aujourdhui','sommeil','recuperation','effort','nutrition','tendances','plus'];
- if(e.key==='Escape'){$('#sheet').hidden=true;closeSheet();if(!$('#brief').hidden)hideBrief();hideCele();return}
+ if(e.key==='Escape'){if(!$('#scan').hidden)return closeScan();$('#sheet').hidden=true;closeSheet();if(!$('#brief').hidden)hideBrief();hideCele();return}
  if(/^[1-7]$/.test(e.key)){location.hash=tabs[+e.key-1];return}
  if(e.key==='n'||e.key==='N'){e.preventDefault();$('.tplus').click();return}
  if(!$('#dn').hidden){if(e.key==='ArrowLeft'){S.day=addD(S.day,-1);renderView(cur())}else if(e.key==='ArrowRight'&&S.day<today()){S.day=addD(S.day,1);renderView(cur())}}});
@@ -950,8 +963,57 @@ function msBar(){const t=$('#mstitle'),l=$('#msl'),r=$('#msr');
  else if(msKind==='metric'){t.textContent=(MET[metK]||{}).t||'';l.textContent='';r.innerHTML='<button type="button" class="ms-btn ms-done" data-act="msclose">OK</button>'}
  l.style.visibility=l.textContent?'':'hidden'}
 function openSheet(k){msKind=k;const m=$('#msheet');$$('#msheet .ms-body').forEach(b=>b.hidden=b.dataset.k!==k);msBar();m.hidden=false;document.documentElement.classList.add('ms-open');m.querySelector('.ms-body:not([hidden])').scrollTop=0}
-function closeSheet(){if(!msKind)return;msKind='';const a=document.activeElement;if(a&&$('#msheet').contains(a))a.blur();$('#msheet').hidden=true;document.documentElement.classList.remove('ms-open');setTimeout(renderSoft,0)}
-function openFood(m){renderNutri();foodMeal=m;$('#ff').reset();$('#fm').value=m;openSheet('food');if(matchMedia('(pointer:fine)').matches)$('#fn').focus()}
+function closeSheet(){if(!msKind)return;msKind='';pick=null;const a=document.activeElement;if(a&&$('#msheet').contains(a))a.blur();$('#msheet').hidden=true;document.documentElement.classList.remove('ms-open');setTimeout(renderSoft,0)}
+function openFood(m){renderNutri();foodMeal=m;$('#ff').reset();$('#fm').value=m;$('#fq').value='';pick=null;renderPick();renderFoodSearch();openSheet('food');
+ loadCiqual().then(()=>{if(msKind==='food')renderFoodSearch()});if(matchMedia('(pointer:fine)').matches)$('#fq').focus()}
+
+/* ---------- banque d'aliments : recherche, quantité, produits scannés ---------- */
+let pick=null,fres=[],scanStop=null;
+const SRC={ciqual:'Ciqual (ANSES)',off:'Open Food Facts',mine:'Mon produit'};
+const per100=f=>f.k==null?'valeurs à compléter':`${r0(f.k)} kcal · P ${fx(num(f.p))} · G ${fx(num(f.g))} · L ${fx(num(f.l))} g`;
+const prods=()=>S.set.prods||(S.set.prods=[]);
+function saveProd(f){const L=prods(),i=L.findIndex(x=>x.id===f.id),o={id:f.id,n:f.n,b:f.b||'',k:f.k,p:num(f.p),g:num(f.g),l:num(f.l),sv:f.sv||null,src:f.src||'off',t:Date.now()};
+ if(i>=0)L.splice(i,1);L.unshift(o);if(L.length>300)L.length=300;put.set()}
+function renderFoodSearch(){const q=$('#fq').value.trim();$('#fhome').hidden=!!q;$('#ffh').textContent=q?'Pas dans la liste ? Saisie libre':'Saisie libre';
+ const mp=prods();$('#mprodw').hidden=!mp.length;
+ $('#mprods').innerHTML=mp.slice(0,12).map((f,i)=>`<button class="chip" data-act="mprod" data-i="${i}"><b>${esc(f.n)}${f.b?` <small>${esc(f.b)}</small>`:''}</b><span>${f.k==null?'à compléter':r0(f.k)+' kcal / 100 g'}</span></button>`).join('');
+ if(!q){$('#fres').innerHTML='';return}
+ fres=searchFoods(q,{prods:mp,favs:S.set.foods});const n=ciqualCount();
+ $('#fres').innerHTML=fres.length?fres.map((f,i)=>`<li><button type="button" class="fr" ${f.src==='fav'?`data-act="fav" data-k="${f.id.slice(1)}"`:`data-act="fpick" data-i="${i}"`}><span><b>${esc(f.n)}</b><small>${f.src==='fav'?`Favori · ${fx(num(f.p))} g de protéines · ${r0(kcalOf(f))} kcal`:`${esc(f.b||SRC[f.src]||'')} · ${per100(f)}${f.k==null?'':' / 100 g'}`}</small></span><em>${f.src==='fav'?'+':'›'}</em></button></li>`).join('')
+  :`<li class="fnone">${n===0?'La banque d\'aliments s\'installe : en attendant, scanne le produit ou saisis-le ci-dessous.':n==null?'Chargement de la banque d\'aliments…':`Aucun aliment ne correspond à « ${esc(q)} ».`}</li>`;
+ if(!$('#fn').value||$('#fn').dataset.auto){$('#fn').value=q;$('#fn').dataset.auto='1'}}
+/* Étape « quantité » : valeurs pour 100 g, grammes, total calculé en direct */
+function openPick(f,note=''){if(msKind!=='food')openFood(mealNow());pick={f:{...f},q:f.sv||100,note,edit:f.k==null||!f.n};renderPick();msBar();$('#fpick').scrollIntoView({block:'start'});setTimeout(()=>(pick&&pick.edit?$('#pk-n'):$('#pq'))?.focus({preventScroll:true}),80)}
+function renderPick(){const el=$('#fpick');$('#fsearch').hidden=!!pick;$('.fsr').hidden=!!pick;el.hidden=!pick;if(!pick){el.innerHTML='';return}const f=pick.f;
+ const qs=[...new Set([f.sv,50,100,150,200].filter(Boolean))];
+ el.innerHTML=`<div class="panel pick">${pick.note?`<p class="vd">${esc(pick.note)}</p>`:''}
+  ${pick.edit?`<div class="pk-ed"><label>Nom<input id="pk-n" value="${esc(f.n)}" placeholder="ex. Yaourt grec nature"></label><label>Calories pour 100 g<input id="pk-k" inputmode="decimal" value="${f.k??''}"></label><label>Protéines pour 100 g<input id="pk-p" inputmode="decimal" value="${f.p??''}"></label><label>Glucides pour 100 g<input id="pk-g" inputmode="decimal" value="${f.g??''}"></label><label>Lipides pour 100 g<input id="pk-l" inputmode="decimal" value="${f.l??''}"></label></div>`
+   :`<div class="pk-h"><b>${esc(f.n)}</b><small>${esc([f.b,SRC[f.src]].filter(Boolean).join(' · '))}<br>Pour 100 g : ${per100(f)}</small></div>`}
+  <label class="pk-q">Quantité<span><input id="pq" inputmode="decimal" value="${esc(String(pick.q).replace('.',','))}" aria-label="Quantité en grammes"> g</span></label>
+  <div class="chips pk-c">${qs.map(q=>`<button type="button" class="chip${num(pick.q)===q?' on':''}" data-act="pickq" data-q="${q}">${q===f.sv?`1 portion (${q} g)`:q+' g'}</button>`).join('')}</div>
+  <p class="pk-r" id="pkr"></p>
+  <label class="chk"><input type="checkbox" id="pfav"> Garder cette portion dans mes favoris</label>
+  <div class="row"><button type="button" class="btn pri" data-act="pickadd">Ajouter · ${esc(foodMeal.toLowerCase())}</button><button type="button" class="btn" data-act="pickback">Retour</button></div></div>`;
+ pickTotal()}
+function pickTotal(){if(!pick)return;const f=pick.f,x=forGrams(f,pick.q);$('#pkr').innerHTML=f.k==null?'Indique au moins les calories pour 100 g (sur l\'emballage).':`<b>${r0(x.k)} kcal</b> · ${fx(x.p)} g de protéines · ${fx(x.g)} g de glucides · ${fx(x.l)} g de lipides`;
+ $$('#fpick [data-act=pickq]').forEach(b=>b.classList.toggle('on',+b.dataset.q===num(pick.q)))}
+function addPicked(){const f=pick.f,q=num(pick.q);if(pick.edit&&!f.n.trim())return $('#pk-n').focus();if(f.k==null)return $('#pk-k').focus();if(!(q>0))return $('#pq').focus();
+ const x=forGrams(f,q),o={n:`${f.n}${f.b?' · '+f.b:''} (${fx(q)} g)`,p:x.p,k:x.k};if(x.g)o.g=x.g;if(x.l)o.l=x.l;
+ if(f.src!=='ciqual')saveProd(f);
+ if($('#pfav').checked&&!S.set.foods.some(y=>norm(y.n)===norm(o.n))){S.set.foods.push({n:o.n,p:o.p,g:o.g||0,l:o.l||0,k:o.k});put.set()}
+ addFood(o,foodMeal);pick=null;closeSheet();buzz('ok');toast(`${o.n} ajouté · ${foodMeal}`)}
+/* ---------- scan : caméra, puis Open Food Facts ---------- */
+async function openScan(){const sc=$('#scan');sc.hidden=false;document.documentElement.classList.add('scan-open');$('#sccode').value='';$('#scmsg').textContent='Vise le code-barres de l\'emballage';sc.classList.remove('nocam');
+ try{scanStop=await startScanner($('#scv'),c=>{scanStop=null;buzz('ok');closeScan();handleCode(c)});if(sc.hidden&&scanStop){scanStop();scanStop=null}}
+ catch(e){sc.classList.add('nocam');$('#scmsg').textContent=e&&e.name==='NotAllowedError'?'Arden n\'a pas accès à la caméra (Réglages → Arden → Appareil photo). Tu peux taper le code :':'Caméra indisponible : tape les chiffres sous le code-barres.';setTimeout(()=>$('#sccode').focus(),60)}}
+function closeScan(){if(scanStop){scanStop();scanStop=null}$('#scan').hidden=true;document.documentElement.classList.remove('scan-open')}
+async function handleCode(code){const known=prods().find(x=>x.id===code);if(known)return openPick(known);
+ if(msKind!=='food')openFood(mealNow());toast('Recherche du produit…');
+ try{const r=await lookupOFF(code);$('#toast').classList.remove('on');
+  if(!r.found)return openPick({id:code,n:'',k:null,src:'mine'},'Produit inconnu d\'Open Food Facts : saisis ses valeurs pour 100 g, Arden s\'en souviendra au prochain scan.');
+  const f={...r.prod,src:'off'};if(f.k==null||!f.n)return openPick(f,'Valeurs incomplètes sur Open Food Facts : complète-les une fois, Arden s\'en souviendra.');
+  saveProd(f);openPick(f)}
+ catch(e){$('#toast').classList.remove('on');openPick({id:code,n:'',k:null,src:'mine'},'Pas de connexion pour trouver ce produit : saisis ses valeurs pour 100 g, ou réessaie plus tard.')}}
 function renderSessCard(){const c=S.cur,el=$('#sesscard');if(!el)return;
  const row=(m,col,ic,t,s2)=>`<button type="button" class="hr" data-act="msopen" data-m="${m}" style="--c:${col}"><i><svg viewBox="0 0 24 24">${ic}</svg></i><span><b>${t}</b><small>${s2}</small></span><em>›</em></button>`;
  if(c){const n=c.ex.filter(e=>norm(e.n)).length,h0=new Date(c.t||Date.now()).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});

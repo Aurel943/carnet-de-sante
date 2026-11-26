@@ -974,3 +974,54 @@ button.ritual{cursor:pointer}
 :root[data-dt=sm] :is(input,select,textarea){font-size:16px}
 /* notification : aussi large que son texte (et non la moitié de l'écran), même en grande taille */
 #toast{width:max-content;max-width:calc(100vw - 32px)}
+
+/* ---------- banque d'aliments : recherche, résultats, quantité ---------- */
+.fsr{display:flex;gap:8px;align-items:center;margin:4px 0 12px}
+.fsr input{flex:1;background-color:var(--panel)}
+.scanb{display:inline-flex;align-items:center;gap:6px;background:var(--tint);color:var(--on-tint);white-space:nowrap}
+.scanb svg,.qa svg.bc{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.fres{list-style:none;margin:0 0 6px;padding:0;background:var(--panel);border-radius:var(--r-card);overflow:hidden}
+.fres:empty{display:none}
+.fres li+li{border-top:.5px solid var(--line)}
+.fr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;padding:11px 16px;color:var(--ink);font:inherit;cursor:pointer;min-height:56px}
+.fr:active{background:color-mix(in srgb,var(--ink) 6%,transparent)}
+.fr b{display:block;font-weight:500;font-size:1.0625rem;letter-spacing:-.02em}
+.fr small{display:block;color:var(--mute);font-size:0.8125rem;line-height:1.35}
+.fr em{font-style:normal;color:var(--mute2);font-size:1.375rem;line-height:1}
+.fnone{padding:16px;color:var(--mute);font-size:0.9375rem}
+#mprods .chip small{font-weight:400;color:var(--mute)}
+.pick{display:grid;gap:12px}
+.pk-h b{display:block;font:600 1.375rem/1.2 var(--serif);font-variation-settings:'SOFT' 60}
+.pk-h small{display:block;color:var(--mute);font-size:0.875rem;margin-top:4px;line-height:1.4}
+.pk-ed{display:block}
+.pk-ed>label,.pk-q{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:50px;border-top:.5px solid var(--line);font-size:1.0625rem;color:var(--ink);letter-spacing:-.02em}
+.pk-ed>label:first-child{border-top:0}
+.pk-ed>label>input{flex:0 1 55%;width:auto;min-height:36px;padding:6px 0;background:transparent;border-radius:0;text-align:right}
+.pk-q span{display:flex;align-items:center;gap:6px;color:var(--mute)}
+.pk-q input{width:5.5em;text-align:right;font:600 1.25rem var(--round);background:var(--field)}
+.pk-r{margin:0;font-size:1rem;line-height:1.4}.pk-r b{font:600 1.25rem var(--round)}
+.pick .row{margin-top:2px}.pick .btn.pri{flex:1}
+@supports (corner-shape:squircle){.fres{corner-shape:squircle}}
+
+/* ---------- scanner de codes-barres ---------- */
+#scan{position:fixed;inset:0;z-index:70;background:#000;color:#fff}
+#scan video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.sc-mask{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
+.sc-box{width:min(78vw,340px);aspect-ratio:1.6;border-radius:26px;box-shadow:0 0 0 200vmax rgba(0,0,0,.5);position:relative}
+.sc-box::before{content:'';position:absolute;inset:0;border-radius:inherit;border:3px solid rgba(255,255,255,.9)}
+.sc-box i{position:absolute;left:10%;right:10%;top:50%;height:2px;border-radius:2px;background:var(--eff);box-shadow:0 0 12px var(--eff);animation:scanl 1.8s ease-in-out infinite alternate}
+@keyframes scanl{from{transform:translateY(-38px)}to{transform:translateY(38px)}}
+#scan.nocam .sc-mask{display:none}
+.sc-top{position:absolute;top:calc(var(--sat) + 10px);left:16px;right:16px;display:flex}
+.sc-top .ms-btn{background:rgba(255,255,255,.18);color:#fff;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.sc-bot{position:absolute;left:16px;right:16px;bottom:calc(var(--sab) + 18px);display:grid;gap:10px;text-align:center}
+#scmsg{margin:0;font:600 1.0625rem var(--font);text-shadow:0 1px 8px rgba(0,0,0,.6)}
+#scf{display:flex;gap:8px}
+#scf input{flex:1;background:rgba(255,255,255,.16);color:#fff;font:600 1.0625rem var(--round);letter-spacing:.06em;text-align:center}
+#scf input::placeholder{color:rgba(255,255,255,.6);letter-spacing:0;font-weight:400}
+#scf .btn.pri{background:#fff;color:#16181e}
+.sc-note{margin:0;font-size:0.8125rem;color:rgba(255,255,255,.7)}
+:root.scan-open{overflow:hidden}
+@media(prefers-reduced-motion:reduce){.sc-box i{animation:none}}
+/* bouton d'effacement de la recherche en gris, comme le reste de l'interface (pas de bleu système) */
+input[type=search]::-webkit-search-cancel-button{filter:grayscale(1) opacity(.55);cursor:pointer}
