@@ -1140,3 +1140,5 @@ input[type=search]::-webkit-search-cancel-button{filter:grayscale(1) opacity(.55
 :root[data-theme=light] #sky .stars i{background:color-mix(in srgb,var(--slp) 50%,#fff);box-shadow:none}
 /* une notification ne bloque pas les touchers sur ce qu'elle recouvre (sauf son bouton « Annuler ») */
 #toast{pointer-events:none}#toast button{pointer-events:auto}
+/* « Noter » : icônes alignées sur une même ligne, libellés en dessous (une ou deux lignes) */
+#sheet .qa{align-content:start;grid-template-rows:40px auto;padding-top:14px;line-height:1.2}
