@@ -78,6 +78,10 @@ try {
       expect(await page.$('#g3 .gz'), 'la zone conseillée n\'est pas dessinée sur la jauge Dépense');
       expect(await page.$('#heroact .btn.pri'), 'pas d\'action principale');
       expect(await page.$$eval('#g3 .gu', (a) => a.map((x) => x.textContent).join(' ')) === '/100 % /100', 'unités des jauges incohérentes');
+      expect(await page.isVisible('#appbar .abdate'), 'barre du haut sans la date');
+      expect((await page.$$('#vitals .vit')).length >= 4, 'moniteur de santé : tuiles manquantes');
+      expect(await page.isVisible('#bal .balc'), 'pas de bilan dépensé / mangé');
+      expect((await page.$$('#chrono .ev')).length >= 1, 'chronologie vide');
     });
 
     await step('barre d\'onglets : Résumé, Sommeil, Dépense, Tendances, Plus', async () => {
@@ -109,13 +113,13 @@ try {
 
     await step('onglets de jour : aujourd\'hui au retour, jour gardé entre eux, toucher = revenir', async () => {
       await tab(page, 'sommeil');
-      await page.click('[data-act="dprev"]');
+      await page.$eval('[data-act="dprev"]', (b) => b.click()); // flèches cachées sur téléphone (glisser ou frise)
       await page.waitForFunction(() => /^Hier/.test(document.querySelector('#dsub').textContent));
       await tab(page, 'effort');
       expect(/^Hier/.test(await text(page, '#dsub')), 'le jour choisi doit suivre entre Sommeil et Dépense');
       await page.click('#tabs a[href="#effort"]');
       await page.waitForFunction(() => /^Aujourd/.test(document.querySelector('#dsub').textContent));
-      await page.click('[data-act="dprev"]');
+      await page.$eval('[data-act="dprev"]', (b) => b.click()); // flèches cachées sur téléphone (glisser ou frise)
       await page.waitForFunction(() => /^Hier/.test(document.querySelector('#dsub').textContent));
       await tab(page, 'tendances');
       await tab(page, 'sommeil');
@@ -127,9 +131,9 @@ try {
       await tab(page, 'aujourdhui');
       await page.click('#g3 [data-go="recuperation"]');
       await page.waitForSelector('#v-recuperation:not([hidden])');
-      expect(await visible(page, '#dback'), 'bouton « ‹ Résumé » absent');
+      expect(await visible(page, '#abback'), 'bouton retour vers le Résumé absent de la barre du haut');
       expect(await page.$eval('#tabs a[href="#aujourdhui"]', (a) => a.classList.contains('sub-on')), 'Résumé non surligné');
-      await page.click('#dback');
+      await page.click('#abback');
       await page.waitForSelector('#v-aujourdhui:not([hidden])');
     });
 
@@ -321,7 +325,7 @@ try {
     });
 
     await step('page de détail : le grand chiffre suit le doigt sur le graphique', async () => {
-      await page.click('#tiles .tile[data-k="rhr"]');
+      await page.click('#vitals [data-k="rhr"]'); // FC au repos, dans le moniteur de santé
       await page.waitForSelector('#mfig svg circle');
       await page.waitForTimeout(450); // la feuille finit de monter
       const h0 = await text(page, '#mdet .mhead');

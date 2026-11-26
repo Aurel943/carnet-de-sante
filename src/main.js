@@ -268,7 +268,7 @@ function arcRing(cx,cy,r,w,p,col,id,shadow=true,a0=-Math.PI/2,span=2*Math.PI){if
 function gaugeSVG(v,col,unit,max=100,key,zone){const r=56,w=10,cy=74,p=v==null?0:clamp(v/max,0,1),id='rg'+(++ringN);
  const an=!!key&&p>0&&ringSeen.get(key)!==p&&!matchMedia('(prefers-reduced-motion: reduce)').matches;if(key)ringSeen.set(key,p);
  const tick=a=>{const c=Math.cos(a),s=Math.sin(a);return `<line x1="${(70+(r-w/2-5)*c).toFixed(2)}" y1="${(cy+(r-w/2-5)*s).toFixed(2)}" x2="${(70+(r-w/2-2)*c).toFixed(2)}" y2="${(cy+(r-w/2-2)*s).toFixed(2)}" stroke="${col}" stroke-opacity=".45" stroke-width="1.6" stroke-linecap="round"/>`};
- return `<svg viewBox="0 0 140 136" aria-hidden="true"><defs><filter id="${id}b" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2"/></filter>${an?`<mask id="${id}m"><path class="ringgrow" d="${arcPath(70,cy,r,GA0-.2,GA0+GSPAN+.2)}" fill="none" stroke="#fff" pathLength="100" stroke-dasharray="100 100" stroke-dashoffset="100"/></mask>`:''}</defs><path d="${arcPath(70,cy,r,GA0,GA0+GSPAN)}" fill="none" stroke="${col}" stroke-opacity=".15" stroke-width="${w}" stroke-linecap="round"/>${zone?zoneArc(70,cy,r,w,zone,col,max):[.25,.5,.75].map(t=>tick(GA0+GSPAN*t)).join('')}<g${an?` mask="url(#${id}m)"`:''}>${arcRing(70,cy,r,w,p,col,id,true,GA0,GSPAN)}</g><text class="gv${an?' cnt':''}" x="70" y="${cy+11}" text-anchor="middle"${an?` data-to="${Math.round(v)}"`:''}>${v==null?'–':an?0:Math.round(v)}</text>${unit?`<text class="gu" x="70" y="${cy+r*.71+4}" text-anchor="middle">${unit}</text>`:''}</svg>`}
+ return `<svg viewBox="0 0 140 142" aria-hidden="true"><defs><linearGradient id="${id}w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="gw0"/><stop offset="1" class="gw1"/></linearGradient><filter id="${id}b" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2"/></filter>${an?`<mask id="${id}m"><path class="ringgrow" d="${arcPath(70,cy,r,GA0-.2,GA0+GSPAN+.2)}" fill="none" stroke="#fff" pathLength="100" stroke-dasharray="100 100" stroke-dashoffset="100"/></mask>`:''}</defs><circle class="gw" cx="70" cy="${cy}" r="67" fill="url(#${id}w)"/><path d="${arcPath(70,cy,r,GA0,GA0+GSPAN)}" fill="none" stroke="${col}" stroke-opacity=".15" stroke-width="${w}" stroke-linecap="round"/>${zone?zoneArc(70,cy,r,w,zone,col,max):[.25,.5,.75].map(t=>tick(GA0+GSPAN*t)).join('')}<g${an?` mask="url(#${id}m)"`:''}>${arcRing(70,cy,r,w,p,col,id,true,GA0,GSPAN)}</g><text class="gv${an?' cnt':''}" x="70" y="${cy+11}" text-anchor="middle"${an?` data-to="${Math.round(v)}"`:''}>${v==null?'–':an?0:Math.round(v)}</text>${unit?`<text class="gu" x="70" y="${cy+r*.71+4}" text-anchor="middle">${unit}</text>`:''}</svg>`}
 /* zone conseillée : bande plus soutenue sur la piste, bornée par deux traits */
 function zoneArc(cx,cy,r,w,[lo,hi],col,max=100){const b0=GA0+GSPAN*lo/max,b1=GA0+GSPAN*hi/max,edge=a=>{const c=Math.cos(a),s=Math.sin(a);return `<line x1="${(cx+(r-w/2-1)*c).toFixed(2)}" y1="${(cy+(r-w/2-1)*s).toFixed(2)}" x2="${(cx+(r+w/2+1)*c).toFixed(2)}" y2="${(cy+(r+w/2+1)*s).toFixed(2)}" stroke="${col}" stroke-opacity=".7" stroke-width="1.6" stroke-linecap="round"/>`};
  return `<path class="gz" d="${arcPath(cx,cy,r,b0,b1)}" fill="none" stroke="${col}" stroke-opacity=".32" stroke-width="${w}"/>${edge(b0)}${edge(b1)}`}
@@ -349,7 +349,11 @@ function renderDayNav(){const d=S.day,v0=cur(),rel=d===today()?"Aujourd'hui":d==
  if(VT[v0]){$('#dtitle').textContent=VT[v0];$('#dsub').textContent=rel||dLong(d)}
  else{$('#dtitle').textContent=story.t;$('#dsub').textContent=rel?`${rel} · ${dLong(d)}`:dLong(d)}
  $('#dlede').innerHTML=!dayv?'':v0==='aujourdhui'?esc(story.l):esc(sectionLede(v0,d));
- $('[data-act=dnext]').disabled=d>=today();$('#dback').hidden=v0!=='recuperation';
+ $('[data-act=dnext]').disabled=d>=today();
+ $('#appbar').hidden=!dayv;$('#abback').hidden=v0!=='recuperation';if(dayv){$('#abrel').textContent=rel||new Date(d+'T12:00').toLocaleDateString('fr-FR',{weekday:'long'});$('#abday').textContent=new Date(d+'T12:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+  const L0=hLast(),age=L0?Math.round((new Date(today()+'T12:00')-new Date(L0+'T12:00'))/864e5):null;$('#abdot').className=age==null?'':age<=1?'ok':'old';
+  $('.abdate').setAttribute('aria-expanded',String(!S.set.wkc));$('#wk').classList.toggle('cl',!!S.set.wkc)}
+ document.documentElement.classList.toggle('dayv',dayv);$('#dback').hidden=v0!=='recuperation';
  paintSky($('#sky'),skyFor(v0,story.tone));
  const L=hLast();
  $('#dn').hidden=!dayv;$('#wk').hidden=$('#dn').hidden;if(!$('#wk').hidden)renderWeek(v0);
@@ -398,6 +402,54 @@ setInterval(()=>{if(cur()==='aujourdhui'&&S.day===today()&&!msKind&&document.vis
 function upNextHTML(){const up=S.med.filter(m=>(m.date>=today()&&m.date<=addD(today(),14))||(m.next&&m.next>=today()&&m.next<=addD(today(),14)));
  return S.day===today()&&up.length?`<button type="button" class="upnext" data-act="psub" data-s="dossier"><i><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg></i><span>${up.map(m=>{const x=m.date>=today()?m.date:m.next,n=Math.round((new Date(x+'T12:00')-new Date(today()+'T12:00'))/864e5);return `<b>${esc(m.title)}</b> ${n===0?"aujourd'hui":n===1?'demain':'dans '+n+' jours'}`}).join('<br>')}</span><em>›</em></button>`:''}
 
+/* ---------- Résumé façon appli : bilan, moniteur en tuiles, chronologie ---------- */
+/* Bilan du jour : dépensé (base + actif) et mangé sur la même échelle, l'écart en grand. */
+function balHTML(d){const x=burnOf(d),it=(S.days[d]||{}).items||[],ate=it.reduce((a,y)=>a+kcalOf(y),0),goal=num(S.set.kcal);
+ if(!x&&!it.length)return'';const burn=x?x.total:0,mx=Math.max(burn,ate,goal||0,1),W=v=>clamp(v/mx*100,0,100).toFixed(1)+'%',dl=Math.round(ate-burn);
+ const lab=!x?'calories mangées':Math.abs(dl)<100?'à l\'équilibre':dl<0?'de déficit, pour l\'instant':'de surplus';
+ return `<div class="panel balc"><div class="balh"><b>${x?(dl>0?'+':dl<0?'−':'')+r0(Math.abs(x?dl:ate)):r0(ate)}<small> kcal</small></b><span>${lab}</span></div>
+ <button type="button" class="balr" data-act="metric" data-k="burn" style="--c:var(--eff)"><span class="bl"><i><svg viewBox="0 0 24 24"><path d="M12 2.5c.8 3.8 5.5 5.6 5.5 11a5.5 5.5 0 0 1-11 0c0-2.8 1.6-4.2 2.4-6 .9 1.3 1.8 1.9 2.9 2.2-.3-2.5-.6-4.6.2-7.2z"/></svg></i>Dépensé</span><span class="bt"><i class="b0" style="width:${W(x?x.basal:0)}"></i><i class="b1" style="width:${W(x?x.active:0)}"></i></span><em>${x?r0(burn):'–'}</em></button>
+ <button type="button" class="balr" data-act="metric" data-k="nut" style="--c:var(--nut)"><span class="bl"><i><svg viewBox="0 0 24 24"><path d="M4 11h16a8 8 0 0 1-16 0zM9 7c0-2 1.5-3 3-3s3 1 3 3"/></svg></i>Mangé</span><span class="bt"><i class="b1" style="width:${W(ate)}"></i>${goal?`<u style="left:${W(goal)}"></u>`:''}</span><em>${r0(ate)}</em></button>
+ <p class="balf">${x?`${r0(x.basal)} de base · ${r0(x.active)} actives`:'renseigne ton profil pour la dépense'}${goal?` · objectif ${r0(goal)}`:''}</p></div>`}
+/* Mini-arc d'Arden pour une mesure : piste, plage normale en couleur, point-curseur sur la valeur. */
+function miniArc(p,lo,hi,col){const r=13,c=18,P=t=>{const a=GA0+GSPAN*clamp(t,0,1);return [c+r*Math.cos(a),c+r*Math.sin(a)]},[x,y]=P(p);
+ return `<svg class="ma" viewBox="0 0 36 36" aria-hidden="true"><path d="${arcPath(c,c,r,GA0,GA0+GSPAN)}" class="mat"/><path d="${arcPath(c,c,r,GA0+GSPAN*clamp(lo,0,1),GA0+GSPAN*clamp(hi,0,1))}" class="man" style="stroke:${col}"/><circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="3.6" class="mad" style="stroke:${col}"/></svg>`}
+const VIT={rhr:['FC repos','<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>','metric'],hrv:['VFC','<path d="M3 12h4l2-5 3 10 2-5h7"/>','metric'],rr:['Respiration','<path d="M12 4v7M12 11c-2 0-3 1.5-4.5 4S5 20 4 19.5 3.2 14 5 10c1-2.3 2.6-3 3.5-3M12 11c2 0 3 1.5 4.5 4S19 20 20 19.5s.8-5.5-1-9.5c-1-2.3-2.6-3-3.5-3"/>'],o2:['SpO₂','<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>'],tp:['Température','<path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z"/>'],nmin:['FC nocturne','<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>']};
+const VST=x=>x.lab==='Dans ta normale'?['Normal','ok']:x.lab.startsWith('Plus haut')?['Plus haut','up']:x.lab.startsWith('Plus bas')?['Plus bas','dn']:[x.lab==='Inhabituel'?'Inhabituel':'Très inhabituel','warn'];
+const VIC={ok:'<path d="M7.5 12.5l3 3 6-6.5"/>',up:'<path d="M12 17V7M7.5 11.5 12 7l4.5 4.5"/>',dn:'<path d="M12 7v10M7.5 12.5 12 17l4.5-4.5"/>',warn:'<path d="M12 7v6M12 16.6v.1"/>'};
+function vitalsHTML(d){const h=H(d),mo=monitor(d),by=Object.fromEntries(mo.map(x=>[x.k,x])),out=[];
+ const cell=(k,lab,ic,val,unit,st,arc,tap)=>`<button type="button" class="vit" ${tap}><span class="vk"><svg viewBox="0 0 24 24">${ic}</svg>${lab}</span><span class="vv">${val}<small>${unit}</small></span>${st?`<span class="vs ${st[1]}"><svg viewBox="0 0 24 24">${VIC[st[1]]}</svg>${st[0]}</span>`:'<span class="vs na">pas de normale</span>'}${arc}</button>`;
+ for(const k of ['rhr','hrv','rr','o2','tp','nmin']){if(out.length>=5)break;const x=by[k],[lab,ic,how]=VIT[k];
+  const raw=x?x.v:k==='hrv'?nhrv(d):k==='tp'?null:num(h[k])||null;if(raw==null)continue;
+  const val=k==='tp'?sg(Math.round((raw-x.m)*10)/10).replace('.',','):k==='rr'||k==='o2'?fx(raw):r0(raw),unit=k==='tp'?' °C':k==='rr'?' /min':k==='o2'?' %':' '+(x?x.u:k==='hrv'?'ms':'bpm');
+  const arc=x?miniArc((x.v-(x.m-3*x.sd))/(6*x.sd),.25,.75,x.col):'';
+  out.push(cell(k,lab,ic,val,unit,x&&VST(x),arc,how?`data-act="metric" data-k="${k}"`:'data-go="recuperation"'))}
+ if(has(h.stz)){const st=num(h.stz),sv=st<20?['Faible','ok']:st<35?['Élevé','up']:['Très élevé','warn'];
+  out.push(cell('stz','Stress','<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',r0(st),' /100',sv,miniArc(st/60,0,20/60,st<20?'var(--rec)':st<35?'var(--str)':'var(--bad)'),'data-act="metric" data-k="stz"'))}
+ if(!out.length)return'';
+ const bad=mo.filter(x=>x.warn);
+ return `<p class="vd vitd">${!mo.length?'Encore quelques nuits pour établir ta normale.':bad.length?`${bad.length} ${bad.length>1?'signaux inhabituels':'signal inhabituel'} cette nuit : ${bad.map(x=>(VIT[x.k]||[x.l])[0].toLowerCase()).join(', ')}.`:'Tout est dans ta normale cette nuit.'}</p>${out.join('')}`}
+/* Chronologie : ce qui s'est passé dans la journée, du plus récent au plus ancien. */
+const MEALT={'Petit-déjeuner':480,'Déjeuner':750,'Collation':990,'Dîner':1200};
+const MEALI={'Petit-déjeuner':'<path d="M5 10h11v4a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5zM16 11h1.5a2.5 2.5 0 0 1 0 5H16M9 4c-.6 1 .6 2 0 3M12.5 4c-.6 1 .6 2 0 3"/>','Collation':'<path d="M12 7c-3-2.5-7-.5-7 4 0 4 3 9 5 9 1 0 1.3-.5 2-.5s1 .5 2 .5c2 0 5-5 5-9 0-4.5-4-6.5-7-4zM12 7c0-2 1-3.5 3-4"/>'};
+function chronoHTML(d){const h=H(d),T=dayTrain(d),D=S.days[d]||{},it=D.items||[],E=[],j=J(d);
+ const ev=(t,lab,c,ic,ti,meta,attr,extra='')=>E.push({t,html:`<button type="button" class="ev" style="--c:${c}" ${attr}><i class="evi"><svg viewBox="0 0 24 24">${ic}</svg></i><span class="evb"><small>${lab}</small><b>${ti}</b>${meta?`<span class="evm">${meta}</span>`:''}${extra}</span><em aria-hidden="true">›</em></button>`});
+ const tr=w=>w&&w.tr?`<span><b style="color:var(--eff)">${r0(100*(1-Math.exp(-w.tr/110)))}</b> dépense</span>`:'';
+ if(has(h.sw)&&h.sl)ev(h.sw+720,`${has(h.sb)?hhmm(h.sb)+' – ':''}${hhmm(h.sw)}`,'var(--slp)','<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>','Nuit',`<span>${fmtSl(h.sl)}</span>${sleepScore(d)?`<span><b style="color:var(--slp)">${sleepScore(d).s}</b> sommeil</span>`:''}`,'data-go="sommeil"');
+ for(const x of D.br||[]){const m=/^(\d+):(\d+)/.exec(x.at||'');ev(m?+m[1]*60+ +m[2]:600,x.at||'Respiration','var(--rec)','<path d="M6.3 17.7A8 8 0 1 1 17.7 17.7"/><path d="M9.2 14.8A4 4 0 1 1 14.8 14.8"/>','Respiration guidée',`<span>${x.min} min</span>`,'data-act="breath"')}
+ for(const w of T.ap)ev(has(w.st)?w.st:900,has(w.st)?hm(w.st):'Montre',isStr(w)?'var(--trn)':'var(--eff)',isStr(w)?IC.lift:IC.run,esc(WT[w.ty]||w.ty),`<span>${esc(w.min)} min</span>${w.km?`<span>${fx(w.km)} km</span>`:''}${w.hr?`<span>${esc(w.hr)} bpm</span>`:''}${tr(w)}`,'data-go="effort"',zbar(w.z));
+ for(const s of T.mu){const w=T.att.filter(isStr)[0],vol=(s.ex||[]).reduce((a,x)=>a+x.sets.reduce((b,y)=>b+num(y.w)*num(y.r),0),0);
+  ev(w&&has(w.st)?w.st:s.t?new Date(s.t).getHours()*60+new Date(s.t).getMinutes():1080,w&&has(w.st)?hm(w.st):'Séance','var(--trn)',IC.lift,esc(s.name),`<span>${(s.ex||[]).length} exercices</span>${vol?`<span>${fx(vol/1000)} t</span>`:''}${s.dur?`<span>${esc(s.dur)} min</span>`:''}${tr(w)}`,'data-go="effort"',w?zbar(w.z):'')}
+ for(const s of T.sp){const w=T.att.find(x=>(WT[x.ty]||'')===s.type);
+  ev(w&&has(w.st)?w.st:1020,w&&has(w.st)?hm(w.st):'Sport','var(--eff)',IC.run,esc(s.type),`<span>${esc(s.min)} min</span>${s.km?`<span>${fx(s.km)} km</span>`:''}${tr(w)}`,'data-go="effort"',w?zbar(w.z):'')}
+ const meals={};for(const x of it)(meals[x.m||'Repas']=meals[x.m||'Repas']||[]).push(x);
+ for(const [m,L] of Object.entries(meals)){const k=L.reduce((a,x)=>a+kcalOf(x),0),p=L.reduce((a,x)=>a+num(x.p),0);
+  ev(MEALT[m]??1100,esc(m),'var(--nut)',MEALI[m]||'<path d="M4 11h16a8 8 0 0 1-16 0zM9 7c0-2 1.5-3 3-3s3 1 3 3"/>',esc(L.length>2?L.slice(0,2).map(x=>x.n).join(', ')+'…':L.map(x=>x.n).join(', ')),`<span>${r0(k)} kcal</span><span>${r0(p)} g prot.</span>`,`data-act="foodadd" data-m="${esc(m)}"`)}
+ if(j.mood||j.energy||j.stress||j.sore){const sc=['','Très bas','Bas','Moyen','Bien','Très bien'];ev(-1,'Ressenti','var(--mind)','<circle cx="12" cy="12" r="8.5"/><path d="M8.7 14s1.2 1.8 3.3 1.8 3.3-1.8 3.3-1.8M9.2 10h.01M14.8 10h.01"/>','Check-in',[j.mood&&`<span>humeur ${sc[j.mood]?.toLowerCase()||j.mood}</span>`,j.energy&&`<span>énergie ${j.energy}/5</span>`].filter(Boolean).join(''),'data-act="ciopen"')}
+ E.sort((a,b)=>b.t-a.t);
+ $('#chrn').textContent=E.length?`${E.length} événement${E.length>1?'s':''}`:'';
+ return E.length?E.map(e=>e.html).join(''):`<div class="evempty"><p>Rien de noté pour l'instant.</p><button type="button" class="btn small" data-act="sheet">Noter quelque chose</button></div>`}
+
 /* ---------- aujourd'hui ---------- */
 const waterLv={};
 function renderToday(){const d=S.day,h=H(d),D=S.days[d]||{},it=D.items||[],T=dayTrain(d),set=S.set;
@@ -426,6 +478,8 @@ function renderToday(){const d=S.day,h=H(d),D=S.days[d]||{},it=D.items||[],T=day
  const mo=monitor(d),bad=mo.filter(x=>x.warn);
  $('#monmini').innerHTML=mo.length?`<div class="mm" data-go="recuperation"><div><div class="eyebrow">Moniteur de santé</div><b style="font-size:1.0625rem">${bad.length?`${bad.length} ${bad.length>1?'signaux':'signal'} inhabituel${bad.length>1?'s':''} : ${bad.map(x=>x.l).join(', ')}`:'Tous tes signes vitaux sont dans ta normale'}</b></div><div class="dots" style="margin-left:auto">${mo.map(x=>`<i style="--c:${x.col}" data-tip="${esc(x.l+' : '+monFmt(x,x.v)+'\n'+x.lab)}"></i>`).join('')}</div></div>`:'<div class="eyebrow">Moniteur de santé</div><p class="mute small" style="margin:4px 0 0">Il faut au moins 7 nuits importées pour établir ta normale.</p>';
  $('#upn').innerHTML=upNextHTML();
+ $('#bal').innerHTML=balHTML(d);$('#vitals').innerHTML=vitalsHTML(d);$('#sh-vit').hidden=!$('#vitals').innerHTML;$('#sh-bal').hidden=false;
+ $('#chrono').innerHTML=chronoHTML(d);
  renderCheckin()}
 function coach(d,rc,sl,ef,tg){const h=H(d),out=[];
  if(rc&&!rc.partial){const [l]=recLab(rc.s);out.push(`<b>Énergie ${l.toLowerCase()} (${rc.s} %).</b> `+(rc.s>=67?'Tes indicateurs (VFC, FC de repos, sommeil) sont au niveau ou au-dessus de ta normale : bon jour pour une séance exigeante.':rc.s>=34?'Tes indicateurs sont proches de ta normale : entraîne-toi normalement, sans forcément viser ton maximum.':'Tes indicateurs sont sous ta normale : privilégie une activité légère ou le repos, et dors davantage ce soir.'));
@@ -817,7 +871,13 @@ function renderSoft(){updateDatalist();
  if(!S.cur&&!$('#editor').contains(document.activeElement))renderStart();
  if(S.cur)S.cur.ex.forEach((e,i)=>updateHint(i));
  const v=cur();if(v==='aujourdhui'&&$('#checkin').contains(document.activeElement))return;if(v==='effort'&&$('#editor').contains(document.activeElement))return;renderView(v)}
-function route(){const v=cur();views.forEach(n=>$('#v-'+n).hidden=n!==v);$$('#tabs a').forEach(a=>{a.setAttribute('aria-current',a.getAttribute('href')==='#'+v?'page':'false');a.classList.toggle('sub-on',(a.getAttribute('href')==='#plus'&&v==='nutrition')||(a.getAttribute('href')==='#aujourdhui'&&v==='recuperation'))});renderView(v)}
+function route(){const v=cur();views.forEach(n=>$('#v-'+n).hidden=n!==v);$$('#tabs a').forEach(a=>{a.setAttribute('aria-current',a.getAttribute('href')==='#'+v?'page':'false');a.classList.toggle('sub-on',(a.getAttribute('href')==='#plus'&&v==='nutrition')||(a.getAttribute('href')==='#aujourdhui'&&v==='recuperation'))});renderView(v);tabInd()}
+/* indicateur de l'onglet actif : il glisse d'un onglet à l'autre (ressort), à la couleur de la section */
+function tabInd(){const nav=$('#tabs');let ind=nav.querySelector('.tabind');if(!ind){ind=document.createElement('i');ind.className='tabind';ind.setAttribute('aria-hidden','true');nav.prepend(ind)}
+ const a=nav.querySelector('a[aria-current=page]:not(.dsk),a.sub-on');if(!a||!a.offsetWidth){ind.classList.add('off');return}
+ const first=!ind.style.width;if(first)ind.style.transition='none';ind.classList.remove('off');ind.style.width=a.offsetWidth+'px';ind.style.transform=`translateX(${a.offsetLeft}px)`;ind.style.setProperty('--tc',getComputedStyle(a).getPropertyValue('--tc'));
+ if(first){void ind.offsetWidth;ind.style.transition=''}}
+addEventListener('resize',()=>requestAnimationFrame(tabInd));
 
 $('#editor').addEventListener('input',ev=>{const t=ev.target,c=S.cur;if(!c)return;
  if(t.id==='cn'){c.name=t.value;return dirty()}if(t.id==='cd'){c.date=t.value;return dirty()}if(t.id==='crpe'){c.rpe=num(t.value)||'';return dirty()}
@@ -858,6 +918,8 @@ document.addEventListener('click',ev=>{unlockAudio();
  case'hkauth':return hkConnect();
  case'bkok':{const t=pendingBk;pendingBk='';if(t)doImport(t,$('#bkmsg'));return}
  case'wipe':{if(b.classList.contains('armed'))return resetAll();b.classList.add('armed');b.textContent='Confirmer : tout effacer définitivement';setTimeout(()=>{b.classList.remove('armed');b.textContent='Effacer toutes mes données'},6000);return}
+ case'wktoggle':buzz();return vt(()=>{S.set.wkc=!S.set.wkc;put.set();renderDayNav()},'tab');
+ case'absync':buzz();if(HKN)return hkSync();psub='apple';scrollTo(0,0);location.hash='plus';return;
  case'dprev':return goDay(-1);
  case'dnext':return goDay(1);
  case'dlast':S.day=hLast()||today();return renderView(cur());

@@ -58,7 +58,7 @@ try {
       await page.waitForTimeout(400);
       // Effort : on recule jusqu'au dernier jour avec un entraînement enregistré par la montre
       for (let k = 0; workoutDay && k < 7 && /Pas d'entraînement/.test(await page.textContent('#dz')); k++) {
-        await page.click('[data-act="dprev"]'); await page.waitForTimeout(250);
+        await page.$eval('[data-act="dprev"]', (b) => b.click()); await page.waitForTimeout(250);
       }
       await page.evaluate((s) => {
         const el = s && document.querySelector(s)?.closest('.panel');
@@ -66,7 +66,7 @@ try {
       }, sel);
       await page.waitForTimeout(500);
       await page.screenshot({ path: `${out}${name}-${theme}.png` });
-      while (workoutDay && await page.isEnabled('[data-act="dnext"]')) await page.click('[data-act="dnext"]');
+      while (workoutDay && await page.isEnabled('[data-act="dnext"]')) await page.$eval('[data-act="dnext"]', (b) => b.click());
     }
     await ctx.close();
   }
