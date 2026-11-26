@@ -363,28 +363,55 @@ try {
     await page.goto(url);
     await page.evaluate(() => window.carnet.loadDemo());
     await page.waitForFunction(() => document.querySelector('#plan li'), null, { timeout: 30000 });
-    const items = () => page.evaluate(() => { const d = JSON.parse(localStorage.getItem('carnet-muscu-v1')); const t = new Date(); const k = new Date(t - t.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); return (d.days[k] && d.days[k].items || []).map((x) => x.n); });
+    const items = () => page.evaluate(() => { const d = JSON.parse(localStorage.getItem('carnet-muscu-v1')); const t = new Date(); const k = new Date(t - t.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); return (d.days[k] && d.days[k].items || []).map((x) => x.n + (x.q ? ` (${x.q} g)` : '')); });
+    const done = async () => { await page.click('#fbasket [data-act="msclose"]'); await page.waitForSelector('#msheet', { state: 'hidden' }); };
 
     await step('recherche : favoris et banque d\'aliments', async () => {
       await page.click('.tplus'); await page.click('#sheet [data-q="food"]');
       await page.waitForSelector('#msheet:not([hidden])');
       await page.fill('#fq', 'whey');
       await page.waitForSelector('#fres [data-act="fav"]');
-      const n = await page.evaluate(() => import('/src/foods.js').then((m) => m.loadCiqual()).then((a) => a.length));
-      if (n) {
-        await page.fill('#fq', 'riz');
-        await page.waitForSelector('#fres [data-act="fpick"]');
-        await page.click('#fres [data-act="fpick"]');
-        await page.fill('#pq', '150');
-        expect(/kcal/.test(await text(page, '#pkr')), 'pas de total calculé');
-        await page.click('[data-act="pickadd"]');
-        await page.waitForSelector('#msheet', { state: 'hidden' });
-        expect((await items()).some((x) => /150 g/.test(x)), 'aliment Ciqual non ajouté');
-      } else {
-        await page.fill('#fq', 'zzzz');
-        expect(/s'installe|Aucun/.test(await text(page, '#fres')), 'pas de message sans résultat');
-        await page.click('#msl');
-      }
+      // aliments courants embarqués : toujours trouvés, avec une portion naturelle
+      await page.fill('#fq', 'riz');
+      await page.waitForSelector('#fres [data-act="fpick"]');
+      expect(/Riz blanc/.test(await text(page, '#fres')), 'aliment courant introuvable');
+      await page.click('#fres [data-act="fpick"]');
+      await page.fill('#pq', '150');
+      expect(/kcal/.test(await text(page, '#pkr')), 'pas de total calculé');
+      await page.click('[data-act="pickadd"]');
+      await page.waitForSelector('#fbasket:not([hidden])');
+      expect((await items()).some((x) => /150 g/.test(x)), 'aliment courant non ajouté');
+      await page.fill('#fq', 'zzzz');
+      expect(/Aucun/.test(await text(page, '#fres')), 'pas de message sans résultat');
+      await page.fill('#fq', '');
+      await done();
+    });
+
+    await step('en un toucher : récent, « comme hier », ajout rapide', async () => {
+      const n0 = (await items()).length;
+      await page.click('.tplus'); await page.click('#sheet [data-q="food"]');
+      await page.waitForSelector('#frec [data-act="rplus"]');
+      await page.click('#frec [data-act="rplus"]');
+      await page.waitForFunction(() => /1 ajouté/.test(document.querySelector('#fbasket').textContent));
+      await page.click('[data-act="fquick"]');
+      await page.fill('#qk-k', '320');
+      await page.fill('#qk-n', 'Plat du midi');
+      await page.click('[data-act="pickadd"]');
+      await page.waitForFunction(() => /2 ajoutés/.test(document.querySelector('#fbasket').textContent));
+      await done();
+      expect((await items()).length === n0 + 2, 'les deux ajouts manquent');
+      // l'écran Nutrition : repas, et « comme hier » quand un repas est vide
+      await page.evaluate(() => { location.hash = 'nutrition'; });
+      await page.waitForSelector('#v-nutrition:not([hidden]) #meals .meal');
+      expect(/kcal/.test(await text(page, '#nhero')), 'pas de total du jour');
+      const likey = await page.$('#meals [data-act="likey"]');
+      if (likey) { const n1 = (await items()).length; await likey.click(); await page.waitForTimeout(200); expect((await items()).length > n1, '« comme hier » n\'ajoute rien'); }
+      await page.click('#meals [data-act="fedit"]');
+      await page.waitForSelector('#fpick:not([hidden]) [data-act="pkdel"]');
+      const n2 = (await items()).length;
+      await page.click('[data-act="pkdel"]');
+      await page.waitForSelector('#msheet', { state: 'hidden' });
+      expect((await items()).length === n2 - 1, 'aliment non supprimé');
     });
 
     await step('scan à la caméra, Open Food Facts, portion, ajout', async () => {
@@ -395,7 +422,7 @@ try {
       await page.click('[data-act="pickq"][data-q="15"]');
       expect(/81 kcal/.test(await text(page, '#pkr')), 'portion mal calculée : ' + await text(page, '#pkr'));
       await page.click('[data-act="pickadd"]');
-      await page.waitForSelector('#msheet', { state: 'hidden' });
+      await done();
       expect((await items()).some((x) => /Pâte à tartiner.*15 g/.test(x)), 'produit scanné non ajouté');
     });
 
@@ -440,7 +467,7 @@ try {
       await page.fill('#pk-p', '4');
       await page.fill('#pq', '125');
       await page.click('[data-act="pickadd"]');
-      await page.waitForSelector('#msheet', { state: 'hidden' });
+      await done();
       expect((await items()).some((x) => /Yaourt maison \(125 g\)/.test(x)), 'produit inconnu non ajouté');
       const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('carnet-muscu-v1')).set.prods.map((p) => p.id));
       expect(saved.includes('12345670'), 'produit inconnu non mémorisé');

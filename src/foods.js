@@ -5,6 +5,7 @@
      recherche du produit sur Open Food Facts. Seul le numéro du code-barres est envoyé, et seulement au
      moment du scan ; le produit trouvé est ensuite gardé sur l'appareil. */
 import {plain,num,has} from './utils.js';
+import {BASICS} from './basics.js';
 
 /* ---------- recherche ---------- */
 let CIQ=null,ciqP=null;
@@ -13,12 +14,15 @@ export function loadCiqual(){if(CIQ)return Promise.resolve(CIQ);
  return ciqP||(ciqP=import('./data/ciqual.json').then(m=>{const a=m.default||[];CIQ=a.map(r=>({id:'c'+r[0],n:r[1],k:r[2],p:r[3],g:r[4],l:r[5],src:'ciqual',w:plain(r[1]).split(/[^a-z0-9]+/).filter(Boolean)}));return CIQ}).catch(()=>{CIQ=[];return CIQ}))}
 export const ciqualCount=()=>CIQ?CIQ.length:null;
 const words=s=>plain(s).split(/[^a-z0-9]+/).filter(Boolean);
+/* Aliments courants, embarqués : valeurs moyennes pour 100 g et une portion naturelle (« 1 pomme », 150 g) */
+export const BASE=BASICS.map((r,i)=>({id:'b'+i,n:r[0],k:r[1],p:r[2],g:r[3],l:r[4],su:r[5],sv:r[6],src:'base',w:words(r[0]+' '+(r[7]||''))}));
 /* Chaque mot tapé doit commencer un mot du nom (« riz cu » trouve « Riz blanc, cuit »). */
 function score(q,w,name){let s=0;for(const t of q){const i=w.findIndex(x=>x.startsWith(t));if(i<0)return -1;s+=i===0?3:1;if(w[i]===t)s+=1}return s*100-name.length}
-export function searchFoods(query,{prods=[],favs=[]}={},limit=30){const q=words(query);if(!q.length)return[];
- const mine=[...prods.map(p=>({...p,src:'off'})),...favs.map((f,i)=>({...f,id:'f'+i,src:'fav'}))].map(x=>({x,s:score(q,words(x.n+' '+(x.b||'')),x.n)})).filter(r=>r.s>=0).sort((a,b)=>b.s-a.s).map(r=>r.x);
- const base=(CIQ||[]).map(x=>({x,s:score(q,x.w,x.n)})).filter(r=>r.s>=0).sort((a,b)=>b.s-a.s).slice(0,limit).map(r=>r.x);
- return[...mine.slice(0,8),...base].slice(0,limit)}
+export function searchFoods(query,{prods=[],favs=[],recents=[]}={},limit=30){const q=words(query);if(!q.length)return[];
+ const rank=(L,w)=>L.map(x=>({x,s:score(q,w(x),x.n)})).filter(r=>r.s>=0).sort((a,b)=>b.s-a.s).map(r=>r.x);
+ const mine=rank([...recents.filter(r=>Array.isArray(r.c)).map(r=>({...r,src:'rec'})),...prods.map(p=>({...p,src:p.src==='mine'?'mine':'off'})),...favs.map((f,i)=>({...f,id:'f'+i,src:'fav'}))],x=>words(x.n+' '+(x.b||'')));
+ const seen=new Set(),out=[];for(const x of [...mine.slice(0,6),...rank(BASE,x=>x.w).slice(0,10),...rank(CIQ||[],x=>x.w).slice(0,limit),...rank(recents.filter(r=>!Array.isArray(r.c)).map(r=>({...r,src:'rec'})),x=>words(x.n)).slice(0,4)]){const k=plain(x.n);if(seen.has(k))continue;seen.add(k);out.push(x)}
+ return out.slice(0,limit)}
 /* Valeurs pour une quantité donnée (en grammes) à partir des valeurs pour 100 g */
 export function forGrams(f,q){const r=num(q)/100,k=Math.round(num(f.k)*r),o={k,p:Math.round(num(f.p)*r*10)/10,g:Math.round(num(f.g)*r*10)/10,l:Math.round(num(f.l)*r*10)/10};return o}
 

@@ -5,7 +5,7 @@ import '@fontsource-variable/inter/opsz.css'; // graisse + taille optique (comme
 import {$,$$,esc,clone,iso,today,addD,dShort,dLong,dWk,num,has,fx,f2,r0,sg,clamp,nid,norm,plain,e1,sortDesc,setTxt,fmtSl,hhmm,hm,avg,sdv} from './utils.js';
 import {BASE_EX,SPORTS,MEALS,WT,MG,SCALES,MEAS,ZC,ZN,IC,DEF} from './constants.js';
 import {readHealth} from './health-import.js';
-import {loadCiqual,ciqualCount,searchFoods,forGrams,lookupOFF,validCode,startScanner} from './foods.js';
+import {loadCiqual,searchFoods,forGrams,lookupOFF,validCode,startScanner} from './foods.js';
 import {demoHealthXML,demoManual,DEMO_PROFILE} from './demo.js';
 import {hasHealthKit,authorizeHealth,readHealthKit,useHealthProvider} from './healthkit.js';
 import {Capacitor} from '@capacitor/core';
@@ -341,7 +341,8 @@ const STARS=Array.from({length:24},(_,i)=>{const r=n=>((Math.sin(i*12.9898+n*78.
 function paintSky(el,k){if(el.id==='sky'){el.classList.toggle('night',!!k.night);if(k.night&&!el.firstChild)el.innerHTML=`<div class="stars">${STARS}</div>`}el.style.setProperty('--sk1',k.a);el.style.setProperty('--sk2',k.b);el.style.setProperty('--sk3',k.c);el.style.setProperty('--sko',k.o)}
 
 /* ---------- vue commune : jour ---------- */
-const VT={sommeil:'Sommeil',recuperation:'Énergie',effort:'Dépense'};
+const VT={sommeil:'Sommeil',recuperation:'Énergie',effort:'Dépense',nutrition:'Nutrition'};
+const DAYV=['aujourdhui','sommeil','recuperation','effort','nutrition'];
 /* Phrase de conclusion de chaque section, sous le grand titre : ce qu'il faut retenir avant les chiffres. */
 const SLW={Durée:'un peu courte',Efficacité:'du temps éveillé au lit',Récupératrice:'peu de sommeil profond',Régularité:'un coucher irrégulier',Continuité:'plusieurs réveils'};
 function sectionLede(v,d){const h=H(d);
@@ -352,15 +353,19 @@ function sectionLede(v,d){const h=H(d);
  if(v==='effort'){const rc=recovery(d),ef=effortOf(d),tg=effTarget(rc&&rc.s);if(ef==null&&!tg)return'';
   if(!tg)return `Dépense de ${ef} aujourd'hui.`;const e=ef??0;
   return e>tg[1]?`Dépense de ${e}, au-delà de la zone conseillée (${tg[0]}–${tg[1]}) : récupère ce soir.`:e>=tg[0]?`Dépense de ${e}, dans ta zone conseillée (${tg[0]}–${tg[1]}). Bien joué.`:d===today()?`Dépense de ${e} pour une zone de ${tg[0]}–${tg[1]} : encore environ ${fmtMin(effGap(d,tg))} d'effort modéré pour l'atteindre.`:`Dépense de ${e}, sous la zone conseillée (${tg[0]}–${tg[1]}).`}
+ if(v==='nutrition'){const it=dayIt(d),K=it.reduce((a,x)=>a+kcalOf(x),0),KT=num(S.set.kcal),P=sum(it,'p'),T=num(S.set.prot);
+  if(!it.length)return d===today()?'Rien de noté pour l\'instant : commence par ton dernier repas, même approximatif.':'Rien de noté ce jour-là.';
+  if(d!==today())return `${r0(K)} kcal et ${r0(P)} g de protéines ce jour-là.`;
+  return K>KT?`Objectif dépassé de ${r0(K-KT)} kcal : rien de grave, c'est la moyenne de la semaine qui compte.`:`Il te reste ${r0(KT-K)} kcal${P<T?` et ${r0(T-P)} g de protéines`:', protéines atteintes'}.`}
  return''}
 let story=null;
-function renderDayNav(){const d=S.day,v0=cur(),rel=d===today()?"Aujourd'hui":d===addD(today(),-1)?'Hier':'',dayv=['aujourdhui','sommeil','recuperation','effort'].includes(v0);
+function renderDayNav(){const d=S.day,v0=cur(),rel=d===today()?"Aujourd'hui":d===addD(today(),-1)?'Hier':'',dayv=DAYV.includes(v0);
  story=dayStory(d);
  if(VT[v0]){$('#dtitle').textContent=VT[v0];$('#dsub').textContent=rel||dLong(d)}
  else{$('#dtitle').textContent=story.t;$('#dsub').textContent=rel?`${rel} · ${dLong(d)}`:dLong(d)}
  $('#dlede').innerHTML=!dayv?'':v0==='aujourdhui'?esc(story.l):esc(sectionLede(v0,d));
  $('[data-act=dnext]').disabled=d>=today();
- $('#appbar').hidden=!dayv;$('#abback').hidden=v0!=='recuperation';if(dayv){$('#abrel').textContent=rel||new Date(d+'T12:00').toLocaleDateString('fr-FR',{weekday:'long'});$('#abday').textContent=new Date(d+'T12:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+ $('#appbar').hidden=!dayv;$('#abback').hidden=v0!=='recuperation'&&v0!=='nutrition';$('#abback').dataset.go=v0==='nutrition'?'plus':'aujourdhui';$('#abback').setAttribute('aria-label',v0==='nutrition'?'Retour à Plus':'Retour au Résumé');if(dayv){$('#abrel').textContent=rel||new Date(d+'T12:00').toLocaleDateString('fr-FR',{weekday:'long'});$('#abday').textContent=new Date(d+'T12:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
   const L0=hLast(),age=L0?Math.round((new Date(today()+'T12:00')-new Date(L0+'T12:00'))/864e5):null;$('#abdot').className=age==null?'':age<=1?'ok':'old';
   $('.abdate').setAttribute('aria-expanded',String(!S.set.wkc));$('#wk').classList.toggle('cl',!!S.set.wkc)}
  document.documentElement.classList.toggle('dayv',dayv);$('#dback').hidden=v0!=='recuperation';
@@ -377,7 +382,7 @@ function barsSVG(bars){const sz=34,n=bars.length,w=n>1?5.5:9,gap=n>1?3.5:0,x0=(s
 function renderWeek(v){const d=S.day,t=today(),wd=(new Date(d+'T12:00').getDay()+6)%7,mon=addD(d,-wd),L='LMMJVSD';
  const val=(f,x)=>{try{const r=f(x);return r==null?null:typeof r==='object'?r.s:r}catch(e){return null}};
  $('#wk').innerHTML=[0,1,2,3,4,5,6].map(i=>{const x=addD(mon,i),fut=x>t;
-  const rings=fut?[]:v==='sommeil'?[[val(sleepScore,x),'var(--slp)']]:v==='recuperation'?[[val(recovery,x),'var(--rec)']]:v==='effort'?[[val(effortOf,x),'var(--eff)']]:[[val(effortOf,x),'var(--eff)'],[val(recovery,x),'var(--rec)'],[val(sleepScore,x),'var(--slp)']];
+  const rings=fut?[]:v==='sommeil'?[[val(sleepScore,x),'var(--slp)']]:v==='recuperation'?[[val(recovery,x),'var(--rec)']]:v==='effort'?[[val(effortOf,x),'var(--eff)']]:v==='nutrition'?[[(()=>{const c=dayIt(x).reduce((a,y)=>a+kcalOf(y),0);return c?Math.min(100,c/num(S.set.kcal)*100):null})(),'var(--nut)']]:[[val(effortOf,x),'var(--eff)'],[val(recovery,x),'var(--rec)'],[val(sleepScore,x),'var(--slp)']];
   return `<button type="button" class="wd${x===d?' on':''}${x===t?' tod':''}" data-act="dpick" data-d="${x}"${fut?' disabled':''} aria-label="${esc(dLong(x))}"><span>${L[i]}</span>${fut?'<i class="ph"></i>':barsSVG(rings)}<b>${+x.slice(8)}</b></button>`}).join('')}
 
 /* ---------- état d'attente quand il n'y a pas encore de données Apple Santé ---------- */
@@ -419,7 +424,7 @@ function balHTML(d){const x=burnOf(d),it=(S.days[d]||{}).items||[],ate=it.reduce
  const lab=!x?'calories mangées':Math.abs(dl)<100?'à l\'équilibre':dl<0?'de déficit, pour l\'instant':'de surplus';
  return `<div class="panel balc"><div class="balh"><b>${x?(dl>0?'+':dl<0?'−':'')+r0(Math.abs(x?dl:ate)):r0(ate)}<small> kcal</small></b><span>${lab}</span></div>
  <button type="button" class="balr" data-act="metric" data-k="burn" style="--c:var(--eff)"><span class="bl"><i><svg viewBox="0 0 24 24"><path d="M12 2.5c.8 3.8 5.5 5.6 5.5 11a5.5 5.5 0 0 1-11 0c0-2.8 1.6-4.2 2.4-6 .9 1.3 1.8 1.9 2.9 2.2-.3-2.5-.6-4.6.2-7.2z"/></svg></i>Dépensé</span><span class="bt"><i class="b0" style="width:${W(x?x.basal:0)}"></i><i class="b1" style="width:${W(x?x.active:0)}"></i></span><em>${x?r0(burn):'–'}</em></button>
- <button type="button" class="balr" data-act="metric" data-k="nut" style="--c:var(--nut)"><span class="bl"><i><svg viewBox="0 0 24 24"><path d="M4 11h16a8 8 0 0 1-16 0zM9 7c0-2 1.5-3 3-3s3 1 3 3"/></svg></i>Mangé</span><span class="bt"><i class="b1" style="width:${W(ate)}"></i>${goal?`<u style="left:${W(goal)}"></u>`:''}</span><em>${r0(ate)}</em></button>
+ <button type="button" class="balr" data-go="nutrition" style="--c:var(--nut)"><span class="bl"><i><svg viewBox="0 0 24 24"><path d="M4 11h16a8 8 0 0 1-16 0zM9 7c0-2 1.5-3 3-3s3 1 3 3"/></svg></i>Mangé</span><span class="bt"><i class="b1" style="width:${W(ate)}"></i>${goal?`<u style="left:${W(goal)}"></u>`:''}</span><em>${r0(ate)}</em></button>
  <p class="balf">${x?`${r0(x.basal)} de base · ${r0(x.active)} actives`:'renseigne ton profil pour la dépense'}${goal?` · objectif ${r0(goal)}`:''}</p></div>`}
 /* Mini-arc d'Arden pour une mesure : piste, plage normale en couleur, point-curseur sur la valeur. */
 function miniArc(p,lo,hi,col){const r=13,c=18,P=t=>{const a=GA0+GSPAN*clamp(t,0,1);return [c+r*Math.cos(a),c+r*Math.sin(a)]},[x,y]=P(p);
@@ -454,7 +459,8 @@ function chronoHTML(d){const h=H(d),T=dayTrain(d),D=S.days[d]||{},it=D.items||[]
   ev(w&&has(w.st)?w.st:1020,w&&has(w.st)?hm(w.st):'Sport','var(--eff)',IC.run,esc(s.type),`<span>${esc(s.min)} min</span>${s.km?`<span>${fx(s.km)} km</span>`:''}${tr(w)}`,'data-go="effort"',w?zbar(w.z):'')}
  const meals={};for(const x of it)(meals[x.m||'Repas']=meals[x.m||'Repas']||[]).push(x);
  for(const [m,L] of Object.entries(meals)){const k=L.reduce((a,x)=>a+kcalOf(x),0),p=L.reduce((a,x)=>a+num(x.p),0);
-  ev(MEALT[m]??1100,esc(m),'var(--nut)',MEALI[m]||'<path d="M4 11h16a8 8 0 0 1-16 0zM9 7c0-2 1.5-3 3-3s3 1 3 3"/>',esc(L.length>2?L.slice(0,2).map(x=>x.n).join(', ')+'…':L.map(x=>x.n).join(', ')),`<span>${r0(k)} kcal</span><span>${r0(p)} g prot.</span>`,`data-act="foodadd" data-m="${esc(m)}"`)}
+  const t0=L.map(x=>num(x.t)).filter(Boolean).sort()[0],tm=t0?new Date(t0).getHours()*60+new Date(t0).getMinutes():null;
+  ev(tm??MEALT[m]??1100,tm!=null?`${hm(tm)} · ${esc(m)}`:esc(m),'var(--nut)',MEALI[m]||'<path d="M4 11h16a8 8 0 0 1-16 0zM9 7c0-2 1.5-3 3-3s3 1 3 3"/>',esc(L.length>2?L.slice(0,2).map(itemName).join(', ')+'…':L.map(itemName).join(', ')),`<span>${r0(k)} kcal</span><span>${r0(p)} g prot.</span>`,`data-act="foodadd" data-m="${esc(m)}"`)}
  if(j.mood||j.energy||j.stress||j.sore){const sc=['','Très bas','Bas','Moyen','Bien','Très bien'];ev(-1,'Ressenti','var(--mind)','<circle cx="12" cy="12" r="8.5"/><path d="M8.7 14s1.2 1.8 3.3 1.8 3.3-1.8 3.3-1.8M9.2 10h.01M14.8 10h.01"/>','Check-in',[j.mood&&`<span>humeur ${sc[j.mood]?.toLowerCase()||j.mood}</span>`,j.energy&&`<span>énergie ${j.energy}/5</span>`].filter(Boolean).join(''),'data-act="ciopen"')}
  E.sort((a,b)=>b.t-a.t);
  $('#chrn').textContent=E.length?`${E.length} événement${E.length>1?'s':''}`:'';
@@ -729,30 +735,65 @@ function renderHist(){const open=new Set($$('#hist details[open]').map(d=>d.data
  +(E.length>histN?`<div class="row"><button class="btn small" data-act="more">Voir plus (${E.length-histN})</button></div>`:'')}
 
 /* ---------- nutrition ---------- */
-function meter(l,v,t,u,sub,cls,col){return `<div class="${cls}" style="--c:${col}"><div class="mh"><span class="eyebrow">${l}</span><b class="big">${r0(v)}<small> / ${r0(t)} ${u}</small></b></div><div class="bar"><i style="width:${Math.min(100,t?v/t*100:0)}%"></i></div><p class="mute small">${sub}</p></div>`}
-function renderNutri(){const d=S.day,D=S.days[d]||{},it=D.items||[],Pr=sum(it,'p'),G=sum(it,'g'),Li=sum(it,'l'),K=it.reduce((a,x)=>a+kcalOf(x),0),T=num(S.set.prot),KT=num(S.set.kcal),h=H(d),out=num(h.bs)+num(h.ac);
- if(document.activeElement!==$('#nday'))$('#nday').value=d;
- if(!$('#fm').options.length){const hr=new Date().getHours();$('#fm').innerHTML=MEALS.map(m=>`<option>${m}</option>`).join('');$('#fm').value=hr<11?'Petit-déjeuner':hr<15?'Déjeuner':hr<18?'Collation':'Dîner'}
+/* Pensée pour qu'on tienne dans la durée : ce qu'il reste d'abord, les repas ensuite, et tout s'ajoute en un toucher
+   (récents, favoris, « comme hier ») ; chercher ou peser n'est jamais obligatoire. */
+const MEALC={'Petit-déjeuner':'var(--str)','Déjeuner':'var(--nut)','Collation':'var(--mind)','Dîner':'var(--slp)'};
+const MEALIC={'Petit-déjeuner':'<path d="M5 10h11v4a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5zM16 11h1.5a2.5 2.5 0 0 1 0 5H16M9 4c-.6 1 .6 2 0 3M12.5 4c-.6 1 .6 2 0 3"/>','Déjeuner':'<path d="M4 11h16a8 8 0 0 1-16 0zM9 7c0-2 1.5-3 3-3s3 1 3 3"/>','Collation':'<path d="M12 7c-3-2.5-7-.5-7 4 0 4 3 9 5 9 1 0 1.3-.5 2-.5s1 .5 2 .5c2 0 5-5 5-9 0-4.5-4-6.5-7-4zM12 7c0-2 1-3.5 3-4"/>','Dîner':'<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>'};
+const frac=n=>{const r=Math.round(n*4)/4,i=Math.floor(r),f=r-i,F={0:'',0.25:'¼',0.5:'½',0.75:'¾'}[f];return i?(F?i+F:String(i)):F||'0'};
+/* « 1 pomme », « 2 × pomme », ou « 150 g » */
+function qtyTxt(x){const q=num(x.q);if(!q)return'';if(x.u&&num(x.sv)>0){const c=q/num(x.sv);if(Math.abs(c*4-Math.round(c*4))<.01){const u=String(x.u).replace(/^(1|½|¼|2) (de |d')?/,'');return c===1?x.u:`${frac(c)} × ${u}`}}return fx(q)+' g'}
+const itemName=x=>String(x.n||'Aliment').replace(/ \(\d+([,.]\d+)? g\)$/,'');
+/* aliments notés ces 30 derniers jours, du plus récent au plus ancien, sans doublon ; ceux du même repas d'abord */
+function recentItems(meal,n=12){const seen=new Set(),A=[],B=[];for(let i=0;i<30;i++){const its=dayIt(addD(today(),-i)).slice().reverse();
+  for(const x of its){const k=plain(itemName(x))+'|'+num(x.q);if(seen.has(k))continue;seen.add(k);(x.m===meal?A:B).push(x)}}
+ return[...A,...B].slice(0,n)}
+const cleanItem=x=>{const o={n:itemName(x),p:num(x.p),k:Math.round(kcalOf(x))};for(const f of ['g','l','q','sv'])if(num(x[f]))o[f]=num(x[f]);if(x.u)o.u=String(x.u);if(Array.isArray(x.c))o.c=x.c.map(num);if(x.b)o.b=String(x.b);return o};
+function pushItem(x,m){const d=S.day,o={...cleanItem(x),m:m||foodMeal||mealNow()};if(d===today())o.t=Date.now();getDay(d).items.push(o);put.day(d);return o}
+function quickAdd(x,m){const o=pushItem(x,m),d=S.day,D=getDay(d),k=D.items.length-1;buzz('ok');renderNutri();if(msKind==='food')renderFoodSearch();
+ toast(`${o.n} · ${r0(o.k)} kcal`,()=>{const i=D.items.indexOf(o);if(i>=0)D.items.splice(i,1);put.day(d);renderNutri();if(msKind==='food')renderFoodSearch()});return k}
+/* arc des calories : mangé sur l'objectif, le reste en grand au centre */
+function kcalArc(eat,goal){const r=78,cx=100,cy=100,p=goal?clamp(eat/goal,0,1):0,over=goal&&eat>goal?clamp((eat-goal)/goal,0,.25):0,id='ka'+(++ringN);
+ return `<svg viewBox="0 0 200 178" class="karc" aria-hidden="true"><defs><linearGradient id="${id}g" x1="0" y1="1" x2="1" y2="0"><stop offset="0" style="stop-color:color-mix(in oklab,var(--nut) 80%,#000)"/><stop offset="1" style="stop-color:color-mix(in oklab,var(--nut) 70%,#fff)"/></linearGradient></defs>
+ <path d="${arcPath(cx,cy,r,GA0,GA0+GSPAN)}" fill="none" stroke="var(--nut)" stroke-opacity=".14" stroke-width="16" stroke-linecap="round"/>
+ ${p>0?`<path d="${arcPath(cx,cy,r,GA0,GA0+GSPAN)}" fill="none" stroke="url(#${id}g)" stroke-width="16" stroke-linecap="round" class="kfill" pathLength="100" style="--len:${(p*100).toFixed(1)}"/>`:''}
+ ${over>0?`<path d="${arcPath(cx,cy,r,GA0,GA0+GSPAN*over)}" fill="none" stroke="var(--str)" stroke-width="16" stroke-linecap="round" opacity=".9"/>`:''}
+ ${p>0?(()=>{const a=GA0+GSPAN*(over>0?over:p);return `<circle cx="${(cx+r*Math.cos(a)).toFixed(2)}" cy="${(cy+r*Math.sin(a)).toFixed(2)}" r="3.4" fill="#fff" opacity=".92"/>`})():''}</svg>`}
+const MEALDEF=[...MEALS];
+function renderNutri(){const d=S.day,D=S.days[d]||{},it=D.items||[],Pr=sum(it,'p'),G=sum(it,'g'),Li=sum(it,'l'),K=it.reduce((a,x)=>a+kcalOf(x),0),T=num(S.set.prot),KT=num(S.set.kcal),isT=d===today();
+ const left=KT-K,bn=burnOf(d),rest=Math.max(0,KT-T*4),cRef=rest*.55/4,lRef=rest*.45/9;
+ const mbar=(lab,v,ref,c,txt)=>`<div class="mac" style="--c:${c}"><span>${lab}</span><i><b style="width:${ref?clamp(v/ref*100,0,100).toFixed(1):0}%"></b></i><em>${txt}</em></div>`;
+ $('#nhero').innerHTML=`<div class="kwrap">${kcalArc(K,KT)}<div class="kmid"><b class="kv">${K&&left<0?'+'+r0(-left):r0(Math.max(0,left))}</b><span>${!KT?'kcal':left<0?'kcal au-dessus':isT?'kcal restantes':'kcal sous l\'objectif'}</span></div></div>
+  <div class="kst"><div><b>${r0(K)}</b><span>mangé</span></div><div><b>${r0(KT)}</b><span>objectif</span></div><div><b>${bn?r0(bn.total):'–'}</b><span>brûlé</span></div></div>
+  <div class="macs">${mbar('Protéines',Pr,T,'var(--nut)',`<b>${r0(Pr)}</b> / ${r0(T)} g`)}${mbar('Glucides',G,cRef,'var(--wat)',`<b>${r0(G)}</b> g`)}${mbar('Lipides',Li,lRef,'var(--str)',`<b>${r0(Li)}</b> g`)}</div>`;
+ const byM={};it.forEach((x,k)=>{const m=MEALS.includes(x.m)?x.m:'Collation';(byM[m]||(byM[m]=[])).push([x,k])});
+ const y=dayIt(addD(d,-1));
+ $('#meals').innerHTML=MEALDEF.map(m=>{const L=byM[m]||[],mk=L.reduce((a,[x])=>a+kcalOf(x),0),mp=L.reduce((a,[x])=>a+num(x.p),0),ym=y.filter(x=>x.m===m);
+  const empty=!L.length?`<div class="mempty">${ym.length?`<button type="button" class="mchip" data-act="likey" data-m="${esc(m)}"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4"/></svg>Comme hier · ${r0(ym.reduce((a,x)=>a+kcalOf(x),0))} kcal</button>`:''}${recentItems(m,6).filter(x=>x.m===m).slice(0,ym.length?2:3).map(x=>`<button type="button" class="mchip" data-act="radd" data-m="${esc(m)}" data-r="${esc(JSON.stringify(cleanItem(x)))}">+ ${esc(itemName(x))}</button>`).join('')}</div>`:'';
+  return `<div class="panel meal" style="--c:${MEALC[m]}"><div class="mh2"><i class="mi"><svg viewBox="0 0 24 24">${MEALIC[m]}</svg></i><span><b>${m}</b><small>${L.length?`${r0(mk)} kcal · ${r0(mp)} g de protéines`:'rien de noté'}</small></span><button type="button" class="madd" data-act="foodadd" data-m="${esc(m)}" aria-label="Ajouter au ${esc(m.toLowerCase())}"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div>
+   ${L.length?`<ul class="mitems">${L.map(([x,k])=>`<li><button type="button" class="mit" data-act="fedit" data-k="${k}"><span><b>${esc(itemName(x))}</b><small>${esc([qtyTxt(x),num(x.p)?fx(num(x.p))+' g de protéines':''].filter(Boolean).join(' · '))}</small></span><em>${r0(kcalOf(x))}</em></button></li>`).join('')}</ul>`:empty}</div>`}).join('');
+ // eau, compléments, poids
+ const wat=num(D.w)||num(H(d).wa),wt=num(S.set.water),tk=D.sup||[];
+ $('#nwat').innerHTML=`<div class="wrow"><span class="wl"><i><svg viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg></i><span><b>${fx(wat/1000)} <small>/ ${fx(wt/1000)} L</small></b><small>eau</small></span></span><span class="wbtn"><button type="button" class="btn small" data-act="water" data-v="-250" aria-label="Retirer 25 cl">−</button><button type="button" class="btn small" data-act="water" data-v="250">+ 25 cl</button></span></div>
+  <div class="bar wb" style="--c:var(--wat)"><i style="width:${Math.min(100,wat/wt*100)}%"></i></div>
+  ${S.set.sups.length?`<div class="chips sups">${S.set.sups.map(s=>`<button class="chip ${tk.includes(s)?'on':''}" data-act="sup" data-s="${esc(s)}">${tk.includes(s)?'✓ ':''}${esc(s)}</button>`).join('')}</div>`:''}
+  <label class="bwrow"><span>Poids du matin</span><span class="bwi"><input id="bw" inputmode="decimal" placeholder="–" aria-label="Poids du matin en kilos"> kg</span></label>`;
+ const bw=$('#bw');bw.value=has(D.bw)?String(D.bw).replace('.',','):'';
+ // la semaine : régularité d'abord, sans jugement
+ const wd=(new Date(d+'T12:00').getDay()+6)%7,mon=addD(d,-wd),days=[0,1,2,3,4,5,6].map(i=>{const k=addD(mon,i),its=dayIt(k);return{k,c:its.reduce((a,x)=>a+kcalOf(x),0),n:its.length,fut:k>today()}});
+ let st=0;for(let i=dayIt(today()).length?0:1;i<400;i++){if(dayIt(addD(today(),-i)).length)st++;else break}
+ const mx=Math.max(KT*1.3,...days.map(x=>x.c)),noted=days.filter(x=>x.n).length;
+ $('#nweek').innerHTML=`<div class="ph"><h2>Ta semaine</h2><span class="mute small">${st>=2?`${st} jours notés d'affilée`:`${noted} jour${noted>1?'s':''} noté${noted>1?'s':''}`}</span></div>
+  <div class="wkb">${days.map(x=>`<button type="button" class="wkd${x.k===d?' on':''}" data-act="dpick" data-d="${x.k}"${x.fut?' disabled':''}><i><b style="height:${x.c?clamp(x.c/mx*100,6,100):0}%"></b><u style="bottom:${KT/mx*100}%"></u></i><span>${'LMMJVSD'[(new Date(x.k+'T12:00').getDay()+6)%7]}</span></button>`).join('')}</div>
+  <p class="mute small wkt">${noted?`Moyenne : ${r0(avg(days.filter(x=>x.n).map(x=>x.c)))} kcal par jour noté. Le trait marque ton objectif.`:'Note un repas par jour pour voir ta semaine se dessiner.'}</p>`;
+ // analyse détaillée
  const Wn=weights(),wkk=Object.keys(Wn).sort(),wtn=wkk.length?wAvg(Wn,wkk[wkk.length-1]):null;
- $('#meters').innerHTML=meter('Protéines',Pr,T,'g',(Pr>=T?'Objectif atteint':'Il reste '+r0(T-Pr)+' g')+(wtn?` · ${fx(Pr/wtn)} g/kg`:''),Pr>=T?'ok':'','var(--nut)')+meter('Calories',K,KT,'kcal',K>KT?r0(K-KT)+' kcal au-dessus':'Il reste '+r0(KT-K)+' kcal',K>KT*1.05?'over':'','var(--nut)')
-  +(out?meter('Calories brûlées',out,out,'kcal',`${r0(num(h.bs))} de base + ${r0(num(h.ac))} actives`+(K?` · bilan <b>${K-out>0?'+':''}${r0(K-out)}</b>`:''),'','var(--eff)'):`<div><span class="eyebrow">Calories brûlées</span><p class="mute small">Tes calories brûlées de ce jour apparaîtra après ${IMP('un import Apple couvrant cette date','la synchro Apple Santé de cette date')}.</p></div>`);
- const mk=Pr*4+G*4+Li*9;$('#macros').innerHTML=mk&&(G||Li)?`<div class="mh small"><span>Macros : <b>${r0(Pr)} g</b> protéines · <b>${r0(G)} g</b> glucides · <b>${r0(Li)} g</b> lipides</span><span class="mute">${r0(Pr*4/mk*100)} / ${r0(G*4/mk*100)} / ${r0(Li*9/mk*100)} % des kcal</span></div><div class="macro"><i style="width:${Pr*4/mk*100}%;background:var(--nut)"></i><i style="width:${G*4/mk*100}%;background:var(--wat)"></i><i style="width:${Li*9/mk*100}%;background:var(--hrt)"></i></div>`:'';
- $('#hday').textContent=h.wa&&!num(D.w)?`Eau notée dans Apple Santé : ${fx(h.wa/1000)} L`:'';
- $('#favs').innerHTML=S.set.foods.map((f,k)=>`<button class="chip" data-act="fav" data-k="${k}"><b>${esc(f.n)}</b><span>${fx(num(f.p))} g · ${r0(kcalOf(f))} kcal</span></button>`).join('')||'<p class="mute small">Coche « Garder dans mes favoris » en ajoutant un aliment.</p>';
- const byM={};it.forEach((x,k)=>{const m=x.m||'Sans repas';(byM[m]||(byM[m]=[])).push([x,k])});
- $('#flist').innerHTML=[...MEALS,'Sans repas'].filter(m=>byM[m]||m!=='Sans repas').map(m=>`<div class="mealh"><span>${m}</span><span>${byM[m]?`${r0(byM[m].reduce((a,[x])=>a+num(x.p),0))} g · ${r0(byM[m].reduce((a,[x])=>a+kcalOf(x),0))} kcal`:''}</span></div><ul class="flist meal" style="margin:0">${(byM[m]||[]).map(([x,k])=>`<li><span>${esc(x.n)}${x.g||x.l?`<span class="ml">G ${fx(num(x.g))} g · L ${fx(num(x.l))} g</span>`:''}</span><span class="num">${fx(num(x.p))} g</span><span class="num">${r0(kcalOf(x))} kcal</span><button class="x" data-act="delFood" data-k="${k}" aria-label="Supprimer">×</button></li>`).join('')}${m!=='Sans repas'?`<li class="addf"><button type="button" data-act="foodadd" data-m="${m}">Ajouter un aliment</button></li>`:''}</ul>`).join('');
- const bw=$('#bw');if(document.activeElement!==bw)bw.value=has(D.bw)?String(D.bw).replace('.',','):'';
- const wat=num(D.w),wt=num(S.set.water);
- $('#water').innerHTML=`<div class="mh"><span class="eyebrow">${d===today()?"Aujourd'hui":dShort(d)}</span><b class="big">${fx(wat/1000)}<small> / ${fx(wt/1000)} L</small></b></div><div class="bar" style="--c:var(--wat)"><i style="width:${Math.min(100,wat/wt*100)}%"></i></div><div class="row"><button class="btn small" data-act="water" data-v="250">+ 25 cl</button><button class="btn small" data-act="water" data-v="330">+ 33 cl</button><button class="btn small" data-act="water" data-v="500">+ 50 cl</button><button class="btn small ghost" data-act="water" data-v="-250">− 25 cl</button></div>`;
- const tk=D.sup||[];$('#sups').innerHTML=S.set.sups.length?`<div class="chips">${S.set.sups.map(s=>`<button class="chip ${tk.includes(s)?'on':''}" data-act="sup" data-s="${esc(s)}">${tk.includes(s)?'✓ ':''}${esc(s)}</button>`).join('')}</div><p class="mute small">Touche pour cocher ce que tu as pris.</p>`:'<p class="mute small">Ajoute tes compléments dans Plus → Réglages.</p>';
  const L=[];for(let i=13;i>=0;i--){const k=addD(d,-i),its=dayIt(k);L.push({k,p:sum(its,'p'),c:its.reduce((a,x)=>a+kcalOf(x),0),has:its.length>0})}
  const hv=L.filter(x=>x.has),mp=Math.max(T*1.25,...L.map(x=>x.p));
  $('#nk').innerHTML=hv.length?`<div><b>${r0(avg(hv.map(x=>x.p)))} g</b><span>protéines / jour</span></div><div><b>${r0(avg(hv.map(x=>x.c)))}</b><span>kcal / jour</span></div><div><b>${hv.filter(x=>x.p>=T).length} / ${hv.length}</b><span>jours à l'objectif</span></div>`:'';
  const td=tdeeEst(),gw=num(S.set.goalw),ab=[];for(let i=1;i<=14;i++){const h2=H(addD(today(),-i));if(h2.bs||h2.ac)ab.push(num(h2.bs)+num(h2.ac))}const apl=avg(ab);
- $('#tdee').innerHTML=td?`<div class="kpis"><div><b>${r0(td.t)} kcal</b><span>besoins réels par jour</span></div><div><b>${r0(td.intake)} kcal</b><span>apport moyen (${td.n} jours notés)</span></div><div><b>${sg(Math.round(td.wk*100)/100)} kg</b><span>par semaine (tendance du poids)</span></div>${apl?`<div><b>${r0(apl)} kcal</b><span>dépense selon la montre</span></div>`:''}</div><p class="small">Calculée à partir de ce que tu manges et de la pente de ton poids sur 3 semaines (régression sur toutes tes pesées ; 1 kg ≈ 7 700 kcal). Fiable seulement si tu notes tout ce que tu manges les jours renseignés : un oubli fait paraître ta dépense plus basse qu'en réalité.${gw&&wtn?` Pour aller vers ${fx(gw)} kg, vise environ <b>${r0(td.t+(gw>wtn?300:-450))} kcal par jour</b> (${gw>wtn?'léger surplus pour prendre du muscle en limitant le gras':'déficit modéré pour perdre du gras en gardant le muscle'}).`:''}${apl&&Math.abs(apl-td.t)>250?` La montre ${apl>td.t?'surestime':'sous-estime'} ta dépense d'environ ${r0(Math.abs(apl-td.t))} kcal.`:''}</p>`:'<p class="mute small">Note tes repas au moins 10 jours sur 3 semaines et pèse-toi régulièrement : l\'appli calculera ta vraie dépense à partir de l\'évolution de ton poids.</p>';
- $('#prot14').innerHTML=L.map(x=>`<div class="hrow ${x.p>=T?'ok':''}" style="--c:var(--nut)" data-tip="${esc(x.has?`${dLong(x.k)}\n${r0(x.p)} g de protéines (${x.p>=T?'objectif atteint':'il manquait '+r0(T-x.p)+' g'})\n${r0(x.c)} kcal`:dLong(x.k)+' : rien de noté')}"><span>${dWk(x.k)}</span><div class="bar"><i style="width:${x.p/mp*100}%"></i><b class="tg" style="left:${T/mp*100}%"></b></div><span class="num">${x.has?r0(x.p)+' g':'–'}</span></div>`).join('')}
-function addFood(f,m){if(!f)return;const d=S.day,o={n:f.n,p:num(f.p),k:Math.round(kcalOf(f)),m:m||$('#fm').value};if(num(f.g))o.g=num(f.g);if(num(f.l))o.l=num(f.l);getDay(d).items.push(o);put.day(d);renderNutri()}
-function delFood(k){const d=S.day,D=getDay(d),x=D.items.splice(k,1)[0];put.day(d);renderNutri();toast('Aliment retiré',()=>{getDay(d).items.splice(k,0,x);put.day(d);renderNutri()})}
+ $('#tdee').innerHTML=td?`<div class="kpis"><div><b>${r0(td.t)} kcal</b><span>besoins réels par jour</span></div><div><b>${r0(td.intake)} kcal</b><span>apport moyen (${td.n} jours notés)</span></div><div><b>${sg(Math.round(td.wk*100)/100)} kg</b><span>par semaine (tendance du poids)</span></div>${apl?`<div><b>${r0(apl)} kcal</b><span>dépense selon la montre</span></div>`:''}</div><p class="small">Calculée à partir de ce que tu manges et de la pente de ton poids sur 3 semaines (1 kg ≈ 7 700 kcal). Fiable seulement si tu notes tout ce que tu manges les jours renseignés.${gw&&wtn?` Pour aller vers ${fx(gw)} kg, vise environ <b>${r0(td.t+(gw>wtn?300:-450))} kcal par jour</b>.`:''}${apl&&Math.abs(apl-td.t)>250?` La montre ${apl>td.t?'surestime':'sous-estime'} ta dépense d'environ ${r0(Math.abs(apl-td.t))} kcal.`:''}</p>`:'<p class="mute small">Note tes repas au moins 10 jours sur 3 semaines et pèse-toi régulièrement : l\'appli calculera ta dépense réelle.</p>';
+ $('#prot14').innerHTML=L.map(x=>`<div class="hrow ${x.p>=T?'ok':''}" style="--c:var(--nut)" data-tip="${esc(x.has?`${dLong(x.k)}\n${r0(x.p)} g de protéines\n${r0(x.c)} kcal`:dLong(x.k)+' : rien de noté')}"><span>${dWk(x.k)}</span><div class="bar"><i style="width:${x.p/mp*100}%"></i><b class="tg" style="left:${T/mp*100}%"></b></div><span class="num">${x.has?r0(x.p)+' g':'–'}</span></div>`).join('')}
+function delFood(k){const d=S.day,D=getDay(d),x=D.items.splice(k,1)[0];put.day(d);renderNutri();buzz('light');toast(`${itemName(x)} retiré`,()=>{getDay(d).items.splice(k,0,x);put.day(d);renderNutri()})}
 
 /* ---------- tendances ---------- */
  function renderMarkers(){const m=markers(),gm=m.filter(x=>x.st[1]==='var(--rec)'),wm=m.filter(x=>x.st[1]==='var(--bad)'||x.st[0]==='À améliorer');$('#vd-mk').innerHTML=m.length?`<b>${gm.length} repère${gm.length>1?'s':''} sur ${m.length}</b> au vert${wm.length?`. À travailler : ${esc(wm.slice(0,2).map(x=>x.t.toLowerCase()).join(', '))}`:''}.`:'';$('#mkrs').innerHTML=m.length?m.map(x=>`<div class="mkr"><div class="t2"><span>${x.t}</span><span class="st" style="--c:${x.st[1]}">${x.st[0]}</span></div><b>${esc(x.v)}</b><p>${x.p}</p></div>`).join('')+(m.length>4?`<button type="button" class="btn mall" data-act="showall" data-t="#mkrs">Afficher les ${m.length} repères</button>`:''):'<p class="mute small">'+IMP('Importe Apple Santé et note ton poids pour obtenir ton bilan.','Connecte Apple Santé et note ton poids pour obtenir ton bilan.')+'</p>';
@@ -828,7 +869,7 @@ function quick(q){$('#sheet').hidden=true;setTimeout(()=>document.documentElemen
  else if(q==='food'){S.day=today();openFood(mealNow())}
  else if(q==='scan'){S.day=today();openScan()}
  else if(q==='breath')openBreath()
- else if(q==='bw'){S.day=today();go('nutrition',()=>{$('#bw').scrollIntoView({behavior:'smooth',block:'center'});$('#bw').focus({preventScroll:true})})}
+ else if(q==='bw'){S.day=today();go('nutrition',()=>{const b=$('#bw');if(b){b.scrollIntoView({behavior:'smooth',block:'center'});b.focus({preventScroll:true})}})}
  else if(q==='water'){const o=getDay(today());o.w=num(o.w)+250;put.day(today());renderView(cur());toast(`Eau : ${fx(o.w/1000)} L aujourd'hui`)}
  else if(q==='ci'){S.day=today();renderCheckin();openSheet('checkin')}
  else if(q==='med'){psub='dossier';go('plus',()=>{renderPlus();$('#mti').focus({preventScroll:true})})}
@@ -863,7 +904,7 @@ function doImport(txt=$('#imp').value,m=$('#impmsg')){let d;try{d=JSON.parse(txt
  const ok=/^[\w.~:@+-]+$/,str=v=>String(v??'');
  S.set={...clone(DEF),...(d.set||{})};
  S.sessions=d.sessions.filter(s=>s&&s.id&&ok.test(s.id)).map(s=>s.kind==='sport'?{id:s.id,kind:'sport',type:str(s.type||'Autre'),date:str(s.date||today()),min:num(s.min),rpe:num(s.rpe)||'',km:num(s.km)||'',note:str(s.note),t:num(s.t)}:{id:s.id,name:str(s.name||'Séance'),date:str(s.date||today()),t:num(s.t),dur:num(s.dur)||'',rpe:num(s.rpe)||'',ex:(s.ex||[]).map(e=>({n:str(e.n),sets:(e.sets||[]).map(x=>({w:num(x.w),r:num(x.r)}))}))});
- S.days={};for(const [k,o] of Object.entries(d.days||{}))if(/^\d{4}-\d{2}-\d{2}$/.test(k)&&o&&typeof o==='object'){const x={items:(o.items||[]).map(i=>({n:str(i.n),p:num(i.p),k:num(i.k),...(i.g?{g:num(i.g)}:{}),...(i.l?{l:num(i.l)}:{}),...(i.m?{m:str(i.m)}:{})})),bw:has(o.bw)?num(o.bw):''};if(o.w)x.w=num(o.w);if(Array.isArray(o.sup))x.sup=o.sup.map(str);if(o.j)x.j={mood:num(o.j.mood)||undefined,energy:num(o.j.energy)||undefined,stress:num(o.j.stress)||undefined,sore:num(o.j.sore)||undefined,note:str(o.j.note),tags:(o.j.tags||[]).map(str)};if(o.m){x.m={};for(const [mk] of MEAS)if(num(o.m[mk]))x.m[mk]=num(o.m[mk])}S.days[k]=clone(x)}
+ S.days={};for(const [k,o] of Object.entries(d.days||{}))if(/^\d{4}-\d{2}-\d{2}$/.test(k)&&o&&typeof o==='object'){const x={items:(o.items||[]).map(i=>({n:str(i.n),p:num(i.p),k:num(i.k),...(i.g?{g:num(i.g)}:{}),...(i.l?{l:num(i.l)}:{}),...(i.m?{m:str(i.m)}:{}),...(num(i.q)?{q:num(i.q)}:{}),...(num(i.sv)?{sv:num(i.sv)}:{}),...(i.u?{u:str(i.u)}:{}),...(Array.isArray(i.c)&&i.c.length===4?{c:i.c.map(num)}:{}),...(num(i.t)?{t:num(i.t)}:{})})),bw:has(o.bw)?num(o.bw):''};if(o.w)x.w=num(o.w);if(Array.isArray(o.sup))x.sup=o.sup.map(str);if(o.j)x.j={mood:num(o.j.mood)||undefined,energy:num(o.j.energy)||undefined,stress:num(o.j.stress)||undefined,sore:num(o.j.sore)||undefined,note:str(o.j.note),tags:(o.j.tags||[]).map(str)};if(o.m){x.m={};for(const [mk] of MEAS)if(num(o.m[mk]))x.m[mk]=num(o.m[mk])}S.days[k]=clone(x)}
  S.med=(d.med||[]).filter(x=>x&&x.id&&ok.test(x.id)).map(x=>({id:x.id,type:str(x.type||'Note'),date:str(x.date||today()),title:str(x.title),who:str(x.who),note:str(x.note),next:str(x.next)}));
  put.set();S.sessions.forEach(put.sess);Object.keys(S.days).forEach(put.day);S.med.forEach(put.med);
  $('#imp').value='';m.textContent=`Importé : ${S.sessions.length} séances, ${Object.keys(S.days).length} jours, ${S.med.length} entrées de dossier.`;renderSoft()}
@@ -943,7 +984,7 @@ document.addEventListener('click',ev=>{unlockAudio();
  case'mper':buzz();metP=+b.dataset.n;return renderMetric();
  case'msopen':if(!S.cur){startMode=b.dataset.m||'mu';renderStart()}return openSheet('seance');
  case'foodadd':return openFood(b.dataset.m);
- case'foodsave':return pick?addPicked():$('#ff').requestSubmit();
+ case'foodsave':return pick?addPicked():closeSheet();
  case'onb':if(b.dataset.to==='2'&&!b.dataset.skip)saveProfile();return showOnb(+b.dataset.to);
  case'onbGo':return onbGo(b.dataset.go2);
  case'demoEnd':clearDemo();renderSoft();return showOnb(2);
@@ -980,9 +1021,22 @@ document.addEventListener('click',ev=>{unlockAudio();
  case'edit':return editSess(b.dataset.id);
  case'delSess':return delSess(b.dataset.id);
  case'more':histN+=20;return renderHist();
- case'fpick':return openPick(fres[+b.dataset.i]);
+ case'fpick':{const f=fres[+b.dataset.i];if(!f)return;if(f.src==='fav'){const x=S.set.foods[+f.id.slice(1)];return x&&x.c?openPick(asFood(x),'',{q:num(x.q)}):openPick({n:itemName(x),k:kcalOf(x),p:num(x.p)},'',{quick:true})}
+  if(f.src==='rec'){const a=asFood(f);return a?openPick(a,'',{q:num(f.q)||a.sv||100}):openPick({n:itemName(f),k:kcalOf(f),p:num(f.p)},'',{quick:true})}return openPick(f)}
+ case'fplus':{const f=fres[+b.dataset.i];if(!f)return;return addNow(f.src==='rec'?f:foodItem(f,f.sv||100))}
+ case'ropen':case'favopen':{const x=act==='ropen'?frec[+b.dataset.i]:S.set.foods[+b.dataset.k];if(!x)return;const a=asFood(x);return a?openPick(a,'',{q:num(x.q)||a.sv||100}):openPick({n:itemName(x),k:kcalOf(x),p:num(x.p)},'',{quick:true})}
+ case'rplus':{const x=frec[+b.dataset.i];return x&&addNow(x)}
+ case'fmeal':buzz();foodMeal=b.dataset.m;msBar();return renderFoodSearch();
+ case'fquick':return openPick({n:$('#fq').value.trim(),k:null,p:0},'',{quick:true});
+ case'pkfav':buzz();pick.fav=!pick.fav;b.classList.toggle('on',pick.fav);b.setAttribute('aria-pressed',String(pick.fav));return;
+ case'pkstep':{buzz();pick.q=Math.max(0,Math.round((num(pick.q)+ +b.dataset.d)*10)/10);$('#pq').value=String(pick.q).replace('.',',');return pickTotal()}
+ case'pkdel':{const k=pick.ek;pick=null;closeSheet();return delFood(k)}
+ case'fedit':return openEdit(+b.dataset.k);
+ case'radd':{let x=null;try{x=JSON.parse(b.dataset.r)}catch(e){return}return quickAdd(x,b.dataset.m)}
+ case'likey':{const m=b.dataset.m,d=S.day,y=dayIt(addD(d,-1)).filter(x=>x.m===m);if(!y.length)return;const os=y.map(x=>pushItem(x,m));if(msKind==='food')fAdded.push(...os);buzz('ok');renderNutri();if(msKind==='food')renderFoodSearch();
+  return toast(`${os.length} aliment${os.length>1?'s':''} comme hier · ${r0(os.reduce((a,x)=>a+kcalOf(x),0))} kcal`,()=>{const D=getDay(d);D.items=D.items.filter(x=>!os.includes(x));fAdded=fAdded.filter(x=>!os.includes(x));put.day(d);renderNutri();if(msKind==='food')renderFoodSearch()})}
  case'mprod':return openPick(prods()[+b.dataset.i]);
- case'pickq':pick.q=+b.dataset.q;$('#pq').value=String(pick.q);return pickTotal();
+ case'pickq':buzz();pick.q=+b.dataset.q;$('#pq').value=String(pick.q).replace('.',',');return pickTotal();
  case'pickadd':return addPicked();
  case'pickback':pick=null;renderPick();msBar();return;
  case'scan':return openScan();
@@ -991,7 +1045,7 @@ document.addEventListener('click',ev=>{unlockAudio();
  case'bzgo':return startBreath();
  case'bzclose':return closeBreath();
  case'scanclose':return closeScan();
- case'fav':{const f=S.set.foods[+b.dataset.k],m=$('#fm').value;addFood(f);if(msKind==='food'){closeSheet();toast(f.n+' ajouté · '+m)}return}
+ case'fav':{const f=S.set.foods[+b.dataset.k];if(!f)return;if(msKind==='food')return addNow(f);return quickAdd(f,mealNow())}
  case'delFood':return delFood(+b.dataset.k);
  case'delM':{const d=b.dataset.d,o=S.days[d],old=o&&o.m;if(!o)return;delete o.m;put.day(d);renderBody();toast('Mensurations supprimées',()=>{getDay(d).m=old;put.day(d);renderBody()});return}
  case'delMed':{const id=b.dataset.id,x=S.med.find(m=>m.id===id);S.med=S.med.filter(m=>m.id!==id);put.delMed(id);renderMed();toast('Entrée supprimée',()=>{S.med.push(x);put.med(x);renderMed()});return}
@@ -1003,19 +1057,15 @@ document.addEventListener('click',ev=>{unlockAudio();
  case'import':{if(b.dataset.c){delete b.dataset.c;b.textContent='Importer (remplace tout)';return doImport()}b.dataset.c='1';b.textContent='Confirmer : tout remplacer ?';setTimeout(()=>{if(b.dataset.c){delete b.dataset.c;b.textContent='Importer (remplace tout)'}},6000);return}
  }});
 document.addEventListener('change',ev=>{if(ev.target.id==='jnote')setJ({note:ev.target.value.trim()})});
-document.addEventListener('input',ev=>{const t=ev.target;if(t.id==='fq')return renderFoodSearch();if(t.id==='fn')delete t.dataset.auto;
+document.addEventListener('input',ev=>{const t=ev.target;if(t.id==='fq')return renderFoodSearch();
  if(!pick)return;if(t.id==='pq'){pick.q=num(t.value);return pickTotal()}
  const k={'pk-n':'n','pk-k':'k','pk-p':'p','pk-g':'g','pk-l':'l'}[t.id];if(k){pick.f[k]=k==='n'?t.value:(t.value.trim()===''?(k==='k'?null:0):num(t.value));pickTotal()}});
 $('#scf').addEventListener('submit',ev=>{ev.preventDefault();const c=$('#sccode').value.replace(/\D/g,'');if(!validCode(c)){$('#scmsg').textContent='Un code-barres compte 8 ou 13 chiffres.';return}closeScan();handleCode(c)});
-$('#ff').addEventListener('submit',ev=>{ev.preventDefault();const n=$('#fn').value.trim(),p=num($('#fp').value),g=num($('#fg').value),l=num($('#fl2').value),k=num($('#fk').value);if(!n&&!p&&!k&&!g&&!l)return $('#fn').focus();
- const f={n:n||'Aliment',p,g,l,k:k||Math.round(p*4+g*4+l*9)};addFood(f);if($('#fsave').checked&&!S.set.foods.some(x=>norm(x.n)===norm(f.n))){S.set.foods.push(f);put.set()}
- const m=$('#fm').value;$('#ff').reset();$('#fm').value=m;renderNutri();buzz('ok');if(msKind==='food'){closeSheet();toast(f.n+' ajouté · '+m)}else $('#fn').focus()});
 $('#mf').addEventListener('submit',ev=>{ev.preventDefault();const d=$('#mdate').value||today(),m={};for(const [k] of MEAS){const v=num($('#m-'+k).value);if(v>0)m[k]=v}if(!Object.keys(m).length)return $('#m-taille').focus();getDay(d).m=m;put.day(d);$('#mf').reset();$('#mdate').value=today();renderBody();toast('Mensurations enregistrées')});
 $('#medf').addEventListener('submit',ev=>{ev.preventDefault();const o={id:nid(),type:$('#mt').value,date:$('#md').value||today(),title:$('#mti').value.trim(),who:$('#mw').value.trim(),next:$('#mn').value,note:$('#mno').value.trim()};if(!o.title)return $('#mti').focus();S.med.push(o);put.med(o);$('#medf').reset();$('#md').value=today();renderMed();toast('Ajouté au dossier')});
 $('#supf').addEventListener('submit',ev=>{ev.preventDefault();const v=$('#supn').value.trim();if(v&&!S.set.sups.includes(v)){S.set.sups.push(v);put.set()}$('#supn').value='';renderSettings()});
 $('#tagf').addEventListener('submit',ev=>{ev.preventDefault();const v=$('#tagn').value.trim();if(v&&!S.set.tags.includes(v)){S.set.tags.push(v);put.set()}$('#tagn').value='';renderSettings()});
-$('#nday').addEventListener('change',ev=>{if(ev.target.value){S.day=ev.target.value;renderNutri()}});
-$('#bw').addEventListener('change',ev=>{const d=S.day,v=ev.target.value.trim();getDay(d).bw=v===''?'':num(v);put.day(d);renderNutri()});
+document.addEventListener('change',ev=>{if(ev.target.id!=='bw')return;const d=S.day,v=ev.target.value.trim();getDay(d).bw=v===''?'':num(v);put.day(d);renderNutri()});
 $('#bkfile').addEventListener('change',async ev=>{const f=ev.target.files[0];ev.target.value='';if(!f)return;const m=$('#bkmsg');
  let d;try{pendingBk=await f.text();d=JSON.parse(pendingBk)}catch(e){pendingBk='';m.textContent="Ce fichier n'est pas une sauvegarde lisible.";return}
  if(!d||!Array.isArray(d.sessions)||typeof d.days!=='object'){pendingBk='';m.textContent="Ce fichier n'est pas une sauvegarde d'Arden.";return}
@@ -1037,7 +1087,7 @@ $('#hfile').addEventListener('change',async ev=>{const f=ev.target.files[0];ev.t
  finally{bar.hidden=true;delete msg.dataset.busy;renderSoft()}});
 /* Revenir sur un onglet depuis une autre partie de l'appli le rouvre à son point de départ (aujourd'hui,
    menu Plus) ; entre onglets de jour (Résumé, Sommeil, Énergie, Dépense), le jour choisi est gardé. */
-const DAYV=['aujourdhui','sommeil','recuperation','effort'];let lastV=cur();
+let lastV=cur();
 addEventListener('hashchange',()=>{$('#sheet').hidden=true;buzz();const v=cur(),from=lastV;lastV=v;
  if(DAYV.includes(v)&&!DAYV.includes(from))S.day=today();
  vt(()=>{route();scrollTo(0,0)},zoomFrom?'zoom':'tab')});
@@ -1053,7 +1103,7 @@ document.addEventListener('keydown',e=>{if(e.metaKey||e.ctrlKey||e.altKey)return
  document.addEventListener('pointermove',e=>{if(!T.hidden)place(e)});const hideT=e=>{if(e.pointerType!=='mouse')T.hidden=true};document.addEventListener('pointerup',hideT);document.addEventListener('pointercancel',hideT);document.addEventListener('scroll',()=>{T.hidden=true;$$('.ov').forEach(o=>o.innerHTML='')},{passive:true,capture:true})}
 
 /* ---------- gestes : glisser d'un jour à l'autre, tirer pour synchroniser ---------- */
-{const sc=$('#sc'),wrap=$('#sc>.wrap'),ptr=$('#ptr'),dayV=()=>['aujourdhui','sommeil','recuperation','effort'].includes(cur());
+{const sc=$('#sc'),wrap=$('#sc>.wrap'),ptr=$('#ptr'),dayV=()=>DAYV.includes(cur());
  let x0=null,y0=0,dx=0,dy=0,tx=0,vx=0,hist=[],past=false,lock=null,armed=false;const PULL=86;
  const skip=t=>t.closest('.fig,.scroll,.seg,.chips,input,textarea,select,label,#wk,.rc-d,.dial,#tabs,#sheet');
  const setPull=d=>{const p=Math.min(1,d/PULL);ptr.style.setProperty('--p',p);ptr.style.transform=`translate(-50%,${Math.min(d,PULL*1.3)*.6-40}px)`;ptr.style.opacity=Math.min(1,p*1.6);
@@ -1148,51 +1198,88 @@ let msKind='',foodMeal='';
 const mealNow=()=>{const hr=new Date().getHours();return hr<11?'Petit-déjeuner':hr<15?'Déjeuner':hr<18?'Collation':'Dîner'};
 function msBar(){const t=$('#mstitle'),l=$('#msl'),r=$('#msr');
  if(msKind==='seance'){t.textContent=S.cur?'Séance en cours':'Nouvelle séance';l.textContent=S.cur?'Fermer':'Annuler';r.innerHTML=S.cur?'<button type="button" class="ms-btn ms-done" data-act="finish">Terminer</button>':''}
- else if(msKind==='food'){t.textContent=foodMeal;l.textContent='Annuler';r.innerHTML='<button type="button" class="ms-btn ms-done" data-act="foodsave">Ajouter</button>'}
+ else if(msKind==='food'){t.textContent=pick&&pick.ek!=null?'Modifier':foodMeal;l.textContent='Fermer';r.innerHTML=pick?(pick.ek==null?'<button type="button" class="ms-btn" data-act="pickback">Retour</button>':''):''}
  else if(msKind==='checkin'){t.textContent=S.day===today()?"Check-in du jour":'Check-in du '+dShort(S.day);l.textContent='';r.innerHTML='<button type="button" class="ms-btn ms-done" data-act="msclose">OK</button>'}
  else if(msKind==='metric'){t.textContent=(MET[metK]||{}).t||'';l.textContent='';r.innerHTML='<button type="button" class="ms-btn ms-done" data-act="msclose">OK</button>'}
  l.style.visibility=l.textContent?'':'hidden'}
 function openSheet(k){msKind=k;const m=$('#msheet');$$('#msheet .ms-body').forEach(b=>b.hidden=b.dataset.k!==k);msBar();m.hidden=false;document.documentElement.classList.add('ms-open');m.querySelector('.ms-body:not([hidden])').scrollTop=0}
 function closeSheet(){if(!msKind)return;msKind='';pick=null;const a=document.activeElement;if(a&&$('#msheet').contains(a))a.blur();$('#msheet').hidden=true;document.documentElement.classList.remove('ms-open');setTimeout(renderSoft,0)}
-function openFood(m){renderNutri();foodMeal=m;$('#ff').reset();$('#fm').value=m;$('#fq').value='';pick=null;renderPick();renderFoodSearch();openSheet('food');
+function openFood(m){foodMeal=MEALS.includes(m)?m:mealNow();fAdded=[];$('#fq').value='';pick=null;renderPick();renderFoodSearch();openSheet('food');
  loadCiqual().then(()=>{if(msKind==='food')renderFoodSearch()});if(matchMedia('(pointer:fine)').matches)$('#fq').focus()}
 
 /* ---------- banque d'aliments : recherche, quantité, produits scannés ---------- */
-let pick=null,fres=[],scanStop=null;
-const SRC={ciqual:'Ciqual (ANSES)',off:'Open Food Facts',mine:'Mon produit'};
-const per100=f=>f.k==null?'valeurs à compléter':`${r0(f.k)} kcal · P ${fx(num(f.p))} · G ${fx(num(f.g))} · L ${fx(num(f.l))} g`;
+let pick=null,fres=[],frec=[],scanStop=null,fAdded=[];
+const SRC={ciqual:'Ciqual (ANSES)',off:'Open Food Facts',mine:'Mon produit',base:'Valeurs moyennes',rec:'Déjà noté',fav:'Favori'};
 const prods=()=>S.set.prods||(S.set.prods=[]);
 function saveProd(f){const L=prods(),i=L.findIndex(x=>x.id===f.id),o={id:f.id,n:f.n,b:f.b||'',k:f.k,p:num(f.p),g:num(f.g),l:num(f.l),sv:f.sv||null,src:f.src||'off',t:Date.now()};
  if(i>=0)L.splice(i,1);L.unshift(o);if(L.length>300)L.length=300;put.set()}
-function renderFoodSearch(){const q=$('#fq').value.trim();$('#fhome').hidden=!!q;$('#ffh').textContent=q?'Pas dans la liste ? Saisie libre':'Saisie libre';
+/* une ligne de liste : le nom ouvre la portion, « + » ajoute tout de suite */
+const frow=(f,open,add,sub)=>`<li><button type="button" class="fr" ${open}><span><b>${esc(itemName(f))}</b><small>${sub}</small></span></button>${add?`<button type="button" class="fadd" ${add} aria-label="Ajouter ${esc(itemName(f))}"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>`:''}</li>`;
+const subOf=f=>f.src==='base'||f.src==='ciqual'||f.src==='off'||f.src==='mine'?(f.k==null?'valeurs à compléter':f.sv?`${esc(f.su||'1 portion')} · ${r0(num(f.k)*f.sv/100)} kcal`:`${r0(f.k)} kcal pour 100 g${f.b?' · '+esc(f.b):''}`)
+ :`${esc([qtyTxt(f),r0(kcalOf(f))+' kcal'].filter(Boolean).join(' · '))}`;
+function renderFoodSearch(){const q=$('#fq').value.trim();$('#fhome').hidden=!!q;
+ $('#fmeals').innerHTML=MEALS.map(m=>`<button type="button" class="${m===foodMeal?'on':''}" data-act="fmeal" data-m="${esc(m)}">${m==='Petit-déjeuner'?'Petit-déj':m}</button>`).join('');
+ frec=recentItems(foodMeal,12);
+ const y=dayIt(addD(S.day,-1)).filter(x=>x.m===foodMeal),already=dayIt(S.day).some(x=>x.m===foodMeal);
+ $('#fyest').innerHTML=y.length&&!already?`<button type="button" class="fyest" data-act="likey" data-m="${esc(foodMeal)}"><i><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4"/></svg></i><span><b>Comme hier</b><small>${esc(y.slice(0,3).map(itemName).join(', '))}${y.length>3?'…':''} · ${r0(y.reduce((a,x)=>a+kcalOf(x),0))} kcal</small></span><em>+</em></button>`:'';
+ $('#frech').hidden=!frec.length;
+ $('#frec').innerHTML=frec.map((x,i)=>frow(x,`data-act="ropen" data-i="${i}"`,`data-act="rplus" data-i="${i}"`,subOf(x))).join('');
+ $('#favw').hidden=!S.set.foods.length;
+ $('#favs').innerHTML=S.set.foods.map((f,k)=>frow(f,`data-act="favopen" data-k="${k}"`,`data-act="fav" data-k="${k}"`,subOf(f))).join('');
  const mp=prods();$('#mprodw').hidden=!mp.length;
- $('#mprods').innerHTML=mp.slice(0,12).map((f,i)=>`<button class="chip" data-act="mprod" data-i="${i}"><b>${esc(f.n)}${f.b?` <small>${esc(f.b)}</small>`:''}</b><span>${f.k==null?'à compléter':r0(f.k)+' kcal / 100 g'}</span></button>`).join('');
+ $('#mprods').innerHTML=mp.slice(0,8).map((f,i)=>frow(f,`data-act="mprod" data-i="${i}"`,'',f.k==null?'à compléter':`${r0(f.k)} kcal pour 100 g${f.b?' · '+esc(f.b):''}`)).join('');
+ $('#fempty').hidden=!!(q||frec.length||S.set.foods.length||mp.length||$('#fyest').innerHTML);
+ renderBasket();
  if(!q){$('#fres').innerHTML='';return}
- fres=searchFoods(q,{prods:mp,favs:S.set.foods});const n=ciqualCount();
- $('#fres').innerHTML=fres.length?fres.map((f,i)=>`<li><button type="button" class="fr" ${f.src==='fav'?`data-act="fav" data-k="${f.id.slice(1)}"`:`data-act="fpick" data-i="${i}"`}><span><b>${esc(f.n)}</b><small>${f.src==='fav'?`Favori · ${fx(num(f.p))} g de protéines · ${r0(kcalOf(f))} kcal`:`${esc(f.b||SRC[f.src]||'')} · ${per100(f)}${f.k==null?'':' / 100 g'}`}</small></span><em>${f.src==='fav'?'+':'›'}</em></button></li>`).join('')
-  :`<li class="fnone">${n===0?'La banque d\'aliments s\'installe : en attendant, scanne le produit ou saisis-le ci-dessous.':n==null?'Chargement de la banque d\'aliments…':`Aucun aliment ne correspond à « ${esc(q)} ».`}</li>`;
- if(!$('#fn').value||$('#fn').dataset.auto){$('#fn').value=q;$('#fn').dataset.auto='1'}}
-/* Étape « quantité » : valeurs pour 100 g, grammes, total calculé en direct */
-function openPick(f,note=''){if(msKind!=='food')openFood(mealNow());pick={f:{...f},q:f.sv||100,note,edit:f.k==null||!f.n};renderPick();msBar();$('#fpick').scrollIntoView({block:'start'});setTimeout(()=>(pick&&pick.edit?$('#pk-n'):$('#pq'))?.focus({preventScroll:true}),80)}
-function renderPick(){const el=$('#fpick');$('#fsearch').hidden=!!pick;$('.fsr').hidden=!!pick;el.hidden=!pick;if(!pick){el.innerHTML='';return}const f=pick.f;
- const qs=[...new Set([f.sv,50,100,150,200].filter(Boolean))];
- el.innerHTML=`<div class="panel pick">${pick.note?`<p class="vd">${esc(pick.note)}</p>`:''}
-  ${pick.edit?`<div class="pk-h"><b>${f.src==='mine'?'Nouveau produit':'À compléter'}</b><small>Code-barres ${esc(f.id)} · valeurs pour 100 g, sur l'emballage</small></div>`:''}
-  ${pick.edit?`<div class="pk-ed"><label>Nom<input id="pk-n" value="${esc(f.n)}" placeholder="ex. Yaourt grec nature"></label><label>Calories (kcal)<input id="pk-k" inputmode="decimal" value="${f.k??''}"></label><label>Protéines (g)<input id="pk-p" inputmode="decimal" value="${f.p??''}"></label><label>Glucides (g)<input id="pk-g" inputmode="decimal" value="${f.g??''}"></label><label>Lipides (g)<input id="pk-l" inputmode="decimal" value="${f.l??''}"></label></div>`
-   :`<div class="pk-h"><b>${esc(f.n)}</b><small>${esc([f.b,SRC[f.src]].filter(Boolean).join(' · '))}<br>Pour 100 g : ${per100(f)}</small></div>`}
-  <label class="pk-q">Quantité<span><input id="pq" inputmode="decimal" value="${esc(String(pick.q).replace('.',','))}" aria-label="Quantité en grammes"> g</span></label>
-  <div class="chips pk-c">${qs.map(q=>`<button type="button" class="chip${num(pick.q)===q?' on':''}" data-act="pickq" data-q="${q}">${q===f.sv?`1 portion (${q} g)`:q+' g'}</button>`).join('')}</div>
+ fres=searchFoods(q,{prods:mp,favs:S.set.foods,recents:frec});
+ $('#fres').innerHTML=(fres.length?fres.map((f,i)=>frow(f,`data-act="fpick" data-i="${i}"`,f.src==='fav'?`data-act="fav" data-k="${f.id.slice(1)}"`:f.k!=null?`data-act="fplus" data-i="${i}"`:'',`${subOf(f)}${f.src==='ciqual'||f.src==='base'?'':` · ${SRC[f.src]||''}`}`)).join('')
+  :`<li class="fnone">Aucun aliment ne correspond à « ${esc(q)} ».</li>`)
+  +`<li><button type="button" class="fr fq2" data-act="fquick"><span><b>Ajouter « ${esc(q)} » à la main</b><small>juste les calories, sans chercher plus loin</small></span></button></li>`}
+/* ce qui vient d'être ajouté au repas, en bas de la feuille : on enchaîne, puis « Terminé » */
+function renderBasket(){const b=$('#fbasket');if(!b)return;const n=fAdded.length,k=fAdded.reduce((a,x)=>a+kcalOf(x),0);b.hidden=!n||!!pick;
+ b.innerHTML=n?`<span><b>${n} ajouté${n>1?'s':''}</b> · ${r0(k)} kcal · ${esc(foodMeal.toLowerCase())}</span><button type="button" class="btn pri small" data-act="msclose">Terminé</button>`:''}
+function addNow(x){const o=pushItem(x,foodMeal);fAdded.push(o);buzz('ok');renderNutri();toast(`${o.n} · ${r0(o.k)} kcal`,()=>{const D=getDay(S.day),i=D.items.indexOf(o);if(i>=0)D.items.splice(i,1);fAdded=fAdded.filter(z=>z!==o);put.day(S.day);renderNutri();if(msKind==='food')renderFoodSearch()});
+ if(msKind==='food'){$('#fq').value='';renderFoodSearch()}return o}
+/* une fiche (aliment de la base, produit, ou aliment déjà noté) → valeurs pour 100 g + quantité */
+const asFood=x=>Array.isArray(x.c)?{n:itemName(x),b:x.b||'',k:x.c[0],p:x.c[1],g:x.c[2],l:x.c[3],sv:num(x.sv)||null,su:x.u||'',src:'rec'}:null;
+function foodItem(f,q){const x=forGrams(f,q),o={n:f.n+(f.b&&f.src!=='rec'?' · '+f.b:''),p:x.p,k:x.k,q:Math.round(q*10)/10,c:[num(f.k),num(f.p),num(f.g),num(f.l)]};if(x.g)o.g=x.g;if(x.l)o.l=x.l;if(f.sv){o.sv=f.sv;o.u=f.su||'1 portion'}return o}
+/* Étape « quantité » : un grand total qui suit la quantité ; portions toutes prêtes */
+function openPick(f,note='',opt={}){if(msKind!=='food')openFood(opt.meal||mealNow());pick={f:{...f},q:opt.q||f.sv||100,note,edit:f.k==null||!f.n,fav:false,ek:opt.ek??null,quick:!!opt.quick};renderPick();msBar();{const sb=$('#msheet .ms-body:not([hidden])');if(sb)sb.scrollTop=0}
+ setTimeout(()=>{const el=pick&&(pick.quick?$(pick.f.n?'#qk-k':'#qk-n'):pick.edit?$('#pk-n'):null);if(el)el.focus({preventScroll:true})},80)}
+function renderPick(){const el=$('#fpick');$('#fsearch').hidden=!!pick;$('.fsr').hidden=!!pick;$('#fmeals').hidden=!!pick;el.hidden=!pick;if(!pick){el.innerHTML='';renderBasket();return}const f=pick.f;renderBasket();
+ const star=`<button type="button" class="pkfav${pick.fav?' on':''}" data-act="pkfav" aria-pressed="${pick.fav}" aria-label="Garder dans mes favoris"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg></button>`;
+ const foot=pick.ek!=null?`<div class="pk-act"><button type="button" class="btn pri" data-act="pickadd">Enregistrer</button><button type="button" class="btn danger" data-act="pkdel">Supprimer</button></div>`
+  :`<div class="pk-act"><button type="button" class="btn pri" data-act="pickadd" id="pkgo">Ajouter</button></div>`;
+ if(pick.quick){el.innerHTML=`<div class="pick">${pick.note?`<p class="vd">${esc(pick.note)}</p>`:''}<div class="pk-h"><span><b>${pick.ek!=null?'Modifier':f.n&&f.k!=null?esc(f.n):'Ajout rapide'}</b><small>${pick.ek!=null?esc(foodMeal):f.n&&f.k!=null?'Ajuste les calories si besoin.':'Seulement ce que tu sais : les calories suffisent.'}</small></span>${star}</div>
+   <div class="qk"><label class="qk-big"><input id="qk-k" inputmode="numeric" placeholder="0" value="${f.k!=null?r0(f.k):''}" aria-label="Calories"><span>kcal</span></label>
+   <label class="qk-row"><span>Nom</span><input id="qk-n" placeholder="ex. Plat du midi" value="${esc(f.n||'')}" autocomplete="off"></label>
+   <label class="qk-row"><span>Protéines</span><span class="qk-u"><input id="qk-p" inputmode="decimal" placeholder="facultatif" value="${num(f.p)?String(f.p).replace('.',','):''}"> g</span></label></div>${foot}</div>`;return}
+ const sv=num(f.sv),step=sv?sv/2:10,qs=sv?[.5,1,1.5,2].map(c=>[c*sv,c===1?f.su||'1 portion':frac(c)+' ×']):[[50],[100],[150],[200]].map(([q])=>[q,q+' g']);
+ el.innerHTML=`<div class="pick">${pick.note?`<p class="vd">${esc(pick.note)}</p>`:''}
+  <div class="pk-h"><span><b>${pick.edit?(f.src==='mine'?'Nouveau produit':'À compléter'):esc(f.n)}</b><small>${pick.edit?`Code-barres ${esc(f.id)} · valeurs pour 100 g, sur l'emballage`:esc([f.b,SRC[f.src]].filter(Boolean).join(' · '))}</small></span>${star}</div>
+  ${pick.edit?`<div class="pk-ed"><label>Nom<input id="pk-n" value="${esc(f.n)}" placeholder="ex. Yaourt grec nature"></label><label>Calories (kcal)<input id="pk-k" inputmode="decimal" value="${f.k??''}"></label><label>Protéines (g)<input id="pk-p" inputmode="decimal" value="${f.p??''}"></label><label>Glucides (g)<input id="pk-g" inputmode="decimal" value="${f.g??''}"></label><label>Lipides (g)<input id="pk-l" inputmode="decimal" value="${f.l??''}"></label></div>`:''}
+  <div class="pk-tot"><b id="pkk">0</b><span>kcal</span></div>
   <p class="pk-r" id="pkr"></p>
-  <label class="chk"><input type="checkbox" id="pfav"> Garder cette portion dans mes favoris</label>
-  <div class="row"><button type="button" class="btn pri" data-act="pickadd">Ajouter · ${esc(foodMeal.toLowerCase())}</button><button type="button" class="btn" data-act="pickback">Retour</button></div></div>`;
+  <div class="pk-q"><button type="button" class="pkst" data-act="pkstep" data-d="${-step}" aria-label="Moins">−</button><label><input id="pq" inputmode="decimal" value="${esc(String(Math.round(pick.q*10)/10).replace('.',','))}" aria-label="Quantité en grammes"><span>g</span></label><button type="button" class="pkst" data-act="pkstep" data-d="${step}" aria-label="Plus">+</button></div>
+  <div class="pk-c">${qs.map(([q,l])=>`<button type="button" class="chip" data-act="pickq" data-q="${q}">${esc(l)}${sv?`<small>${fx(q)} g</small>`:''}</button>`).join('')}</div>
+  ${foot}</div>`;
  pickTotal()}
-function pickTotal(){if(!pick)return;const f=pick.f,x=forGrams(f,pick.q);$('#pkr').innerHTML=f.k==null?'Indique au moins les calories pour 100 g (sur l\'emballage).':`<b>${r0(x.k)} kcal</b> · ${fx(x.p)} g de protéines · ${fx(x.g)} g de glucides · ${fx(x.l)} g de lipides`;
- $$('#fpick [data-act=pickq]').forEach(b=>b.classList.toggle('on',+b.dataset.q===num(pick.q)))}
-function addPicked(){const f=pick.f,q=num(pick.q);if(pick.edit&&!f.n.trim())return $('#pk-n').focus();if(f.k==null)return $('#pk-k').focus();if(!(q>0))return $('#pq').focus();
- const x=forGrams(f,q),o={n:`${f.n}${f.b?' · '+f.b:''} (${fx(q)} g)`,p:x.p,k:x.k};if(x.g)o.g=x.g;if(x.l)o.l=x.l;
- if(f.src!=='ciqual')saveProd(f);
- if($('#pfav').checked&&!S.set.foods.some(y=>norm(y.n)===norm(o.n))){S.set.foods.push({n:o.n,p:o.p,g:o.g||0,l:o.l||0,k:o.k});put.set()}
- addFood(o,foodMeal);pick=null;closeSheet();buzz('ok');toast(`${o.n} ajouté · ${foodMeal}`)}
+function pickTotal(){if(!pick||pick.quick)return;const f=pick.f,x=forGrams(f,pick.q),ok=f.k!=null;$('#pkk').textContent=ok?r0(x.k):'–';
+ $('#pkr').innerHTML=ok?`<b>${r0(x.k)} kcal</b><span>${fx(x.p)} g de protéines · ${fx(x.g)} g de glucides · ${fx(x.l)} g de lipides</span>`:'Indique au moins les calories pour 100 g (sur l\'emballage).';
+ const go=$('#pkgo');if(go)go.textContent=ok?`Ajouter · ${r0(x.k)} kcal`:'Ajouter';
+ $$('#fpick [data-act=pickq]').forEach(b=>b.classList.toggle('on',Math.abs(+b.dataset.q-num(pick.q))<.01))}
+function addPicked(){if(pick.quick){const k=num($('#qk-k').value),p=num($('#qk-p').value),n=$('#qk-n').value.trim();if(!(k>0))return $('#qk-k').focus();
+  const o={n:n||'Ajout rapide',k:Math.round(k),p};if(pick.fav&&!S.set.foods.some(y=>norm(y.n)===norm(o.n))){S.set.foods.push({...o,g:0,l:0});put.set()}return finishPick(o)}
+ const f=pick.f,q=num(pick.q);if(pick.edit&&!f.n.trim())return $('#pk-n').focus();if(f.k==null)return $('#pk-k').focus();if(!(q>0))return $('#pq').focus();
+ const o=foodItem(f,q);if(f.src!=='ciqual'&&f.src!=='base'&&f.src!=='rec')saveProd(f);
+ if(pick.fav&&!S.set.foods.some(y=>norm(y.n)===norm(o.n)&&num(y.q)===o.q)){S.set.foods.push({...o});put.set()}
+ finishPick(o)}
+function finishPick(o){const ek=pick.ek;pick=null;
+ if(ek!=null){const D=getDay(S.day),old=D.items[ek];D.items[ek]={...old,...o,m:old.m,t:old.t};if(!o.q){delete D.items[ek].q;delete D.items[ek].c}put.day(S.day);renderNutri();buzz('ok');closeSheet();toast('Modifié');return}
+ renderPick();msBar();addNow(o)}
+/* toucher un aliment noté : on change la quantité, ou on le supprime */
+function openEdit(k){const x=dayIt(S.day)[k];if(!x)return;const m=MEALS.includes(x.m)?x.m:'Collation',f=asFood(x);
+ if(f)openPick(f,'',{q:num(x.q)||100,ek:k,meal:m});else openPick({n:itemName(x),k:kcalOf(x),p:num(x.p)},'',{quick:true,ek:k,meal:m})}
 /* ---------- scan : caméra, puis Open Food Facts ---------- */
 async function openScan(){const sc=$('#scan');sc.hidden=false;document.documentElement.classList.add('scan-open');$('#sccode').value='';$('#scmsg').textContent='Vise le code-barres de l\'emballage';sc.classList.remove('nocam');
  try{scanStop=await startScanner($('#scv'),c=>{scanStop=null;buzz('ok');closeScan();handleCode(c)});if(sc.hidden&&scanStop){scanStop();scanStop=null}}
@@ -1363,7 +1450,7 @@ function hideCele(){const c=$('#cele');c.classList.remove('on');setTimeout(()=>{
 function ciStreak(){let n=0;for(let i=0;i<400;i++){const j=J(addD(today(),-i));if(j.mood||j.energy||j.stress||j.sore)n++;else if(i>0)break}return n}
 
 /* ---------- analyse détaillée : les cartes avancées, repliées par défaut ---------- */
-const DEEP={sommeil:'Durée, phases, VFC, FC et horaires sur 6 mois',recuperation:'FC nocturne, stress estimé, signes vitaux',effort:'Charge d\'entraînement, zones cardiaques, volume par muscle',tendances:'Bien-être, masse grasse, VO2 max, activité quotidienne'};
+const DEEP={nutrition:'Besoins caloriques réels, protéines sur 14 jours',sommeil:'Durée, phases, VFC, FC et horaires sur 6 mois',recuperation:'FC nocturne, stress estimé, signes vitaux',effort:'Charge d\'entraînement, zones cardiaques, volume par muscle',tendances:'Bien-être, masse grasse, VO2 max, activité quotidienne'};
 function applyDeep(){const D=S.set.deep||{};$$('.deep').forEach(b=>{const v=b.dataset.v,on=!!D[v];$('#v-'+v).classList.toggle('deep-on',on);b.setAttribute('aria-expanded',on);
  b.innerHTML=`<span><b>Analyse détaillée</b><small>${DEEP[v]}</small></span><em>${on?'Masquer':'Afficher'}</em>`})}
 
@@ -1376,7 +1463,7 @@ function buzz(k='sel'){if(!Capacitor.isNativePlatform())return;try{
  else Haptics.selectionChanged()}catch(e){}}
 
 /* ---------- barre de titre compacte : le grand titre se replie en défilant (comme iOS) ---------- */
-function navTitle(){const v=cur();return v==='aujourdhui'?(S.day===today()?"Aujourd'hui":dLong(S.day)):['sommeil','recuperation','effort'].includes(v)?$('#dtitle').textContent:v==='nutrition'?'Nutrition':v==='tendances'?'Tendances':psub?(SUBT[psub]||'Plus'):'Plus'}
+function navTitle(){const v=cur();return v==='aujourdhui'?(S.day===today()?"Aujourd'hui":dLong(S.day)):['sommeil','recuperation','effort','nutrition'].includes(v)?$('#dtitle').textContent:v==='tendances'?'Tendances':psub?(SUBT[psub]||'Plus'):'Plus'}
 function syncNav(){const t=navTitle();if($('#navct').textContent!==t)$('#navct').textContent=t}
 addEventListener('scroll',()=>{document.documentElement.classList.toggle('scrolled',scrollY>64)},{passive:true});
 

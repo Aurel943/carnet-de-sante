@@ -17,7 +17,7 @@ export const sg=n=>(n>0?'+':'')+fx(n);
 export const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const nid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 export const norm=s=>String(s||'').trim().toLowerCase();
-export const plain=s=>norm(s).normalize('NFD').replace(/[̀-ͯ]/g,'');
+export const plain=s=>norm(s).replace(/œ/g,'oe').replace(/æ/g,'ae').normalize('NFD').replace(/[̀-ͯ]/g,'');
 export const e1=(w,r)=>(w>0&&r>0)?w*(1+r/30):0;
 export const sortDesc=(a,b)=>String(b.date).localeCompare(String(a.date))||(b.t||0)-(a.t||0);
 export const setTxt=x=>num(x.w)>0?fx(num(x.w))+'×'+num(x.r):num(x.r)+' reps';

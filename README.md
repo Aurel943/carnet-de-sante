@@ -17,7 +17,7 @@ L'appli fonctionne dans un navigateur, s'installe sur l'écran d'accueil (PWA) e
 | **Sommeil** | Score et composantes, hypnogramme de la nuit avec FC et VFC, 14 dernières nuits, tendances, besoin de sommeil et heure de coucher conseillée |
 | **Énergie** | Score, moniteur de santé (plage normale personnelle), VFC nocturne, FC nocturne, stress estimé, signes vitaux (SpO₂, respiration, température au poignet…) |
 | **Dépense** | Zones cardiaques, journal de séances de muscu (séries, minuteur de repos, progression suggérée), autres sports, charge d'entraînement (ratio 7 j / 28 j), volume par groupe musculaire, 1RM estimé, records |
-| **Nutrition** | Repas et macros, favoris, hydratation, compléments, besoins caloriques réels, 14 derniers jours |
+| **Nutrition** | Ce qu'il reste à manger aujourd'hui (arc des calories, protéines, glucides, lipides), les quatre repas avec ajout en un toucher (« Comme hier », récents), eau, compléments, poids du matin, la semaine ; en analyse détaillée : besoins caloriques réels, protéines sur 14 jours |
 | **Tendances** | Ta semaine en un coup d'œil (image à partager), bilan santé sur 30 jours, rigueur du suivi, semaine, corrélations observées, bien-être, poids, mensurations, masse grasse, VO2 max, activité quotidienne |
 | **Plus** | Énergie et signes vitaux (aussi par un toucher sur la jauge Énergie), Nutrition, dossier médical (rendez-vous, vaccins, analyses, blessures + rappels), import Apple Santé, réglages et objectifs, données et confidentialité (sauvegarde en fichier, restauration, suppression) |
 
@@ -85,13 +85,21 @@ npm run lint      # ESLint
 npm run aliments  # (ré)importe la table Ciqual de l'ANSES dans src/data/ciqual.json
 ```
 
-La feuille **Repas** cherche dans la banque d'aliments (table Ciqual de l'ANSES, embarquée, valeurs
-pour 100 g), tes favoris et tes produits déjà scannés ; tu choisis la quantité en grammes ou en
-portions. **Scanner** lit le code-barres avec la caméra (décodage sur l'appareil) et cherche le
-produit sur Open Food Facts : seul le numéro du code-barres est envoyé, et le produit est gardé sur
-l'appareil. Un produit inconnu se complète une fois et reste mémorisé. Si le site de l'ANSES ne
-répond pas, télécharger « Table au format XML » sur https://ciqual.anses.fr puis
-`npm run aliments -- chemin/vers/l-archive.zip`.
+La feuille **Repas** est faite pour noter vite, sans jamais devoir peser : en haut, le repas
+(petit-déj, déjeuner, collation, dîner) ; dessous, « Comme hier » et tes **récents** et **favoris**,
+chacun avec un bouton **+** qui l'ajoute en un toucher (la feuille reste ouverte pour enchaîner, puis
+« Terminé »). La recherche trouve d'abord une centaine d'**aliments courants** embarqués
+(`src/basics.js`, valeurs moyennes pour 100 g) avec une **portion naturelle** (« 1 pomme », « 1 pot »,
+« 1 portion ») ; puis la table Ciqual de l'ANSES si elle est installée, et tes produits scannés. La
+quantité se règle d'un toucher (½, 1, 1½, 2 portions, ou ± au gramme près), avec le total en grand.
+**Ajout rapide** : juste les calories (nom et protéines facultatifs). Toucher un aliment noté permet
+d'en changer la quantité ou de le supprimer. **Scanner** lit le code-barres avec la caméra (décodage
+sur l'appareil) et cherche le produit sur Open Food Facts : seul le numéro du code-barres est envoyé,
+et le produit est gardé sur l'appareil. Un produit inconnu se complète une fois et reste mémorisé.
+
+Table Ciqual (environ 3 000 aliments génériques) : `npm run aliments` la télécharge depuis le site de
+l'ANSES et l'écrit dans `src/data/ciqual.json`, à committer. Si le site ne répond pas, télécharger
+« Table au format XML » sur https://ciqual.anses.fr puis `npm run aliments -- chemin/vers/l-archive.zip`.
 
 ```bash
 npm run parcours  # tests de parcours : l'appli parcourue comme sur un iPhone, le matin et le soir
