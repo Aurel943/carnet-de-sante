@@ -2,6 +2,7 @@
 // quelqu'un, du premier lancement aux rituels. Toute erreur JavaScript fait échouer le test.
 //
 // Lancer :  npm run parcours      (le serveur de dev est lancé automatiquement)
+//           PARCOURS=gestes npm run parcours   pour une seule partie (jour, texte, gestes, repas)
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { fileURLToPath } from 'node:url';
@@ -15,6 +16,7 @@ await server.listen();
 const url = server.resolvedUrls.local[0];
 const browser = await chromium.launch();
 let ok = 0, ko = 0;
+const only = process.env.PARCOURS || '', part = (k) => !only || only === k;
 const errs = [];
 
 async function step(name, fn) {
@@ -44,11 +46,17 @@ async function tab(page, h) {
   await page.click(`#tabs a[href="#${h}"]`);
   await page.waitForSelector(`#v-${h}:not([hidden])`);
 }
+/* referme ce qui peut s'ouvrir tout seul : briefing du matin, célébration (« Dans ta zone »…) */
+async function settle(page) {
+  await page.waitForTimeout(700);
+  if (await page.isVisible('#brief')) { await page.click('[data-act="briefok"]'); await page.waitForSelector('#brief', { state: 'hidden' }); }
+  if (await page.isVisible('#cele')) { await page.click('#cele'); await page.waitForSelector('#cele', { state: 'hidden' }); }
+}
 /* recharge l'appli et laisse le briefing du matin s'ouvrir s'il doit le faire */
 async function reload(page) { await page.reload(); await page.waitForTimeout(800); }
 
 try {
-  for (const [theme, hour] of [['light', 8], ['dark', 21]]) {
+  for (const [theme, hour] of part('jour') ? [['light', 8], ['dark', 21]] : []) {
     console.log(`\nParcours en mode ${theme === 'light' ? 'clair, le matin' : 'sombre, le soir'}`);
     const { ctx, page } = await phone(theme, hour);
 
@@ -127,6 +135,10 @@ try {
       await page.fill('.ex[data-i="0"] input[data-f="w"][data-s="0"]', '200');
       await page.fill('.ex[data-i="0"] input[data-f="r"][data-s="0"]', '5');
       await page.press('.ex[data-i="0"] input[data-f="r"][data-s="0"]', 'Tab');
+      await page.waitForSelector('#timer:not([hidden])');
+      await page.waitForTimeout(600);
+      const arc = await page.$eval('#tarc', (e) => [e.getAttribute('d'), e.style.strokeDashoffset]);
+      expect(arc[0] && arc[0].startsWith('M') && arc[1] !== '', 'l\'arc du minuteur n\'est pas piloté');
       await page.click('.foot [data-act="finish"]');
       await page.waitForSelector('#cele.on', { timeout: 4000 });
       expect(/record/i.test(await text(page, '#cet')), 'pas de célébration de record');
@@ -163,7 +175,7 @@ try {
   }
 
   console.log('\nParcours en grande taille de texte (Dynamic Type)');
-  for (const dt of [1.35, 1.6]) {
+  for (const dt of part('texte') ? [1.35, 1.6] : []) {
     const ctx = await browser.newContext({ viewport: { width: 375, height: 667 }, isMobile: true, hasTouch: true, locale: 'fr-FR', timezoneId: 'Europe/Paris' });
     const page = await ctx.newPage();
     page.on('pageerror', (e) => errs.push(`[texte ×${dt}] ${e.message}`));
@@ -179,7 +191,7 @@ try {
         const over = await page.evaluate(() => {
           const W = document.documentElement.clientWidth;
           return [...document.querySelectorAll('.view:not([hidden]) *')]
-            .filter((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.right > W + 1 && !e.closest('.scroll,.seg,#favs,.fig,.chips'); })
+            .filter((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.right > W + 1 && !e.closest('.scroll,.seg,#favs,.fig,.chips,.wave'); })
             .slice(0, 3).map((e) => e.tagName.toLowerCase() + (e.id ? '#' + e.id : '') + '.' + String(e.className).split(' ')[0]);
         });
         expect(!over.length, `${h} : ${over.join(', ')} dépasse de l'écran`);
@@ -189,8 +201,111 @@ try {
   }
 
   /* ---------- repas : banque d'aliments et scan ---------- */
+  /* ---------- gestes et animations ---------- */
+  if (part('gestes')) {
+  console.log('\nParcours gestes et animations');
+    const ctx = await browser.newContext({ viewport: { width: 393, height: 852 }, isMobile: true, hasTouch: true, locale: 'fr-FR', timezoneId: 'Europe/Paris' });
+    const page = await ctx.newPage();
+    page.on('pageerror', (e) => errs.push('[gestes] ' + e.message));
+    const d = new Date(); d.setHours(10, 5, 0, 0); await page.clock.setFixedTime(d);
+    await page.goto(url + '?ios=1');
+    await page.waitForSelector('#onb:not([hidden])');
+    await page.evaluate(() => window.carnet.loadDemo());
+    await page.waitForFunction(() => document.querySelector('#plan li'), null, { timeout: 30000 });
+    /* glisser du doigt : une suite d'événements tactiles, comme sur l'iPhone */
+    const swipe = (x0, y0, x1, y1) => page.evaluate(async ([x0, y0, x1, y1]) => {
+      const el = document.querySelector('#v-aujourdhui .hero');
+      const ev = (type, x, y) => { const t = new Touch({ identifier: 7, target: el, clientX: x, clientY: y }); el.dispatchEvent(new TouchEvent(type, { touches: type === 'touchend' ? [] : [t], changedTouches: [t], bubbles: true })); };
+      ev('touchstart', x0, y0);
+      for (let i = 1; i <= 10; i++) { ev('touchmove', x0 + (x1 - x0) * i / 10, y0 + (y1 - y0) * i / 10); await new Promise((r) => setTimeout(r, 16)); }
+      ev('touchend', x1, y1);
+    }, [x0, y0, x1, y1]);
+
+    await step('les chiffres des jauges défilent jusqu\'à leur valeur', async () => {
+      await page.waitForTimeout(1300);
+      const g = await page.$$eval('#g3 .gv', (a) => a.map((t) => [t.textContent, t.dataset.to]));
+      expect(g.every(([t, to]) => to == null || t === to), 'valeurs finales inattendues : ' + JSON.stringify(g));
+    });
+
+    await step('glisser pour changer de jour, et revenir', async () => {
+      await swipe(60, 420, 300, 424);
+      await page.waitForFunction(() => /^Hier/.test(document.querySelector('#dsub').textContent));
+      await swipe(300, 420, 60, 424);
+      await page.waitForFunction(() => /^Aujourd'hui/.test(document.querySelector('#dsub').textContent));
+      await swipe(300, 420, 60, 424);
+      await page.waitForTimeout(500);
+      expect(/^Aujourd'hui/.test(await text(page, '#dsub')), 'on ne doit pas aller après aujourd\'hui');
+    });
+
+    await step('tirer vers le bas pour synchroniser Apple Santé (appli iOS)', async () => {
+      await page.evaluate(() => scrollTo(0, 0));
+      await swipe(200, 260, 200, 520);
+      await page.waitForFunction(() => document.querySelector('#ptr').classList.contains('spin'), null, { timeout: 3000 });
+      await page.waitForFunction(() => !document.querySelector('#ptr').classList.contains('spin'), null, { timeout: 30000 });
+      const src = await page.evaluate(() => JSON.parse(localStorage.getItem('carnet-muscu-v1')).health.src);
+      expect(src === 'hk', 'Apple Santé non synchronisé');
+    });
+
+    await step('check-in : cadran tourné au doigt, cran touché', async () => {
+      await settle(page);
+      await page.click('.tplus'); await page.click('#sheet [data-q="ci"]');
+      await page.waitForSelector('.dial[data-k="mood"]');
+      await page.waitForTimeout(450); // la feuille finit de monter
+      const b = await (await page.$('.dial[data-k="mood"] svg')).boundingBox();
+      await page.mouse.move(b.x + b.width * 0.15, b.y + b.height * 0.8); await page.mouse.down();
+      await page.mouse.move(b.x + b.width * 0.5, b.y + b.height * 0.05, { steps: 6 });
+      await page.mouse.move(b.x + b.width * 0.86, b.y + b.height * 0.4, { steps: 6 });
+      await page.mouse.up();
+      await page.click('[data-act="jset"][data-k="energy"][data-v="2"]');
+      await page.waitForTimeout(250); // l'enregistrement se fait à l'image suivante
+      const j = await page.evaluate(() => { const d = JSON.parse(localStorage.getItem('carnet-muscu-v1')).days, t = new Date(), k = new Date(t - t.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); return (d[k] || {}).j || {}; });
+      expect(j.mood === 4 && j.energy === 2, 'valeurs du check-in : ' + JSON.stringify(j));
+      await page.click('#msr [data-act="msclose"]');
+    });
+
+    await step('eau : la vague monte dans la tuile', async () => {
+      await page.waitForSelector('#msheet', { state: 'hidden' });
+      const lv = () => page.$eval('#tiles .wave', (w) => parseFloat(w.style.getPropertyValue('--lv')));
+      const a = await lv();
+      await page.click('#tiles [data-act="water"][data-v="500"]');
+      await page.waitForTimeout(300);
+      expect((await lv()) > a, 'le niveau d\'eau ne monte pas');
+    });
+
+    await step('respiration guidée : inspire, expire, puis fermer', async () => {
+      await page.click('.tplus'); await page.click('#sheet [data-q="breath"]');
+      await page.waitForSelector('#breath:not([hidden])');
+      await page.click('[data-act="bzgo"]');
+      await page.waitForTimeout(1500);
+      expect(await text(page, '#bzw') === 'Inspire', 'pas d\'inspiration');
+      await page.waitForTimeout(3300);
+      expect(await text(page, '#bzw') === 'Expire', 'pas d\'expiration');
+      await page.click('#breath [data-act="bzclose"]');
+      expect(/écourtée/.test(await text(page, '#bzw')), 'fin de séance non affichée');
+      await page.click('#bzend [data-act="bzclose"]');
+      await page.waitForSelector('#breath', { state: 'hidden' });
+    });
+
+    await step('page de détail : le grand chiffre suit le doigt sur le graphique', async () => {
+      await page.click('#tiles .tile[data-k="rhr"]');
+      await page.waitForSelector('#mfig svg circle');
+      await page.waitForTimeout(450); // la feuille finit de monter
+      const h0 = await text(page, '#mdet .mhead');
+      const b = await (await page.$('#mfig')).boundingBox();
+      await page.mouse.move(b.x + b.width * 0.5, b.y + b.height * 0.5);
+      await page.waitForTimeout(100);
+      const h1 = await text(page, '#mdet .mhead');
+      expect(h1 !== h0 && !/Moyenne/.test(h1), 'l\'en-tête ne suit pas le doigt');
+      await page.mouse.move(b.x + b.width * 0.5, b.y - 60);
+      await page.waitForTimeout(100);
+      expect(await text(page, '#mdet .mhead') === h0, 'l\'en-tête ne revient pas à la moyenne');
+      await page.click('#msr [data-act="msclose"]');
+    });
+    await ctx.close();
+  }
+
+  if (part('repas')) {
   console.log('\nParcours repas : recherche, scan, produit inconnu');
-  {
     /* caméra simulée : une vidéo (Y4M) qui filme le code-barres EAN-13 de la pâte à tartiner 3017620422003 */
     const cam = join(tmpdir(), 'arden-camera.y4m');
     writeFileSync(cam, y4mBarcode('3017620422003'));

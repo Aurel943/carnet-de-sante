@@ -19,6 +19,23 @@ const LS='carnet-muscu-v1',pend=[];
 /* Appli iOS : Apple Santé est lu directement (HealthKit) au lieu d'un fichier d'export. */
 let HKN=false,hkBusy=false;const IMP=(web,ios)=>HKN?ios:web;
 
+/* ---------- mouvement : transitions entre écrans, chiffres qui défilent ---------- */
+/* Les écrans glissent dans le sens du geste (jour suivant, précédent), se fondent d'un onglet à l'autre,
+   et une jauge touchée s'agrandit jusqu'à sa page. Rien de tout cela avec « Réduire les animations ». */
+const calm=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
+let zoomFrom=null;
+function vt(update,dir='tab'){const r=document.documentElement;
+ if(!document.startViewTransition||calm()||document.visibilityState!=='visible'){update();zoomFrom=null;return}
+ r.dataset.vt=dir;const src=zoomFrom;zoomFrom=null;if(src)src.style.viewTransitionName='gz';
+ const t=document.startViewTransition(()=>{if(src)src.style.viewTransitionName='';update();
+  if(src){const big=$('.view:not([hidden]) .gauge.big svg');if(big)big.style.viewTransitionName='gz'}});
+ t.finished.finally(()=>{if(r.dataset.vt===dir)r.dataset.vt='';$$('[style*="view-transition-name"]').forEach(e=>{if(e.id!=='tabs')e.style.viewTransitionName=''})})}
+function goDay(n){if(n>0&&S.day>=today())return;buzz();vt(()=>{S.day=addD(S.day,n);renderView(cur())},n>0?'next':'prev')}
+/* Chiffres des jauges : ils défilent de 0 à leur valeur pendant que l'arc se remplit. */
+function countUp(){if(calm())return;$$('.cnt:not([data-done])').forEach(el=>{el.dataset.done='1';const to=+el.dataset.to,t0=performance.now(),D=950;
+ const f=t=>{const k=Math.min(1,(t-t0)/D),e=1-Math.pow(1-k,3);el.textContent=Math.round(to*e);if(k<1&&el.isConnected)requestAnimationFrame(f)};requestAnimationFrame(f)})}
+new MutationObserver(()=>{if(document.querySelector('.cnt:not([data-done])'))requestAnimationFrame(countUp)}).observe(document.documentElement,{childList:true,subtree:true});
+
 /* ---------- Dynamic Type ---------- */
 /* Sur iPhone et iPad, la taille de texte choisie dans Réglages (Luminosité et affichage → Taille du texte,
    ou Accessibilité → Affichage et taille du texte → Police plus grande) est celle de la police système
@@ -184,11 +201,12 @@ function drawFig(f){const c=f._d;if(!c)return;if(c.type==='day')return drawDay(f
  const maps=c.series.map(se=>new Map(se.pts.map(p=>[p.x,p.y]))),dates=[...new Set(all.map(p=>p.x))].sort(),dx=dates.map(x=>Xf(Date.parse(x))),tfd=c.tf||(v=>fm(v)+(c.unit?' '+c.unit:''));
  f._g={hit:x=>{let bi=-1,bd=Infinity;for(let i=0;i<dx.length;i++){const q=Math.abs(dx[i]-x);if(q<bd){bd=q;bi=i}}if(bi<0||bd>40)return null;const dt=dates[bi],gx=dx[bi],rows=[],mk=[];
   c.series.forEach((se,i)=>{const v=maps[i].get(dt);if(v==null)return;mk.push([gx,Y(v),se.col]);rows.push(`<div><i class="sw" style="background:${se.col}"></i>${se.name?esc(se.name)+' : ':''}<b>${esc((se.tf||tfd)(v))}</b></div>`)});
-  if(!rows.length)return null;for(const [se,m,b] of avgs){const q=b.find(z=>z.x===dt),tf2=se.tf||tfd;if(q)rows.push(`<div class="d">Plage habituelle (±${hw} j) : ${esc(tf2(q.lo))} à ${esc(tf2(q.hi))}</div>`);const v=maps[c.series.indexOf(se)].get(dt);if(v!=null)rows.push(`<div class="d">${esc(se.name||'')} vs moyenne de la période (${esc((se.tf||tfd)(m))}) : <b>${v-m>0?'+':''}${esc((se.df||c.df||se.tf||tfd)(Math.abs(v-m))).replace(/^/,v-m<0?'−':'')}</b></div>`)}return{gx,mk,ty:Math.min(...mk.map(m=>m[1])),html:`<div class="d">${esc(dLong(dt))}</div>${rows.join('')}${c.band?`<div class="d">ta normale : ${esc(fm(c.band[0]))} à ${esc(fm(c.band[1]))}</div>`:''}`}}};
+  if(!rows.length)return null;const key=dt;for(const [se,m,b] of avgs){const q=b.find(z=>z.x===dt),tf2=se.tf||tfd;if(q)rows.push(`<div class="d">Plage habituelle (±${hw} j) : ${esc(tf2(q.lo))} à ${esc(tf2(q.hi))}</div>`);const v=maps[c.series.indexOf(se)].get(dt);if(v!=null)rows.push(`<div class="d">${esc(se.name||'')} vs moyenne de la période (${esc((se.tf||tfd)(m))}) : <b>${v-m>0?'+':''}${esc((se.df||c.df||se.tf||tfd)(Math.abs(v-m))).replace(/^/,v-m<0?'−':'')}</b></div>`)}return{key,gx,mk,ty:Math.min(...mk.map(m=>m[1])),html:`<div class="d">${esc(dLong(dt))}</div>${rows.join('')}${c.band?`<div class="d">ta normale : ${esc(fm(c.band[0]))} à ${esc(fm(c.band[1]))}</div>`:''}`}}};
  interact(f)}
 function interact(f){if(f._i)return;f._i=1;const ov=document.createElement('div');ov.className='ov';f.appendChild(ov);
- const hide=()=>{ov.innerHTML=''};
+ const hide=()=>{ov.innerHTML='';if(f._lk!=null){f._lk=null;if(f._d&&f._d.onScrub)f._d.onScrub(null)}};
  const move=e=>{const g=f._g;if(!g)return hide();const r=f.getBoundingClientRect(),x=e.clientX-r.left,res=g.hit(x,e.clientY-r.top);if(!res)return hide();
+  if(res.key!==f._lk){f._lk=res.key;if(e.pointerType!=='mouse')buzz();if(f._d&&f._d.onScrub)f._d.onScrub(res.key)}
   ov.innerHTML=(res.gx!=null?`<i class="guide" style="left:${res.gx}px"></i>`:'')+(res.mk||[]).map(m=>`<i class="mk" style="left:${m[0]}px;top:${m[1]}px;background:${m[2]}"></i>`).join('')+`<div class="tip">${res.html}</div>`;
   const t=ov.querySelector('.tip'),tw=t.offsetWidth,th=t.offsetHeight,ax=res.gx??x;let lx=ax+14;if(lx+tw>r.width)lx=ax-14-tw;t.style.left=Math.max(0,lx)+'px';t.style.top=clamp((res.ty??(e.clientY-r.top))-th-10,0,Math.max(0,r.height-th))+'px'};
  f.addEventListener('pointermove',move);f.addEventListener('pointerdown',move);f.addEventListener('pointerleave',hide);f.addEventListener('pointerup',e=>{if(e.pointerType!=='mouse')hide()});f.addEventListener('pointercancel',hide)}
@@ -207,7 +225,7 @@ function drawDay(f){const s=f.querySelector('svg'),c=f._d,W=f.clientWidth,H2=f.c
  s.innerHTML=g;
  f._g={hit:x=>{const m=clamp((x-pl)/(W-pl-pr)*1440,0,1439);let i=Math.floor(m/15),v=h[i];for(let k=1;k<=2&&!v;k++){if(h[i-k]){i-=k;v=h[i]}else if(h[i+k]){i+=k;v=h[i]}}
   const inS=(c.sleep||[]).some(([a,b])=>m>=a&&m<b),inW=(c.wk||[]).some(([a,b])=>m>=a&&m<b),hh=Math.floor(m/60),sv=(c.stress||[])[hh];if(!v&&!inS&&!inW)return null;
-  return{gx:Xf(i*15+7.5),mk:v?[[Xf(i*15+7.5),Y(v),'var(--hrt)']]:[],ty:v?Y(v):40,html:`<div class="d">${hm(i*15)} – ${hm(i*15+15)}</div>${v?`<div><i class="sw" style="background:var(--hrt)"></i>FC moyenne : <b>${v} bpm</b></div>`:''}${inS?'<div><i class="sw" style="background:var(--slp)"></i>Sommeil</div>':''}${inW?'<div><i class="sw" style="background:var(--eff)"></i>Entraînement</div>':''}${sv?`<div><i class="sw" style="background:var(--str)"></i>Stress entre ${hh}h et ${hh+1}h : <b>${sv} / 100</b></div>`:''}`}}};
+  return{key:i,gx:Xf(i*15+7.5),mk:v?[[Xf(i*15+7.5),Y(v),'var(--hrt)']]:[],ty:v?Y(v):40,html:`<div class="d">${hm(i*15)} – ${hm(i*15+15)}</div>${v?`<div><i class="sw" style="background:var(--hrt)"></i>FC moyenne : <b>${v} bpm</b></div>`:''}${inS?'<div><i class="sw" style="background:var(--slp)"></i>Sommeil</div>':''}${inW?'<div><i class="sw" style="background:var(--eff)"></i>Entraînement</div>':''}${sv?`<div><i class="sw" style="background:var(--str)"></i>Stress entre ${hh}h et ${hh+1}h : <b>${sv} / 100</b></div>`:''}`}}};
  interact(f)}
 function drawHyp(f){const s=f.querySelector('svg'),c=f._d,W=f.clientWidth,H2=f.clientHeight;if(!W)return;const sg2=c.segs||[];f.classList.toggle('nodata',!sg2.length);
  if(!sg2.length){f._g=null;s.innerHTML='';f.dataset.empty=c.empty||'Pas de détail pour cette nuit';return}
@@ -233,7 +251,7 @@ function drawHyp(f){const s=f.querySelector('svg'),c=f._d,W=f.clientWidth,H2=f.c
  const SN=['Éveil','Paradoxal (REM)','Léger','Profond','Endormi (phase non détaillée)'],SC=['var(--awake)','var(--rem)','var(--core)','var(--deep)','var(--slp)'];
  f._g={hit:x=>{const m=a0+(x-pl)/(W-pl-pr)*(a1-a0);if(m<a0||m>a1)return null;const inn=sorted.filter(([a,b])=>m>=a&&m<b),sx=inn.find(q=>q[2]===0)||inn[0];
   const hv=(c.nh||[])[Math.round((m-c.nh0-2.5)/5)];let pv=null,bd=21;for(const p of nv){const q=Math.abs(p[0]-m);if(q<bd){bd=q;pv=p}}if(!sx&&!hv&&!pv)return null;
-  return{gx:Xf(m),mk:[],ty:top+lh*2,html:`<div class="d">${hhmm(m)}</div>${sx?`<div><i class="sw" style="background:${SC[sx[2]]}"></i>${SN[sx[2]]} : <b>${hhmm(sx[0])} – ${hhmm(sx[1])}</b> (${fmtSl(sx[1]-sx[0])})</div>`:''}${hv?`<div><i class="sw" style="background:var(--hrt)"></i>FC : <b>${hv} bpm</b></div>`:''}${pv?`<div><i class="sw" style="background:var(--mind)"></i>VFC ${hvLab()} à ${hhmm(pv[0])} : <b>${r0(pv[1])} ms</b></div>`:''}`}}};
+  return{key:Math.round(m),gx:Xf(m),mk:[],ty:top+lh*2,html:`<div class="d">${hhmm(m)}</div>${sx?`<div><i class="sw" style="background:${SC[sx[2]]}"></i>${SN[sx[2]]} : <b>${hhmm(sx[0])} – ${hhmm(sx[1])}</b> (${fmtSl(sx[1]-sx[0])})</div>`:''}${hv?`<div><i class="sw" style="background:var(--hrt)"></i>FC : <b>${hv} bpm</b></div>`:''}${pv?`<div><i class="sw" style="background:var(--mind)"></i>VFC ${hvLab()} à ${hhmm(pv[0])} : <b>${r0(pv[1])} ms</b></div>`:''}`}}};
  interact(f)}
 const nar=W=>W<520;
 /* Jauges d'Arden : arc ouvert de 270° (ouverture en bas), dégradé du ton profond au ton clair dessiné
@@ -250,7 +268,7 @@ function arcRing(cx,cy,r,w,p,col,id,shadow=true,a0=-Math.PI/2,span=2*Math.PI){if
 function gaugeSVG(v,col,unit,max=100,key,zone){const r=56,w=10,cy=74,p=v==null?0:clamp(v/max,0,1),id='rg'+(++ringN);
  const an=!!key&&p>0&&ringSeen.get(key)!==p&&!matchMedia('(prefers-reduced-motion: reduce)').matches;if(key)ringSeen.set(key,p);
  const tick=a=>{const c=Math.cos(a),s=Math.sin(a);return `<line x1="${(70+(r-w/2-5)*c).toFixed(2)}" y1="${(cy+(r-w/2-5)*s).toFixed(2)}" x2="${(70+(r-w/2-2)*c).toFixed(2)}" y2="${(cy+(r-w/2-2)*s).toFixed(2)}" stroke="${col}" stroke-opacity=".45" stroke-width="1.6" stroke-linecap="round"/>`};
- return `<svg viewBox="0 0 140 136" aria-hidden="true"><defs><filter id="${id}b" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2"/></filter>${an?`<mask id="${id}m"><path class="ringgrow" d="${arcPath(70,cy,r,GA0-.2,GA0+GSPAN+.2)}" fill="none" stroke="#fff" pathLength="100" stroke-dasharray="100 100" stroke-dashoffset="100"/></mask>`:''}</defs><path d="${arcPath(70,cy,r,GA0,GA0+GSPAN)}" fill="none" stroke="${col}" stroke-opacity=".15" stroke-width="${w}" stroke-linecap="round"/>${zone?zoneArc(70,cy,r,w,zone,col,max):[.25,.5,.75].map(t=>tick(GA0+GSPAN*t)).join('')}<g${an?` mask="url(#${id}m)"`:''}>${arcRing(70,cy,r,w,p,col,id,true,GA0,GSPAN)}</g><text class="gv" x="70" y="${cy+11}" text-anchor="middle">${v==null?'–':Math.round(v)}</text>${unit?`<text class="gu" x="70" y="${cy+r*.71+4}" text-anchor="middle">${unit}</text>`:''}</svg>`}
+ return `<svg viewBox="0 0 140 136" aria-hidden="true"><defs><filter id="${id}b" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2"/></filter>${an?`<mask id="${id}m"><path class="ringgrow" d="${arcPath(70,cy,r,GA0-.2,GA0+GSPAN+.2)}" fill="none" stroke="#fff" pathLength="100" stroke-dasharray="100 100" stroke-dashoffset="100"/></mask>`:''}</defs><path d="${arcPath(70,cy,r,GA0,GA0+GSPAN)}" fill="none" stroke="${col}" stroke-opacity=".15" stroke-width="${w}" stroke-linecap="round"/>${zone?zoneArc(70,cy,r,w,zone,col,max):[.25,.5,.75].map(t=>tick(GA0+GSPAN*t)).join('')}<g${an?` mask="url(#${id}m)"`:''}>${arcRing(70,cy,r,w,p,col,id,true,GA0,GSPAN)}</g><text class="gv${an?' cnt':''}" x="70" y="${cy+11}" text-anchor="middle"${an?` data-to="${Math.round(v)}"`:''}>${v==null?'–':an?0:Math.round(v)}</text>${unit?`<text class="gu" x="70" y="${cy+r*.71+4}" text-anchor="middle">${unit}</text>`:''}</svg>`}
 /* zone conseillée : bande plus soutenue sur la piste, bornée par deux traits */
 function zoneArc(cx,cy,r,w,[lo,hi],col,max=100){const b0=GA0+GSPAN*lo/max,b1=GA0+GSPAN*hi/max,edge=a=>{const c=Math.cos(a),s=Math.sin(a);return `<line x1="${(cx+(r-w/2-1)*c).toFixed(2)}" y1="${(cy+(r-w/2-1)*s).toFixed(2)}" x2="${(cx+(r+w/2+1)*c).toFixed(2)}" y2="${(cy+(r+w/2+1)*s).toFixed(2)}" stroke="${col}" stroke-opacity=".7" stroke-width="1.6" stroke-linecap="round"/>`};
  return `<path class="gz" d="${arcPath(cx,cy,r,b0,b1)}" fill="none" stroke="${col}" stroke-opacity=".32" stroke-width="${w}"/>${edge(b0)}${edge(b1)}`}
@@ -291,7 +309,7 @@ function planItems(d){const out=[],P=(c,html)=>out.push([c,html]),h=H(d),D=S.day
  if(rc&&!rc.partial){const low=rc.c.filter(x=>x[1]<45).map(x=>x[0].toLowerCase());if(low.length)P('var(--rec)',`Ce qui freine ton énergie : <b>${low.join(', ')}</b>.`)}
  if(isT||d===hLast()){const b=bedOf(d);if(b)P('var(--slp)',`Ce soir : <b>${fmtSl(b.need)}</b> de sommeil, au lit vers <b>${hhmm(b.bed)}</b>.`)}
  if(has(h.tp)){const tb=base('tp',d);if(tb!=null&&h.tp-tb>=0.5)P('var(--hrt)','<b>Température au poignet en hausse</b> : peut précéder une infection, ou venir de l\'alcool ou d\'une chambre chaude.')}
- if(num(h.stz)>=30)P('var(--str)','<b>Journée stressante</b> : quelques minutes de respiration lente (6 cycles par minute) aident ta FC à redescendre.');
+ if(num(h.stz)>=30)P('var(--str)','<b>Journée stressante</b> : quelques minutes de respiration lente aident ta FC à redescendre. <button type="button" class="pbtn" data-act="breath">Respirer 1 min</button>');
  if(isT&&hr>=13&&hr<21&&out.length<4){const pr=sum(D.items||[],'p'),T=num(S.set.prot);if(T&&(D.items||[]).length&&pr<T*.5)P('var(--nut)',`Protéines : <b>${r0(pr)} g</b> sur ${r0(T)}, pense à en mettre au prochain repas.`)}
  if(!out.length){P('var(--mind)','Fais ton <b>check-in</b> : 20 secondes pour dire comment tu te sens.');P('var(--trn)','Note ta prochaine <b>séance</b> ou ton prochain <b>repas</b>.')}
  return out.slice(0,4)}
@@ -305,10 +323,12 @@ function heroActs(d){if(d!==today())return'';const j=J(d),ci=!!(j.mood||j.energy
 /* Ciel vivant : la lumière suit l'heure (aube, jour, crépuscule, nuit) et se teinte selon ton état. */
 const TONE={go:'var(--rec)',mid:'var(--str)',low:'var(--trn)',warn:'var(--hrt)',eve:'var(--slp)',none:'var(--eff)'};
 function skyFor(v,tone){const hr=new Date().getHours();
- if(v==='aujourdhui'){const [a,b]=hr>=5&&hr<10?['#ffb48c','#ffd9a6']:hr>=10&&hr<17?['#ffe1a1','#bfe7df']:hr>=17&&hr<21?['#f59c8e','#c4a7f3']:['#7183e6','#343d86'];return{a,b,c:TONE[tone]||TONE.none,o:1}}
+ if(v==='aujourdhui'){const [a,b]=hr>=5&&hr<10?['#ffb48c','#ffd9a6']:hr>=10&&hr<17?['#ffe1a1','#bfe7df']:hr>=17&&hr<21?['#f59c8e','#c4a7f3']:['#7183e6','#343d86'];return{a,b,c:TONE[tone]||TONE.none,o:1,night:hr>=21||hr<5}}
  const C={sommeil:'var(--slp)',recuperation:'var(--rec)',effort:'var(--eff)',tendances:'var(--trn)',nutrition:'var(--nut)'}[v];
- return C?{a:C,b:C,c:C,o:.55}:{a:'transparent',b:'transparent',c:'transparent',o:0}}
-function paintSky(el,k){el.style.setProperty('--sk1',k.a);el.style.setProperty('--sk2',k.b);el.style.setProperty('--sk3',k.c);el.style.setProperty('--sko',k.o)}
+ return C?{a:C,b:C,c:C,o:.55,night:v==='sommeil'}:{a:'transparent',b:'transparent',c:'transparent',o:0}}
+/* Étoiles du ciel de nuit : positions fixes (toujours le même ciel), scintillement décalé */
+const STARS=Array.from({length:24},(_,i)=>{const r=n=>((Math.sin(i*12.9898+n*78.233)*43758.5453)%1+1)%1;return`<i style="left:${(r(1)*100).toFixed(1)}%;top:${(4+r(2)*44).toFixed(1)}%;--s:${(1+r(3)*1.8).toFixed(1)}px;animation-delay:${(-r(4)*5).toFixed(2)}s;animation-duration:${(2.6+r(5)*3).toFixed(1)}s"></i>`}).join('');
+function paintSky(el,k){if(el.id==='sky'){el.classList.toggle('night',!!k.night);if(k.night&&!el.firstChild)el.innerHTML=`<div class="stars">${STARS}</div>`}el.style.setProperty('--sk1',k.a);el.style.setProperty('--sk2',k.b);el.style.setProperty('--sk3',k.c);el.style.setProperty('--sko',k.o)}
 
 /* ---------- vue commune : jour ---------- */
 const VT={sommeil:'Sommeil',recuperation:'Énergie',effort:'Dépense'};
@@ -379,6 +399,7 @@ function upNextHTML(){const up=S.med.filter(m=>(m.date>=today()&&m.date<=addD(to
  return S.day===today()&&up.length?`<button type="button" class="upnext" data-act="psub" data-s="dossier"><i><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg></i><span>${up.map(m=>{const x=m.date>=today()?m.date:m.next,n=Math.round((new Date(x+'T12:00')-new Date(today()+'T12:00'))/864e5);return `<b>${esc(m.title)}</b> ${n===0?"aujourd'hui":n===1?'demain':'dans '+n+' jours'}`}).join('<br>')}</span><em>›</em></button>`:''}
 
 /* ---------- aujourd'hui ---------- */
+const waterLv={};
 function renderToday(){const d=S.day,h=H(d),D=S.days[d]||{},it=D.items||[],T=dayTrain(d),set=S.set;
  const rc=recovery(d),sl=sleepScore(d),ef=effortOf(d),tg=effTarget(rc&&rc.s);
  $('#g3').innerHTML=gauge(tg&&ef==null?0:ef,'var(--eff)','Dépense',effSub(d,ef,tg),'effort','/100',false,tg)+gauge(rc&&rc.s,'var(--rec)','Énergie',rc?recLab(rc.s)[0]:(calib(d)<7&&hKeys().length?`calibrage ${calib(d)}/7 nuits`:'en attente de données'),'recuperation')+gauge(sl&&sl.s,'var(--slp)','Sommeil',h.sl?fmtSl(h.sl):'pas de nuit','sommeil','/100');
@@ -394,8 +415,9 @@ function renderToday(){const d=S.day,h=H(d),D=S.days[d]||{},it=D.items||[],T=day
   tile('var(--mind)','VFC nocturne',nhrv(d)?`${r0(nhrv(d))}<small> ms</small>`:'–',nhrv(d)&&vb?`normale ${r0(vb.m)} ms`:'pendant ton sommeil','','hrv'),
   tile('var(--str)','Stress estimé',has(h.stz)?`${st}<small> / 100</small>`:'–',has(h.stz)?stressLab(st):hKeys().length?(d===today()?'calculé au fil de la journée':'pas de mesure ce jour'):IMP('après import Apple','après synchro Apple Santé'),'','stz'),
   tile('var(--nut)','Nutrition',`${r0(it.reduce((a,x)=>a+kcalOf(x),0))}<small> kcal</small>`,`${r0(sum(it,'p'))} g de protéines sur ${r0(set.prot)}`,'','nut'),
-  tile('var(--wat)','Hydratation',`${fx(wat/1000)}<small> / ${fx(num(set.water)/1000)} L</small>`,'',`<div class="row"><button class="btn small" data-act="water" data-v="250">+25 cl</button><button class="btn small" data-act="water" data-v="500">+50 cl</button></div>`,'wat')
+  tile('var(--wat)','Hydratation',`${fx(wat/1000)}<small> / ${fx(num(set.water)/1000)} L</small>`,'',`<i class="wave" aria-hidden="true" style="--lv:${waterLv[d]??Math.min(100,wat/num(set.water)*100)}%"><svg viewBox="0 0 120 10" preserveAspectRatio="none"><path d="M0 5Q15 0 30 5T60 5T90 5T120 5V10H0z"/></svg></i><div class="row"><button class="btn small" data-act="water" data-v="250">+25 cl</button><button class="btn small" data-act="water" data-v="500">+50 cl</button></div>`,'wat')
  ].join('');
+ {const lv=Math.min(100,wat/num(set.water)*100),w=$('#tiles .wave');if(w&&waterLv[d]!==lv){requestAnimationFrame(()=>requestAnimationFrame(()=>{w.style.setProperty('--lv',lv+'%')}))}waterLv[d]=lv}
  const x=X(d);const sleep=[];if(has(h.sw))sleep.push([0,(h.sw+720)%1440]);const hn=H(addD(d,1));if(has(hn.sb)){const m=(hn.sb+720)%1440;if(m>600)sleep.push([m,1440])}
  const wk=(h.wk||[]).filter(w=>has(w.st)).map(w=>[w.st,w.st+num(w.min)]);
  setFig('#fday',{type:'day',h:x&&x.h,sleep,wk,stress:x&&x.sh});
@@ -414,6 +436,7 @@ function coach(d,rc,sl,ef,tg){const h=H(d),out=[];
  if(num(h.stz)>=30)out.push('Ta FC est restée élevée au repos une bonne partie de la journée (stress, caféine, chaleur, digestion…). Quelques minutes de respiration lente, environ 6 cycles par minute, aident à la faire redescendre.');
  return out.join(' ')||''+IMP('Importe tes données Apple Santé et remplis ton check-in','Connecte Apple Santé et remplis ton check-in')+' : le coach interprétera ici ton énergie, ta dépense et ton besoin de sommeil.'}
 function actsHTML(d,T){T=T||dayTrain(d);const L=[];
+ for(const x of (S.days[d]||{}).br||[])L.push(`<div class="act" style="--c:var(--rec)"><div class="ic">${ARC}</div><div><div class="t">Respiration guidée</div><div class="m">${x.min} min · ${esc(x.at||'')}</div></div><div class="e"></div></div>`);
  for(const s of T.mu){const w=T.att.filter(isStr)[0];L.push(`<div class="act" style="--c:var(--trn)"><div class="ic"><svg viewBox="0 0 24 24">${IC.lift}</svg></div><div><div class="t">${esc(s.name)}</div><div class="m">${(s.ex||[]).length} exercices · ${fx((s.ex||[]).reduce((a,x)=>a+x.sets.reduce((b,y)=>b+num(y.w)*num(y.r),0),0)/1000)} t${s.dur?' · '+esc(s.dur)+' min':''}${w&&w.hr?' · '+w.hr+' bpm moy.':''}${w&&w.kcal?' · '+w.kcal+' kcal':''}</div>${w?zbar(w.z)+zleg(w.z):''}</div><div class="e">${w&&w.tr?r0(100*(1-Math.exp(-w.tr/110))):''}<small>${w&&w.tr?'dépense':''}</small></div></div>`)}
  for(const s of T.sp){const w=T.att.find(x=>(WT[x.ty]||'')===s.type);L.push(`<div class="act" style="--c:var(--eff)"><div class="ic"><svg viewBox="0 0 24 24">${IC.run}</svg></div><div><div class="t">${esc(s.type)}</div><div class="m">${esc(s.min)} min${s.km?' · '+fx(s.km)+' km':''}${s.rpe?' · ressenti '+esc(s.rpe)+'/10':''}${w&&w.hr?' · '+w.hr+' bpm moy.':''}</div>${w?zbar(w.z)+zleg(w.z):''}</div><div class="e">${w&&w.tr?r0(100*(1-Math.exp(-w.tr/110))):''}<small>${w&&w.tr?'dépense':''}</small></div></div>`)}
  for(const w of T.ap)L.push(`<div class="act" style="--c:${isStr(w)?'var(--trn)':'var(--eff)'}"><div class="ic"><svg viewBox="0 0 24 24">${isStr(w)?IC.lift:IC.run}</svg></div><div><div class="t">${esc(WT[w.ty]||w.ty)} <span class="mute small">· montre${has(w.st)?' · '+hm(w.st):''}</span></div><div class="m">${esc(w.min)} min${w.km?' · '+fx(w.km)+' km':''}${w.kcal?' · '+esc(w.kcal)+' kcal':''}${w.hr?' · '+esc(w.hr)+' bpm moy.':''}${w.mx?' · max '+esc(w.mx):''}</div>${zbar(w.z)}${zleg(w.z)}</div><div class="e">${w.tr?r0(100*(1-Math.exp(-w.tr/110))):''}<small>${w.tr?'dépense':''}</small></div></div>`);
@@ -424,9 +447,32 @@ function renderCheckin(){const d=S.day,j=J(d),done=!!(j.mood||j.energy||j.stress
   `<div class="cisum">${SCALES.filter(([k])=>j[k]).map(([k,l])=>`<div class="cis"><span>${l}</span><i style="--c:${SCC[k]}">${[1,2,3,4,5].map(v=>`<b class="${v<=j[k]?'on':''}"></b>`).join('')}</i><em>${j[k]}/5</em></div>`).join('')}</div>${(j.tags||[]).length?`<div class="chips cit">${j.tags.map(t=>`<span class="chip on">${esc(t)}</span>`).join('')}</div>`:''}${j.note?`<p class="cinote">${esc(j.note)}</p>`:''}<div class="row"><button type="button" class="btn small" data-act="ciopen">Modifier</button></div>`
   :`<p class="mute" style="margin:0 0 14px">Humeur, énergie, stress et courbatures en 20 secondes : Arden les croise ensuite avec ton sommeil et ton énergie.</p><button type="button" class="btn pri" data-act="ciopen">Faire mon check-in</button>`);
  if(document.activeElement&&document.activeElement.id==='jnote')return;
- $('#cibody').innerHTML=`<div class="panel"><div class="ci">${SCALES.map(([k,l,lo,hi])=>`<div class="sc"><span>${l}</span><div class="seg">${[1,2,3,4,5].map(v=>`<button data-act="jset" data-k="${k}" data-v="${v}" class="${j[k]===v?'on':''}" aria-label="${l} ${v} sur 5">${v}</button>`).join('')}</div><small><span>${lo}</span><span>${hi}</span></small></div>`).join('')}</div>
+ $('#cibody').innerHTML=`<div class="panel"><div class="ci dials">${SCALES.map(([k,l])=>dialHTML(k,l,j[k])).join('')}</div>
  </div><h3 class="ms-sec">Étiquettes</h3><div class="panel"><div class="chips">${S.set.tags.map(t=>`<button class="chip ${(j.tags||[]).includes(t)?'on':''}" data-act="jtag" data-t="${esc(t)}">${esc(t)}</button>`).join('')}</div></div>
  <h3 class="ms-sec">Note</h3><div class="panel"><textarea id="jnote" rows="3" placeholder="Douleur, ressenti, événement…">${esc(j.note||'')}</textarea></div>`}
+/* Cadran du check-in : un arc de 270° en cinq crans, à tourner du doigt (ou à toucher, ou au clavier). */
+const CIW={mood:['mauvaise','bof','correcte','bonne','excellente'],energy:['à plat','faible','moyenne','bonne','au top'],stress:['calme','léger','modéré','élevé','très stressé'],sore:['aucune','légères','modérées','marquées','fortes']};
+const DC={x:60,y:58,r:42};
+const dialPos=v=>{const a=GA0+GSPAN*(v-1)/4;return[DC.x+DC.r*Math.cos(a),DC.y+DC.r*Math.sin(a)]};
+function dialHTML(k,l,v){const c=SCC[k],p=v?(v-1)/4:0;
+ return `<div class="dial" data-k="${k}" style="--c:${c}" role="slider" tabindex="0" aria-label="${l}" aria-valuemin="1" aria-valuemax="5" aria-valuenow="${v||''}" aria-valuetext="${v?esc(CIW[k][v-1]):'non renseigné'}">
+  <svg viewBox="0 0 120 106"><path class="dt" d="${arcPath(DC.x,DC.y,DC.r,GA0,GA0+GSPAN)}"/><path class="df" pathLength="100" d="${arcPath(DC.x,DC.y,DC.r,GA0,GA0+GSPAN)}" style="stroke-dashoffset:${v?(100-p*100).toFixed(1):100}"/>${[1,2,3,4,5].map(i=>{const [x,y]=dialPos(i);return `<circle class="dd${v&&i<=v?' on':''}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6"/>`}).join('')}${v?(()=>{const [x,y]=dialPos(v);return `<circle class="dk" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="8"/>`})():''}</svg>
+  <b class="dv">${v||'–'}</b><span class="dl">${l}</span><small class="dw">${v?esc(CIW[k][v-1]):'touche ou tourne'}</small>
+  ${[1,2,3,4,5].map(i=>{const [x,y]=dialPos(i);return `<button type="button" class="dbt" data-act="jset" data-k="${k}" data-v="${i}" style="left:${(x/120*100).toFixed(1)}%;top:${(y/106*100).toFixed(1)}%" aria-label="${l} ${i} sur 5 : ${esc(CIW[k][i-1])}" tabindex="-1"></button>`}).join('')}</div>`}
+/* mise à jour en direct pendant le geste, enregistrée au lâcher */
+function dialShow(el,v){const k=el.dataset.k,p=(v-1)/4;el.querySelector('.df').style.strokeDashoffset=(100-p*100).toFixed(1);
+ el.querySelectorAll('.dd').forEach((c,i)=>c.classList.toggle('on',i<v));let kn=el.querySelector('.dk');if(!kn){kn=document.createElementNS('http://www.w3.org/2000/svg','circle');kn.setAttribute('class','dk');kn.setAttribute('r','8');el.querySelector('svg').appendChild(kn)}
+ const [x,y]=dialPos(v);kn.setAttribute('cx',x.toFixed(1));kn.setAttribute('cy',y.toFixed(1));el.querySelector('.dv').textContent=v;el.querySelector('.dw').textContent=CIW[k][v-1];el.setAttribute('aria-valuenow',v);el.setAttribute('aria-valuetext',CIW[k][v-1])}
+{let dl=null,dv=0;
+ const val=(el,e)=>{const r=el.querySelector('svg').getBoundingClientRect(),x=(e.clientX-r.left)/r.width*120,y=(e.clientY-r.top)/r.height*106;let a=Math.atan2(y-DC.y,x-DC.x)-GA0;a=((a%(2*Math.PI))+2*Math.PI)%(2*Math.PI);if(a>GSPAN)a=a>GSPAN+(2*Math.PI-GSPAN)/2?0:GSPAN;return 1+Math.round(a/GSPAN*4)};
+ document.addEventListener('pointerdown',e=>{const el=e.target.closest('.dial');if(!el||e.button>0)return;dl=el;dv=+el.getAttribute('aria-valuenow')||0;el.dataset.moved=''});
+ document.addEventListener('pointermove',e=>{if(!dl)return;const v=val(dl,e);if(v!==dv){dv=v;dl.dataset.moved='1';dialShow(dl,v);buzz()}});
+ const up=()=>{if(!dl)return;const el=dl;dl=null;if(el.dataset.moved){setJ({[el.dataset.k]:dv});renderCheckin();const n=$(`.dial[data-k=${el.dataset.k}]`);if(n){n.focus({preventScroll:true});n.dataset.drag='1';setTimeout(()=>{delete n.dataset.drag},80)}}};
+ document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up);
+ /* un glissé ne doit pas aussi compter comme un toucher sur un cran */
+ document.addEventListener('click',e=>{const n=e.target.closest('.dial[data-drag]');if(n){delete n.dataset.drag;e.stopPropagation();e.preventDefault()}},true);
+ document.addEventListener('keydown',e=>{const el=e.target.closest&&e.target.closest('.dial');if(!el)return;const v=+el.getAttribute('aria-valuenow')||0,d={ArrowRight:1,ArrowUp:1,ArrowLeft:-1,ArrowDown:-1}[e.key];if(!d)return;e.preventDefault();e.stopPropagation();
+  const n=clamp((v||3)+(v?d:0),1,5);setJ({[el.dataset.k]:n});buzz();renderCheckin();$(`.dial[data-k=${el.dataset.k}]`)?.focus()},true)}
 function setJ(p){const d=S.day,o=getDay(d);o.j={...(o.j||{}),...p};put.day(d)}
 
 /* ---------- sommeil ---------- */
@@ -572,8 +618,9 @@ function delSess(id){const s=S.sessions.find(s=>s.id===id);if(!s)return;S.sessio
 let tEnd=0,tInt=0,actx=null;
 function beep(){try{if(!actx)return;const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=880;g.gain.value=.15;o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+.35)}catch(e){}}
 function unlockAudio(){try{if(!actx){const A=window.AudioContext||window.webkitAudioContext;if(A)actx=new A()}if(actx&&actx.state==='suspended')actx.resume()}catch(e){}}
-function startTimer(sec){unlockAudio();document.body.classList.add('timing');tEnd=Date.now()+(sec||num(S.set.rest)||120)*1000;$('#timer').hidden=false;$('#timer').classList.remove('end');$('#tlab').textContent='Repos';clearInterval(tInt);tInt=setInterval(tick,250);tick()}
-function tick(){const r=Math.round((tEnd-Date.now())/1000),el=$('#tval');if(r<=0){el.textContent='0:00';if(!$('#timer').classList.contains('end')){$('#timer').classList.add('end');$('#tlab').textContent='Série suivante';beep();setTimeout(beep,450);try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}}if(r<-20)stopTimer();return}el.textContent=Math.floor(r/60)+':'+String(r%60).padStart(2,'0')}
+let tDur=120000;
+function startTimer(sec){unlockAudio();document.body.classList.add('timing');tDur=(sec||num(S.set.rest)||120)*1000;tEnd=Date.now()+tDur;$('#tarc').setAttribute('d',arcPath(18,18,13,GA0,GA0+GSPAN));$('#timer').hidden=false;$('#timer').classList.remove('end');$('#tlab').textContent='Repos';clearInterval(tInt);tInt=setInterval(tick,250);tick()}
+function tick(){const r=Math.round((tEnd-Date.now())/1000),el=$('#tval');$('#tarc').style.strokeDashoffset=(100-clamp((tEnd-Date.now())/tDur,0,1)*100).toFixed(1);if(r<=0){el.textContent='0:00';if(!$('#timer').classList.contains('end')){$('#timer').classList.add('end');$('#tlab').textContent='Série suivante';buzz('ok');beep();setTimeout(beep,450);try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}}if(r<-20)stopTimer();return}el.textContent=Math.floor(r/60)+':'+String(r%60).padStart(2,'0')}
 function stopTimer(){clearInterval(tInt);$('#timer').hidden=true;document.body.classList.remove('timing')}
 function renderMG(){const from=addD(today(),-6),cnt={};MG.forEach(([n])=>cnt[n]=0);let other=0;
  for(const s of done())if(s.kind!=='sport'&&s.date>=from)for(const e of s.ex||[]){const p=plain(e.n),k=e.sets.filter(x=>num(x.r)>0).length;let hit=false;for(const [n,re] of MG)if(re.test(p)){cnt[n]+=k;hit=true}if(!hit)other+=k}
@@ -716,6 +763,7 @@ function quick(q){$('#sheet').hidden=true;setTimeout(()=>document.documentElemen
  if(q==='mu'||q==='sp'){if(!S.cur){startMode=q;renderStart()}openSheet('seance')}
  else if(q==='food'){S.day=today();openFood(mealNow())}
  else if(q==='scan'){S.day=today();openScan()}
+ else if(q==='breath')openBreath()
  else if(q==='bw'){S.day=today();go('nutrition',()=>{$('#bw').scrollIntoView({behavior:'smooth',block:'center'});$('#bw').focus({preventScroll:true})})}
  else if(q==='water'){const o=getDay(today());o.w=num(o.w)+250;put.day(today());renderView(cur());toast(`Eau : ${fx(o.w/1000)} L aujourd'hui`)}
  else if(q==='ci'){S.day=today();renderCheckin();openSheet('checkin')}
@@ -779,7 +827,7 @@ $('#editor').addEventListener('change',ev=>{const t=ev.target,c=S.cur;if(!c)retu
  if(t.dataset.f==='r'&&num(t.value)>0&&S.set.auto!==false)startTimer();
  if(!t.classList.contains('exn'))return;const a=t.closest('.ex'),i=+a.dataset.i,e=c.ex[i];
  if(e.sets.every(s=>s.w===''&&s.r==='')&&suggest(e.n,c.id)){e.sets=prefill(e.n,c.id);a.outerHTML=exHTML(e,i);dirty()}updateHint(i)});
-document.addEventListener('click',ev=>{unlockAudio();if(ev.target.closest('#cele')){hideCele();return}{const db=ev.target.closest('[data-dlg]');if(db){closeDlg(db.dataset.dlg);return}if(ev.target.id==='dlg'){closeDlg('cancel');return}}if(matchMedia('(max-width:800px)').matches){const nt=ev.target.closest('.panel>p.mute.small,.mkr p');if(nt&&!ev.target.closest('a,button')){nt.classList.toggle('open');return}}if(ev.target.id==='sheet'){quick('close');return}const go=ev.target.closest('[data-go]');if(go){location.hash=go.dataset.go;return}
+document.addEventListener('click',ev=>{unlockAudio();if(ev.target.closest('#cele')){hideCele();return}{const db=ev.target.closest('[data-dlg]');if(db){closeDlg(db.dataset.dlg);return}if(ev.target.id==='dlg'){closeDlg('cancel');return}}if(matchMedia('(max-width:800px)').matches){const nt=ev.target.closest('.panel>p.mute.small,.mkr p');if(nt&&!ev.target.closest('a,button')){nt.classList.toggle('open');return}}if(ev.target.id==='sheet'){quick('close');return}const go=ev.target.closest('[data-go]');if(go){if(go.classList.contains('gauge')&&location.hash!=='#'+go.dataset.go)zoomFrom=go.querySelector('svg');location.hash=go.dataset.go;return}
  const b=ev.target.closest('[data-act]');if(!b)return;const act=b.dataset.act,c=S.cur,a=b.closest('.ex'),i=a?+a.dataset.i:-1;
  switch(act){
  case'sheet':{const sh=$('#sheet');sh.hidden=!sh.hidden;setTimeout(()=>{document.documentElement.style.setProperty('--hh',$('.top').offsetHeight+'px')},0);return}
@@ -788,7 +836,7 @@ document.addEventListener('click',ev=>{unlockAudio();if(ev.target.closest('#cele
  case'share':return shareWeek();
  case'briefok':return hideBrief();
  case'briefopen':return showBrief();
- case'dpick':buzz();S.day=b.dataset.d;return renderView(cur());
+ case'dpick':{if(b.dataset.d===S.day)return;const n=b.dataset.d>S.day?1:-1;buzz();return vt(()=>{S.day=b.dataset.d;renderView(cur())},n>0?'next':'prev')}
  case'msclose':return closeSheet();
  case'showall':buzz();$(b.dataset.t).classList.add('all');return;
  case'demoTry':return loadDemo();
@@ -806,22 +854,22 @@ document.addEventListener('click',ev=>{unlockAudio();if(ev.target.closest('#cele
  case'hkauth':return hkConnect();
  case'bkok':{const t=pendingBk;pendingBk='';if(t)doImport(t,$('#bkmsg'));return}
  case'wipe':{if(b.classList.contains('armed'))return resetAll();b.classList.add('armed');b.textContent='Confirmer : tout effacer définitivement';setTimeout(()=>{b.classList.remove('armed');b.textContent='Effacer toutes mes données'},6000);return}
- case'dprev':S.day=addD(S.day,-1);return renderView(cur());
- case'dnext':if(S.day<today())S.day=addD(S.day,1);return renderView(cur());
+ case'dprev':return goDay(-1);
+ case'dnext':return goDay(1);
  case'dlast':S.day=hLast()||today();return renderView(cur());
  case'psub':psub=b.dataset.s;scrollTo(0,0);if(cur()!=='plus'){ev.preventDefault();location.hash='plus';return}return renderPlus();
  case'slt':sleepTrend=b.dataset.k;return renderSleep();
  case'slper':sleepPer=+b.dataset.n;return renderSleep();
  case'jset':buzz();{const k=b.dataset.k,v=+b.dataset.v;setJ({[k]:J(S.day)[k]===v?undefined:v});const n=ciStreak();if(S.day===today()&&n>=7&&n%7===0&&S.set.streakCel!==today()){S.set.streakCel=today();put.set();celebrate(`${n} jours d'affilée`,'Ton check-in devient un rituel.')}return renderCheckin()}
  case'jtag':buzz();{const t=b.dataset.t,tg=(J(S.day).tags||[]).slice(),x=tg.indexOf(t);if(x<0)tg.push(t);else tg.splice(x,1);setJ({tags:tg});return renderCheckin()}
- case'water':{buzz('light');const d=S.day,o=getDay(d);o.w=Math.max(0,num(o.w)+ +b.dataset.v);put.day(d);return renderView(cur())}
+ case'water':{buzz('light');const d=S.day,o=getDay(d);o.w=Math.max(0,num(o.w)+ +b.dataset.v);put.day(d);renderView(cur());const t=$('#tiles .tile[data-k=wat]');if(t&&+b.dataset.v>0){t.classList.remove('splash');void t.offsetWidth;t.classList.add('splash')}return}
  case'sup':{const d=S.day,o=getDay(d),s=b.dataset.s,l=(o.sup||[]).slice(),x=l.indexOf(s);if(x<0)l.push(s);else l.splice(x,1);o.sup=l;put.day(d);return renderNutri()}
  case'copyY':{const d=S.day,y=dayIt(addD(d,-1));if(!y.length)return toast('Rien de noté la veille.');getDay(d).items.push(...clone(y));put.day(d);renderNutri();return toast(y.length+' aliments copiés depuis la veille')}
  case'smode':buzz();startMode=b.dataset.m;return renderStart();
  case'start':return startSession();
  case'tpl':return startSession(b.dataset.id);
  case'tstart':return startTimer();
- case't30':tEnd=Math.max(tEnd,Date.now())+30000;$('#timer').classList.remove('end');$('#tlab').textContent='Repos';return tick();
+ case't30':tEnd=Math.max(tEnd,Date.now())+30000;tDur=Math.max(tDur,tEnd-Date.now());$('#timer').classList.remove('end');$('#tlab').textContent='Repos';return tick();
  case'tstop':return stopTimer();
  case'addSet':{const s=c.ex[i].sets,l=s[s.length-1]||{};s.push({w:l.w??'',r:'',p:l.p||''});a.outerHTML=exHTML(c.ex[i],i);updateHint(i);dirty();$(`.ex[data-i="${i}"] .set:last-of-type input[data-f="r"]`)?.focus();return}
  case'delSet':{c.ex[i].sets.splice(+b.dataset.s,1);if(!c.ex[i].sets.length)c.ex[i].sets.push({w:'',r:''});a.outerHTML=exHTML(c.ex[i],i);updateHint(i);dirty();return}
@@ -838,6 +886,10 @@ document.addEventListener('click',ev=>{unlockAudio();if(ev.target.closest('#cele
  case'pickadd':return addPicked();
  case'pickback':pick=null;renderPick();msBar();return;
  case'scan':return openScan();
+ case'breath':return openBreath();
+ case'bzmin':bzMin=+b.dataset.m;buzz();return bzSeg();
+ case'bzgo':return startBreath();
+ case'bzclose':return closeBreath();
  case'scanclose':return closeScan();
  case'fav':{const f=S.set.foods[+b.dataset.k],m=$('#fm').value;addFood(f);if(msKind==='food'){closeSheet();toast(f.n+' ajouté · '+m)}return}
  case'delFood':return delFood(+b.dataset.k);
@@ -883,17 +935,38 @@ $('#hfile').addEventListener('change',async ev=>{const f=ev.target.files[0];ev.t
   msg.dataset.keep='1';msg.textContent=`Analyse terminée : ${n} jours, ${ns} nuits (dont ${nv} avec VFC nocturne, ${nrm} recalculées en RMSSD) et ${w} entraînements. ${R.chk?` Contrôle de lecture des battements : le SDNN recalculé vaut ${Math.round(R.chk.med*100)} % de la valeur Apple (sur ${R.chk.n} mesures).`:''} FC max. déduite : ${R.hmax} bpm.`}
  catch(e){console.error(e);msg.textContent="Impossible de lire ce fichier. Choisis le export.zip d'Apple Santé, ou le fichier .xml qu'il contient (pas celui qui contient « cda »)."}
  finally{bar.hidden=true;delete msg.dataset.busy;renderSoft()}});
-addEventListener('hashchange',()=>{$('#sheet').hidden=true;buzz();route();scrollTo(0,0)});
+addEventListener('hashchange',()=>{$('#sheet').hidden=true;buzz();vt(()=>{route();scrollTo(0,0)},zoomFrom?'zoom':'tab')});
 document.addEventListener('keydown',e=>{if(e.metaKey||e.ctrlKey||e.altKey)return;const t=e.target;if(t.closest&&t.closest('input,textarea,select,[contenteditable]'))return;
  const tabs=['aujourdhui','sommeil','recuperation','effort','nutrition','tendances','plus'];
- if(e.key==='Escape'){if(!$('#dlg').hidden)return closeDlg('cancel');if(!$('#scan').hidden)return closeScan();$('#sheet').hidden=true;closeSheet();if(!$('#brief').hidden)hideBrief();hideCele();return}
+ if(e.key==='Escape'){if(!$('#breath').hidden)return closeBreath();if(!$('#dlg').hidden)return closeDlg('cancel');if(!$('#scan').hidden)return closeScan();$('#sheet').hidden=true;closeSheet();if(!$('#brief').hidden)hideBrief();hideCele();return}
  if(/^[1-7]$/.test(e.key)){location.hash=tabs[+e.key-1];return}
  if(e.key==='n'||e.key==='N'){e.preventDefault();$('.tplus').click();return}
- if(!$('#dn').hidden){if(e.key==='ArrowLeft'){S.day=addD(S.day,-1);renderView(cur())}else if(e.key==='ArrowRight'&&S.day<today()){S.day=addD(S.day,1);renderView(cur())}}});
+ if(!$('#dn').hidden){if(e.key==='ArrowLeft')goDay(-1);else if(e.key==='ArrowRight')goDay(1)}});
 {const fit=()=>{const r=document.documentElement;r.style.setProperty('--hh',$('.top').offsetHeight+'px');};fit();addEventListener('resize',fit);setTimeout(fit,300)}
 {const T=$('#tip'),place=e=>{const w=T.offsetWidth,h=T.offsetHeight,W=document.documentElement.clientWidth;let x=e.pageX+14,y=e.pageY-h-12;if(x+w>W-8)x=e.pageX-w-14;if(y<scrollY+8)y=e.pageY+18;T.style.left=Math.max(8,x)+'px';T.style.top=y+'px'};
  document.addEventListener('pointerover',e=>{const t=e.target.closest&&e.target.closest('[data-tip]');if(!t){T.hidden=true;return}T.textContent=t.dataset.tip;T.hidden=false;place(e)});
  document.addEventListener('pointermove',e=>{if(!T.hidden)place(e)});const hideT=e=>{if(e.pointerType!=='mouse')T.hidden=true};document.addEventListener('pointerup',hideT);document.addEventListener('pointercancel',hideT);document.addEventListener('scroll',()=>{T.hidden=true;$$('.ov').forEach(o=>o.innerHTML='')},{passive:true,capture:true})}
+
+/* ---------- gestes : glisser d'un jour à l'autre, tirer pour synchroniser ---------- */
+{const sc=$('#sc'),wrap=$('#sc>.wrap'),ptr=$('#ptr'),dayV=()=>['aujourdhui','sommeil','recuperation','effort'].includes(cur());
+ let x0=null,y0=0,dx=0,dy=0,lock=null,armed=false;const PULL=86;
+ const skip=t=>t.closest('.fig,.scroll,.seg,.chips,input,textarea,select,label,#wk,.rc-d,.dial,#tabs,#sheet');
+ const setPull=d=>{const p=Math.min(1,d/PULL);ptr.style.setProperty('--p',p);ptr.style.transform=`translate(-50%,${Math.min(d,PULL*1.3)*.6-40}px)`;ptr.style.opacity=Math.min(1,p*1.6);
+  if(p>=1&&!armed){armed=true;buzz('light')}else if(p<1)armed=false};
+ sc.addEventListener('touchstart',e=>{x0=null;if(e.touches.length!==1||!dayV()||skip(e.target)||msKind||!$('#brief').hidden)return;
+  x0=e.touches[0].clientX;y0=e.touches[0].clientY;dx=dy=0;lock=null;armed=false},{passive:true});
+ sc.addEventListener('touchmove',e=>{if(x0==null)return;const t=e.touches[0];dx=t.clientX-x0;dy=t.clientY-y0;
+  if(!lock&&(Math.abs(dx)>12||Math.abs(dy)>12))lock=Math.abs(dx)>Math.abs(dy)*1.3?'x':dy>0&&scrollY<=0&&HKN&&!hkBusy?'pull':'y';
+  if(lock==='x'){const stop=dx<0&&S.day>=today();wrap.style.transform=`translateX(${dx*(stop?.12:.32)}px)`}
+  else if(lock==='pull')setPull(Math.max(0,dy*.55))},{passive:true});
+ const end=async()=>{if(x0==null)return;x0=null;
+  if(lock==='x'){wrap.style.transition='transform .22s cubic-bezier(.2,.8,.2,1)';wrap.style.transform='';setTimeout(()=>{wrap.style.transition=''},240);
+   if(Math.abs(dx)>70)goDay(dx>0?-1:1)}
+  else if(lock==='pull'){if(armed){ptr.classList.add('spin');ptr.style.transform='translate(-50%,12px)';ptr.style.opacity=1;
+    try{await hkSync()}finally{ptr.classList.remove('spin')}}
+   ptr.style.transition='transform .3s,opacity .3s';ptr.style.transform='translate(-50%,-40px)';ptr.style.opacity=0;setTimeout(()=>{ptr.style.transition=''},320)}
+  lock=null};
+ sc.addEventListener('touchend',end);sc.addEventListener('touchcancel',end)}
 
 /* ---------- données Apple Santé : fusion d'un import ---------- */
 function applyHealth(R,inc=false){
@@ -1074,8 +1147,9 @@ function renderMetric(){const m=MET[metK];if(!m)return;const end=S.day,from=addD
  $('#mdet').innerHTML=`<div class="seg mseg">${[[7,'7 J'],[30,'30 J'],[182,'6 M']].map(([n,l])=>`<button type="button" data-act="mper" data-n="${n}" class="${metP===n?'on':''}">${l}</button>`).join('')}</div>
   <div class="panel"><div class="mhead"><span class="eyebrow">Moyenne${part?' · jours complets':''}</span><b class="big">${U(av)}</b><span class="mute small">${per}${pts.length&&pts.length<metP?` · ${pts.length} jour${pts.length>1?'s':''} avec mesure`:''}</span></div><div class="fig sm" id="mfig"><svg></svg></div></div>
   <div class="panel mstats">${row(end===today()?(part?"Aujourd'hui, en cours":"Aujourd'hui"):dShort(end),U(last))}${row('Minimum',U(mn))}${row('Maximum',U(mx))}${b?row('Plage habituelle (30 j)',`${m.fmt(b.m-b.s)} – ${m.fmt(b.m+b.s)}<small> ${m.u}</small>`):''}${goal?row('Objectif',U(goal)):''}</div>
-  <h3 class="ms-sec">À propos</h3><div class="panel mabout">${note?`<p><b>${note}</b></p>`:''}<p>${m.about}</p><p class="mute small">Repères tirés des recommandations et de la recherche ; ils ne remplacent pas un avis médical.</p></div>`;
- setFig('#mfig',{series:[{name:m.t,pts,col:m.col,bars:!!m.bars,dots:!m.bars&&metP<=30,r:3,w:2,last:!m.bars}],unit:m.u,zero:!!m.bars,hline:goal||null,band:b?[b.m-b.s,b.m+b.s]:null,fmt:m.fmt,empty:'Pas de mesure sur cette période'});
+  ${metK==='stz'?'<button type="button" class="btn pri ms-main" data-act="breath">Respiration guidée</button>':''}<h3 class="ms-sec">À propos</h3><div class="panel mabout">${note?`<p><b>${note}</b></p>`:''}<p>${m.about}</p><p class="mute small">Repères tirés des recommandations et de la recherche ; ils ne remplacent pas un avis médical.</p></div>`;
+ const mh=$('#mdet .mhead'),mh0=mh.innerHTML,byD=new Map(pts.map(p=>[p.x,p.y]));
+ setFig('#mfig',{onScrub:dt=>{mh.innerHTML=dt==null||!byD.has(dt)?mh0:`<span class="eyebrow">${esc(dLong(dt))}</span><b class="big">${U(byD.get(dt))}</b><span class="mute small">${b?(()=>{const z=(byD.get(dt)-b.m)/b.s;return Math.abs(z)<=1?'dans ta plage habituelle':z>0?'au-dessus de ta plage habituelle':'sous ta plage habituelle'})():av!=null?`moyenne de la période : ${m.fmt(av)} ${m.u}`:''}</span>`},series:[{name:m.t,pts,col:m.col,bars:!!m.bars,dots:!m.bars&&metP<=30,r:3,w:2,last:!m.bars}],unit:m.u,zero:!!m.bars,hline:goal||null,band:b?[b.m-b.s,b.m+b.s]:null,fmt:m.fmt,empty:'Pas de mesure sur cette période'});
  if(msKind==='metric')msBar()}
 
 /* ---------- rituels : la soirée, la semaine, le briefing du matin ---------- */
@@ -1138,6 +1212,33 @@ function showBrief(){const d=today(),st=dayStory(d),rc=recovery(d),sl=sleepScore
  const b=$('#brief');b.hidden=false;b.scrollTop=0;document.documentElement.classList.add('br-open');buzz('light')}
 function hideBrief(){if(S.set.brief!==today()){S.set.brief=today();put.set()}const b=$('#brief');b.classList.add('out');setTimeout(()=>{b.hidden=true;b.classList.remove('out');document.documentElement.classList.remove('br-open');if(cur()==='aujourdhui')renderView('aujourdhui')},320)}
 
+/* ---------- respiration guidée ---------- */
+/* Six respirations par minute (inspire 4 s, expire 6 s) : le rythme dit « de résonance », celui qui
+   fait le plus monter la variabilité cardiaque et redescendre la FC. L'arc s'ouvre à l'inspiration,
+   se referme à l'expiration ; une vibration marque chaque phase (et chaque seconde d'inspiration). */
+let bzMin=1,bzRaf=0,bzT0=0;const BZ_IN=4000,BZ_CY=10000;
+function openBreath(min){bzMin=min||S.set.bzMin||1;const b=$('#breath');
+ const d=arcPath(120,124,92,GA0,GA0+GSPAN);$$('#breath .bz-tr,#breath .bz-ar').forEach(p=>p.setAttribute('d',d));
+ $('#breath .bz-ar').style.strokeDashoffset=94;$('#bzw').textContent='Respiration guidée';$('#bzh').textContent='Inspire 4 s, expire 6 s : six respirations par minute, le rythme qui apaise le plus le cœur.';
+ $('#bzt').textContent='';$('#bzch').hidden=false;$('#bzend').hidden=true;b.classList.remove('on');bzSeg();
+ paintSky(b,skyFor('aujourdhui','eve'));b.hidden=false;document.documentElement.classList.add('bz-open')}
+function bzSeg(){$$('#bzm button').forEach(x=>x.classList.toggle('on',+x.dataset.m===bzMin))}
+function startBreath(){S.set.bzMin=bzMin;put.set();$('#bzch').hidden=true;$('#breath').classList.add('on');bzT0=performance.now();let ph=-1,sec=-1;const total=bzMin*60000,ar=$('#breath .bz-ar'),gl=$('#breath .bz-glow');
+ const f=t=>{const el=t-bzT0;if(el>=total)return endBreath(el);
+  const c=el%BZ_CY,inh=c<BZ_IN,k=inh?c/BZ_IN:(c-BZ_IN)/(BZ_CY-BZ_IN),e=.5-.5*Math.cos(Math.PI*k),p=inh?.06+.94*e:1-.94*e;
+  ar.style.strokeDashoffset=(100-100*p).toFixed(2);gl.style.transform=`scale(${(.55+.45*p).toFixed(3)})`;gl.style.opacity=(.25+.5*p).toFixed(2);
+  if(+inh!==ph){ph=+inh;$('#bzw').textContent=inh?'Inspire':'Expire';$('#bzh').textContent=inh?'par le nez, en gonflant le ventre':'lentement, par la bouche';buzz(inh?'med':'light')}
+  if(inh){const s2=Math.floor(c/1000);if(s2!==sec){sec=s2;if(s2>0)buzz()}}else sec=-1;
+  const left=Math.ceil((total-el)/1000);$('#bzt').textContent=`${Math.floor(left/60)}:${String(left%60).padStart(2,'0')}`;
+  bzRaf=requestAnimationFrame(f)};
+ bzRaf=requestAnimationFrame(f)}
+function endBreath(el){cancelAnimationFrame(bzRaf);bzRaf=0;const b=$('#breath');b.classList.remove('on');const n=Math.round(el/60000);
+ if(n>=1){const d=today(),o=getDay(d);o.br=[...(o.br||[]),{min:n,at:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}];put.day(d);buzz('ok')}
+ $('#bzw').textContent=n>=1?`${n} minute${n>1?'s':''} pour toi`:'Séance écourtée';
+ $('#bzh').textContent=n>=1?'Ta fréquence cardiaque redescend souvent dans les minutes qui suivent. C\'est noté dans ta journée.':'Même quelques respirations lentes aident. Reviens quand tu veux.';
+ $('#bzt').textContent='';$('#bzend').hidden=false;$('#breath .bz-ar').style.strokeDashoffset=0;$('#breath .bz-glow').style.transform='scale(1)'}
+function closeBreath(){if(bzRaf)return endBreath(performance.now()-bzT0);$('#breath').hidden=true;document.documentElement.classList.remove('bz-open');if(cur()==='aujourdhui')renderView('aujourdhui')}
+
 /* ---------- moments : records, zone atteinte, régularité ---------- */
 let celT=0;
 function celebrate(t,sub){const c=$('#cele');$('#cet').textContent=t;$('#ces').textContent=sub||'';c.hidden=false;c.classList.remove('on');void c.offsetWidth;c.classList.add('on');buzz('ok');clearTimeout(celT);celT=setTimeout(hideCele,2900)}
@@ -1154,6 +1255,7 @@ function buzz(k='sel'){if(!Capacitor.isNativePlatform())return;try{
  if(k==='ok')Haptics.notification({type:NotificationType.Success});
  else if(k==='warn')Haptics.notification({type:NotificationType.Warning});
  else if(k==='light')Haptics.impact({style:ImpactStyle.Light});
+ else if(k==='med')Haptics.impact({style:ImpactStyle.Medium});
  else Haptics.selectionChanged()}catch(e){}}
 
 /* ---------- barre de titre compacte : le grand titre se replie en défilant (comme iOS) ---------- */

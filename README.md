@@ -41,6 +41,16 @@ Le texte suit la taille choisie dans les Réglages de l'iPhone (Dynamic Type), j
 d'accessibilité ; sur ordinateur, c'est la taille de police du navigateur qui s'applique. Le simulateur
 propose les mêmes tailles (« Taille du texte »).
 
+**Gestes et mouvement** : glisser à gauche ou à droite change de jour ; dans l'appli iOS, tirer
+l'écran vers le bas synchronise Apple Santé (l'arc du logo se dessine puis tourne). Les écrans
+glissent d'un jour à l'autre, une jauge touchée s'agrandit jusqu'à sa page, ses chiffres défilent.
+Dans les pages de détail, le grand chiffre suit le doigt sur le graphique, avec un tic haptique par
+jour. Le check-in se règle avec des cadrans à tourner du doigt, l'eau monte dans la tuile
+Hydratation, le minuteur de repos est un arc qui se vide, et le ciel dérive lentement (étoiles la
+nuit). **Respiration guidée** (Noter → Respirer, ou depuis le plan les jours de stress) : 1, 3 ou
+5 min à six respirations par minute, guidées par l'arc et les vibrations, notées dans la journée.
+Tout le mouvement s'arrête si « Réduire les animations » est activé sur l'iPhone.
+
 Raccourcis clavier sur ordinateur : `←` `→` changer de jour, `1`–`7` onglets, `N` noter, `Échap` fermer.
 
 ## Démarrer

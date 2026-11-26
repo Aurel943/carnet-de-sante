@@ -31,6 +31,11 @@ https://aurel943.github.io/carnet-de-sante/ : rien ne doit rester seulement en l
   dans les Réglages d'iOS (lue par `dynType()` dans `src/main.js`). Restent en px, comme dans les applis
   d'Apple : texte des SVG (jauges, graphiques), barre d'onglets, frise de la semaine. Les colonnes de
   libellés sont en `rem` aussi. `?dt=1.35` force une taille (simulateur, `npm run parcours`).
+- Mouvement : les écrans glissent (View Transitions, `vt()` dans `src/main.js`), une jauge touchée
+  s'agrandit jusqu'à sa page, les chiffres des jauges défilent ; gestes : glisser pour changer de jour,
+  tirer pour synchroniser (appli iOS), tic haptique en parcourant un graphique. Ressorts à l'appui
+  (`cubic-bezier(.25,1.6,.4,1)`). Tout s'arrête avec « Réduire les animations » ; les captures App Store
+  sont faites dans ce mode pour montrer les valeurs finales.
 - Unités des jauges : Dépense et Sommeil sur `/100`, Énergie en `%` ; la jauge Dépense montre sa zone
   conseillée sur l'arc.
 - Identité d'Arden (nom de l'appli), à garder distincte des applis concurrentes : scores « Dépense »

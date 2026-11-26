@@ -40,6 +40,8 @@ try {
     const ctx = await browser.newContext({
       viewport: { width: 440, height: 956 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true,
       colorScheme: theme, locale: 'fr-FR', timezoneId: 'Europe/Paris',
+      // sans animation : chiffres et jauges à leur valeur finale sur chaque capture
+      reducedMotion: 'reduce',
     });
     const page = await ctx.newPage();
     // Matin type : 9 h 41, comme sur les visuels d'Apple
