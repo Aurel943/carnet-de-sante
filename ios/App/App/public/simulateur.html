@@ -32,7 +32,7 @@ label.chk{display:flex;gap:8px;align-items:center;font-weight:500;cursor:pointer
 .phone{--w:393px;--h:852px;--r:55px;--bez:12px;position:relative;width:calc(var(--w) + 2*var(--bez));height:calc(var(--h) + 2*var(--bez));border-radius:calc(var(--r) + var(--bez));background:#1b1b1f;padding:var(--bez);
  box-shadow:0 0 0 2px #3a3a40,0 30px 80px rgba(0,0,0,.35);transform-origin:center;flex:none}
 .screen{position:relative;width:100%;height:100%;border-radius:var(--r);overflow:hidden;background:#000}
-iframe{border:0;width:100%;height:100%;display:block;background:#f2f2f7}
+iframe{border:0;width:100%;height:100%;display:block;background:#f4f1eb}
 .island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:124px;height:36px;border-radius:20px;background:#000;z-index:3}
 .sbar{position:absolute;inset:0 0 auto 0;height:var(--sat);display:flex;align-items:center;justify-content:space-between;padding:0 34px 0 46px;z-index:2;pointer-events:none;font:600 16px/1 -apple-system,'SF Pro Text',system-ui,sans-serif;color:#000}
 .sbar.dark{color:#fff}
@@ -60,6 +60,8 @@ iframe{border:0;width:100%;height:100%;display:block;background:#f2f2f7}
  </div></div>
  <div class="grp"><span>Données</span>
   <button class="btn" id="demo">Charger les données de démo</button>
+  <button class="btn" id="brief">Voir le briefing du matin</button>
+  <button class="btn" id="share">Image de la semaine</button>
   <button class="btn" id="reload">Recharger l'appli</button>
   <button class="btn warn" id="reset">Réinitialiser (premier lancement)</button>
  </div>
@@ -154,6 +156,8 @@ $('#dev').addEventListener('change', (e) => { st.dev = e.target.value; setDevice
 $('#theme').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { st.theme = b.dataset.t; setTheme(); } });
 $('#go').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) frame.contentWindow.location.hash = b.dataset.h; });
 $('#reload').addEventListener('click', () => frame.contentWindow.location.reload());
+$('#brief').addEventListener('click', () => { const api = frame.contentWindow.carnet; if (api && api.showBrief) api.showBrief(); });
+$('#share').addEventListener('click', () => { const api = frame.contentWindow.carnet; if (api && api.shareWeek) api.shareWeek(); });
 $('#demo').addEventListener('click', () => {
   const api = frame.contentWindow.carnet;
   if (!api || !api.loadDemo) return alert("L'appli n'est pas encore chargée.");

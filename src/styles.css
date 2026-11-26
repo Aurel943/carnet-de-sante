@@ -10,21 +10,23 @@
  color-scheme:light dark;
  --font:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro','Inter Variable','Helvetica Neue','Segoe UI',Roboto,system-ui,sans-serif;
  --round:ui-rounded,'SF Pro Rounded',-apple-system,BlinkMacSystemFont,'Inter Variable',system-ui,sans-serif;
- /* fonds et textes (UIKit : systemGroupedBackground, label, secondaryLabel…) */
- --bg:light-dark(#f2f2f7,#000);
- --panel:light-dark(#fff,#1c1c1e);
- --panel2:light-dark(#f2f2f7,#2c2c2e);
- --ink:light-dark(#000,#fff);
- --mute:light-dark(rgba(60,60,67,.6),rgba(235,235,245,.6));
- --mute2:light-dark(rgba(60,60,67,.3),rgba(235,235,245,.3));
- --line:light-dark(rgba(60,60,67,.18),rgba(84,84,88,.55));
- --field:light-dark(rgba(118,118,128,.12),rgba(118,118,128,.24));
- --glass:light-dark(rgba(255,255,255,.72),rgba(36,36,38,.72));
- --glass-edge:light-dark(rgba(255,255,255,.9),rgba(255,255,255,.14));
- --thumb:light-dark(#fff,#636366);
+ --serif:'Fraunces Variable',ui-serif,'New York',Georgia,serif;
+ /* fonds et textes d'Arden : ivoire chaud le jour, nuit bleutée le soir (et non le gris d'iOS) ;
+    gris secondaires opaques pour un contraste d'au moins 4,5:1 même en petit */
+ --bg:light-dark(#f4f1eb,#0b0d12);
+ --panel:light-dark(#fffefb,#161922);
+ --panel2:light-dark(#f3efe8,#20242f);
+ --ink:light-dark(#1b1813,#f4f1ea);
+ --mute:light-dark(#6c645a,#a5a097);
+ --mute2:light-dark(rgba(70,58,44,.32),rgba(236,230,220,.3));
+ --line:light-dark(rgba(70,58,44,.15),rgba(150,160,185,.2));
+ --field:light-dark(rgba(120,104,84,.11),rgba(140,150,175,.17));
+ --glass:light-dark(rgba(255,253,248,.74),rgba(24,27,36,.74));
+ --glass-edge:light-dark(rgba(255,255,255,.9),rgba(255,255,255,.12));
+ --thumb:light-dark(#fff,#5a6070);
  /* identité d’Arden : actions en graphite (noir en clair, blanc en sombre), pas le bleu système */
- --tint:light-dark(#1c1c1e,#f2f2f7);
- --on-tint:light-dark(#fff,#1c1c1e);
+ --tint:light-dark(#1e1b17,#f2eee6);
+ --on-tint:light-dark(#fffdf8,#16181e);
  /* palette d'Arden : un ton par thème, un peu plus doux que les couleurs système */
  --eff:light-dark(#f2553d,#ff6e57);   /* dépense : corail */
  --rec:light-dark(#0aa898,#2fd3c1);   /* énergie : turquoise */
@@ -39,7 +41,7 @@
  --ok:light-dark(#1f9e6a,#3ccf8e);
  --bad:light-dark(#e0453a,#ff5d50);
  /* zones cardiaques et phases du sommeil */
- --z1:#8e8e93;--z2:light-dark(#2894d8,#5ab8f2);--z3:light-dark(#1f9e6a,#3ccf8e);--z4:light-dark(#e3a008,#ffc83d);--z5:light-dark(#e0453a,#ff5d50);
+ --z1:#9a9288;--z2:light-dark(#2894d8,#5ab8f2);--z3:light-dark(#1f9e6a,#3ccf8e);--z4:light-dark(#e3a008,#ffc83d);--z5:light-dark(#e0453a,#ff5d50);
  --awake:light-dark(#f07a5a,#ff9479);--rem:light-dark(#5bb8f0,#7fcdff);--core:light-dark(#3f63e0,#6b84ff);--deep:light-dark(#232f8c,#4651c9);
  /* arrondis : cartes, éléments imbriqués, contrôles */
  --r-card:26px;--r-in:16px;--r-ctl:12px;
@@ -808,3 +810,160 @@ label.btn.filebtn:not(.pri){color:var(--ink)}
 .ringgrow{animation:ringgrow 1s cubic-bezier(.2,.75,.2,1) .05s forwards}
 @keyframes ringgrow{to{stroke-dashoffset:0}}
 @media(prefers-reduced-motion:reduce){.ringgrow{animation:none;stroke-dashoffset:0}}
+
+/* =====================================================================
+   Identité d'Arden : une voix, une lumière, une écriture
+   - Fraunces (serif douce) pour tout ce qui parle : grands titres, titre du jour, titres de cartes ;
+     SF Pro pour l'interface, SF Pro Rounded pour les chiffres
+   - ciel vivant derrière les grands titres : aube, jour, crépuscule ou nuit, teinté par l'état du jour
+   - conclusion d'abord : une phrase en tête de chaque carte, l'analyse détaillée repliée
+   ===================================================================== */
+:is(.daynav h2,.ltitle,.hub h2,.subbar h2,.ob h1,.ob h2,.emptyv h3,.panel>h2,.panel>.ph>h2,.rt,#brief h1,#cele b,.ob-demo-h,.mealt){
+ font-family:var(--serif);font-variation-settings:'SOFT' 60,'WONK' 0;font-optical-sizing:auto;letter-spacing:-.012em}
+.daynav h2,.ltitle,.hub h2,.subbar h2,.ob h1,.ob h2{font-weight:600}
+.panel>h2,.panel>.ph>h2{font-size:21px;font-weight:600;letter-spacing:-.01em}
+.daynav h2::first-letter{text-transform:none}
+
+/* ---------- ciel vivant ---------- */
+#sc{position:relative}
+#sc>.wrap{position:relative;z-index:1}
+#sky{position:absolute;left:0;right:0;top:0;height:560px;z-index:0;pointer-events:none;opacity:var(--sko,0);transition:opacity .8s ease;
+ background:
+  radial-gradient(110% 70% at 12% -6%,color-mix(in oklab,var(--sk1,transparent) 72%,transparent),transparent 68%),
+  radial-gradient(85% 65% at 92% 4%,color-mix(in oklab,var(--sk2,transparent) 62%,transparent),transparent 70%),
+  radial-gradient(70% 55% at 55% 30%,color-mix(in oklab,var(--sk3,transparent) 26%,transparent),transparent 72%);
+ -webkit-mask:linear-gradient(#000 35%,transparent);mask:linear-gradient(#000 35%,transparent)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]) #sky{opacity:calc(var(--sko,0)*.42)}}
+:root[data-theme=dark] #sky{opacity:calc(var(--sko,0)*.42)}
+@media(min-width:1100px){.daynav{background:color-mix(in srgb,var(--bg) 72%,transparent);-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);margin-left:-12px;margin-right:-12px;padding-left:12px;padding-right:12px;border-radius:0 0 22px 22px}}
+
+/* ---------- grand titre et phrase du jour ---------- */
+.daynav{align-items:center}
+.daynav h2{font-size:34px;line-height:1.08}
+.lede{margin:-8px 0 16px;font-size:17px;line-height:1.42;color:color-mix(in srgb,var(--ink) 82%,transparent);max-width:62ch;letter-spacing:-.015em}
+.lede:empty{display:none}
+.dback{margin:2px 0 -2px}
+@media(max-width:800px){.daynav h2{font-size:31px}.lede{font-size:16px;margin:-6px 0 14px}}
+
+/* ---------- Résumé : jauges, plan du jour, actions ---------- */
+.gauge .gu{font-size:11px;letter-spacing:.01em}
+.gauge span{font-size:13px}
+.plan{list-style:none;margin:14px 0 0;padding:12px 0 0;border-top:.5px solid var(--line);display:grid;gap:10px}
+.plan li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:10px;align-items:start;font-size:15px;line-height:1.4}
+.plan li svg{width:18px;height:18px;margin-top:1px;fill:none;stroke:var(--c);stroke-width:2.2;stroke-linecap:round}
+.plan li svg circle{fill:var(--c);stroke:none}
+.plan b{font-weight:600}
+.plan:empty{display:none}
+.heroact{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}
+.heroact:empty{display:none}
+.heroact .btn.pri{flex:1 1 auto;min-height:46px}
+.heroact .btn.small{min-height:46px;padding:6px 16px}
+@media(max-width:800px){
+ #v-aujourdhui>#ritual{order:1}
+ #coach{display:none}
+ .hero .gauge .gu{font-size:10px}
+}
+
+/* ---------- rituels ---------- */
+#ritual:empty{display:none}
+.ritual{display:grid;gap:4px;width:100%;text-align:left;border:0;color:var(--ink);font:inherit;position:relative;overflow:hidden}
+button.ritual{cursor:pointer}
+.ritual .rt{font-size:26px;line-height:1.15;font-weight:600}
+.ritual p{margin:2px 0 0;color:var(--mute);font-size:15px}
+.ritual.eve{background:linear-gradient(160deg,color-mix(in oklab,var(--slp) 22%,var(--panel)),var(--panel) 70%)}
+.ritual.wkr{background:linear-gradient(160deg,color-mix(in oklab,var(--rec) 18%,var(--panel)),var(--panel) 70%)}
+.ritual .go{margin-top:8px;font-weight:600;font-size:15px}
+.tips{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px;font-size:15px}
+.tips li{display:flex;gap:10px;align-items:center}
+.tips li::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--slp);flex:none}
+.ritual-link{display:grid;grid-template-columns:18px minmax(0,1fr) 14px;gap:10px;align-items:center;width:100%;background:var(--panel);border:0;border-radius:var(--r-in);padding:12px 16px;margin:0 0 14px;color:var(--ink);font:500 15px var(--font);cursor:pointer;text-align:left}
+.ritual-link svg{width:18px;height:18px;fill:none;stroke:var(--str);stroke-width:2.2;stroke-linecap:round}.ritual-link svg circle{fill:var(--str);stroke:none}
+.ritual-link em{font-style:normal;color:var(--mute2);font-size:22px;line-height:1}
+
+/* ---------- conclusion d'abord ---------- */
+.vd{margin:-2px 0 12px;font-size:16px;line-height:1.42;color:var(--ink);letter-spacing:-.015em}
+.vd:empty{display:none}
+.vd b{font-weight:600}
+#vd-z28{margin-top:8px}
+/* analyse détaillée : repliée par défaut */
+.view:not(.deep-on) :is(.adv,.adv-s){display:none!important}
+.deep{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:transparent;border:1.5px dashed var(--line);border-radius:var(--r-card);padding:14px 18px;margin:0 0 16px;color:var(--ink);font:inherit;cursor:pointer;transition:background .15s}
+.deep span{flex:1;display:grid;gap:1px}.deep b{font:600 17px var(--serif);font-variation-settings:'SOFT' 60}
+.deep small{color:var(--mute);font-size:14px}
+.deep em{font-style:normal;font-weight:600;font-size:14px;background:var(--field);border-radius:99px;padding:7px 14px;white-space:nowrap}
+.deep-on .deep{border-style:solid;background:var(--panel)}
+@media(hover:hover){.deep:hover{background:var(--panel)}}
+#v-effort.nohd .deep,#v-sommeil.nohd .deep,#v-recuperation.nohd .deep{display:none}
+
+/* ---------- Tendances : la semaine en un coup d'œil ---------- */
+.recap{background:linear-gradient(165deg,color-mix(in oklab,var(--trn) 14%,var(--panel)),var(--panel) 62%)}
+.recap[hidden]{display:none}
+.rc-h{display:grid;gap:2px}.rc-h .rt{font-size:30px;line-height:1.1;font-weight:600}.rc-h p{margin:4px 0 0;color:var(--mute);font-size:15px}
+.rc-g{margin:14px 0 4px}.rc-g .gauge svg{width:min(100%,120px)}.rc-g .gauge{cursor:default}
+.rc-d{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin:6px 0 4px;text-align:center}
+.rc-d span{display:block;font-size:12px;font-weight:500;color:var(--mute)}.rc-d svg{width:34px;height:34px}
+.recap .row .mute{margin-left:4px}
+
+/* ---------- onglets : Tendances sur téléphone, icônes de l'arc ---------- */
+.tabs a svg .fi{fill:var(--tc);stroke:none}
+@media(max-width:800px){
+ .tabs a[href="#effort"]{order:3}.tabs a[href="#tendances"]{order:4}.tabs a[href="#plus"]{order:5}
+ .tabs a svg .fi{fill:var(--mute)}
+ .tabs a[aria-current=page] svg .fi,.tabs a.sub-on svg .fi{fill:var(--tc)}
+ /* notifications en bas, au-dessus de la barre d'onglets : le grand titre reste lisible */
+ #toast{top:auto;bottom:calc(max(calc(var(--sab) - 8px),10px) + var(--tabh) + 14px);transform:translate(-50%,12px) scale(.96)}
+ #toast.on{transform:translate(-50%,0)}
+}
+
+/* ---------- lisibilité ---------- */
+.fig text{font-size:12px}
+.tile .s,.lg,.burnlg{font-size:13px}
+.wd span{font-size:12px;font-weight:600}
+.cr small{font-size:13px}
+
+/* ---------- briefing du matin ---------- */
+#brief{position:fixed;inset:0;z-index:105;background:var(--bg);overflow-y:auto;padding:calc(var(--sat) + 30px) 22px calc(var(--sab) + 22px);display:flex;animation:brin .45s cubic-bezier(.2,.9,.3,1)}
+#brief::before{content:'';position:fixed;inset:0 0 auto 0;height:70vh;pointer-events:none;opacity:var(--sko,1);
+ background:radial-gradient(110% 70% at 12% -6%,color-mix(in oklab,var(--sk1) 75%,transparent),transparent 68%),radial-gradient(85% 65% at 92% 4%,color-mix(in oklab,var(--sk2) 65%,transparent),transparent 70%),radial-gradient(70% 55% at 55% 30%,color-mix(in oklab,var(--sk3) 30%,transparent),transparent 72%);
+ -webkit-mask:linear-gradient(#000 30%,transparent);mask:linear-gradient(#000 30%,transparent)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]) #brief::before{opacity:.45}}
+:root[data-theme=dark] #brief::before{opacity:.45}
+#brief.out{animation:brout .32s ease forwards}
+.br-in{position:relative;width:min(100%,440px);margin:auto;display:flex;flex-direction:column;gap:12px;min-height:100%}
+.br-hi{margin:20px 0 0;font-size:13px;font-weight:600;color:var(--mute);text-transform:uppercase;letter-spacing:.04em}
+#brief h1{margin:0;font-size:42px;line-height:1.05;font-weight:600}
+.br-lede{margin:0 0 6px;font-size:18px;line-height:1.42;color:color-mix(in srgb,var(--ink) 82%,transparent)}
+.br-card{margin:8px 0 0}.br-card .gauge{cursor:default}
+#brief .ob-cta{margin-top:auto}
+:root.br-open{overflow:hidden}
+@keyframes brin{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes brout{to{opacity:0;transform:translateY(-12px)}}
+@media(min-width:801px){.br-in{min-height:0}#brief .ob-cta{margin-top:18px}}
+
+/* ---------- célébration ---------- */
+#cele{position:fixed;inset:0;z-index:120;display:grid;place-items:center;background:color-mix(in srgb,var(--bg) 40%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);opacity:0;transition:opacity .35s;cursor:pointer}
+#cele.on{opacity:1}
+.ce-in{display:grid;justify-items:center;gap:6px;text-align:center;padding:0 24px}
+.ce-arcs{position:relative;width:150px;height:150px;margin-bottom:10px}
+.ce-arcs i{position:absolute;inset:0;border-radius:50%;border:9px solid transparent;transform:scale(.5) rotate(0);opacity:0}
+.ce-arcs i:nth-child(1){border-left-color:var(--eff);border-bottom-color:var(--eff)}
+.ce-arcs i:nth-child(2){inset:18px;border-top-color:var(--rec)}
+.ce-arcs i:nth-child(3){inset:36px;border-right-color:var(--slp);border-bottom-color:var(--slp)}
+#cele.on .ce-arcs i{animation:ceArc 1.1s cubic-bezier(.2,.9,.25,1.15) forwards}
+#cele.on .ce-arcs i:nth-child(2){animation-delay:.08s}#cele.on .ce-arcs i:nth-child(3){animation-delay:.16s}
+#cele b{font-size:34px;line-height:1.1;font-weight:600}
+#cele span{color:var(--mute);font-size:16px;max-width:30ch}
+@keyframes ceArc{0%{opacity:0;transform:scale(.4) rotate(-120deg)}60%{opacity:1}100%{opacity:1;transform:scale(1) rotate(45deg)}}
+@media(prefers-reduced-motion:reduce){#cele.on .ce-arcs i{animation:none;opacity:1;transform:none}}
+
+/* ---------- accueil : un vrai matin en aperçu ---------- */
+.ob-logo{width:68px;height:68px;margin:12px 0 2px}
+.ob-demo{align-self:stretch;background:var(--panel);border-radius:var(--r-card);padding:14px 12px 10px;margin:4px 0 0;display:grid;gap:2px;box-shadow:0 10px 30px rgba(60,40,20,.08)}
+.ob-demo-e{font-size:12px;font-weight:600;color:var(--mute);text-transform:uppercase;letter-spacing:.04em}
+.ob-demo-h{font-size:24px;font-weight:600;margin-bottom:4px}
+.ob-demo .gauge{cursor:default;padding:0}.ob-demo .gauge svg{width:min(100%,96px)}.ob-demo .gauge b{font-size:13px}
+.ob-list{margin-top:8px;gap:18px}
+@supports (corner-shape:squircle){.ob-demo,.deep,.ritual-link{corner-shape:squircle}}
+/* le grand titre se pose sur le ciel, sans fond (sauf la barre collante de l'ordinateur) */
+@media(max-width:800px){.daynav{background:transparent}}
+@media(min-width:801px) and (max-width:1099px){.daynav{background:color-mix(in srgb,var(--bg) 72%,transparent);-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6)}}

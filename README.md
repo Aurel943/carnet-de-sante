@@ -13,13 +13,13 @@ L'appli fonctionne dans un navigateur, s'installe sur l'écran d'accueil (PWA) e
 
 | Onglet | Contenu |
 | --- | --- |
-| **Aujourd'hui** | Jauges dépense / énergie / sommeil, conseil du coach, moniteur de santé, tuiles (stress, VFC, FC au repos, activité, nutrition, hydratation), courbe cardiaque de la journée, activités, check-in (humeur, énergie, stress, courbatures, étiquettes) |
+| **Aujourd'hui** | Titre du jour et sa phrase, jauges dépense / énergie / sommeil (zone de dépense conseillée sur l'arc), plan du jour, action principale, carte du soir avant le coucher, moniteur de santé, tuiles (stress, VFC, FC au repos, activité, nutrition, hydratation), courbe cardiaque de la journée, activités, check-in (humeur, énergie, stress, courbatures, étiquettes) |
 | **Sommeil** | Score et composantes, hypnogramme de la nuit avec FC et VFC, 14 dernières nuits, tendances, besoin de sommeil et heure de coucher conseillée |
 | **Énergie** | Score, moniteur de santé (plage normale personnelle), VFC nocturne, FC nocturne, stress estimé, signes vitaux (SpO₂, respiration, température au poignet…) |
 | **Dépense** | Zones cardiaques, journal de séances de muscu (séries, minuteur de repos, progression suggérée), autres sports, charge d'entraînement (ratio 7 j / 28 j), volume par groupe musculaire, 1RM estimé, records |
 | **Nutrition** | Repas et macros, favoris, hydratation, compléments, besoins caloriques réels, 14 derniers jours |
-| **Tendances** | Bilan santé sur 30 jours, rigueur du suivi, semaine, corrélations observées, bien-être, poids, mensurations, masse grasse, VO2 max, activité quotidienne |
-| **Plus** | Dossier médical (rendez-vous, vaccins, analyses, blessures + rappels), import Apple Santé, réglages et objectifs, données et confidentialité (sauvegarde en fichier, restauration, suppression) |
+| **Tendances** | Ta semaine en un coup d'œil (image à partager), bilan santé sur 30 jours, rigueur du suivi, semaine, corrélations observées, bien-être, poids, mensurations, masse grasse, VO2 max, activité quotidienne |
+| **Plus** | Énergie et signes vitaux (aussi par un toucher sur la jauge Énergie), Nutrition, dossier médical (rendez-vous, vaccins, analyses, blessures + rappels), import Apple Santé, réglages et objectifs, données et confidentialité (sauvegarde en fichier, restauration, suppression) |
 
 La tuile **Calories brûlées** donne la dépense depuis minuit, à l'instant présent : métabolisme de
 base (formule de Mifflin-St Jeor à partir du poids, de la taille, de l'âge et du sexe, réparti sur
@@ -66,6 +66,16 @@ npm run preview   # sert dist/ localement
 ```bash
 npm run lint      # ESLint
 ```
+
+```bash
+npm run parcours  # tests de parcours : l'appli parcourue comme sur un iPhone, le matin et le soir
+```
+
+Chaque matin, à la première ouverture avant midi, un **briefing** plein écran donne le titre du
+jour, les trois jauges et le plan. Le soir, une carte « Ce soir » compte à rebours jusqu'à l'heure de
+coucher conseillée. Le lundi, le bilan de la semaine attend sur le Résumé, et Tendances le propose en
+image à partager (dessinée sur l'appareil). Un record, une dépense qui entre dans sa zone ou sept
+check-ins d'affilée déclenchent une petite célébration.
 
 ## Tester comme sur un iPhone
 

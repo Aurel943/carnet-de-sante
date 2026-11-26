@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f4f1eb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0d12" media="(prefers-color-scheme: dark)">
 <meta name="description" content="Arden : sommeil, énergie, dépense, nutrition et tendances, à partir de tes données Apple Santé.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -13,20 +13,20 @@
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon-180.png">
 <link rel="manifest" href="./manifest.webmanifest">
-  <script type="module" crossorigin src="./assets/main-JFUJPzET.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/main-Bv0ISIsJ.css">
+  <script type="module" crossorigin src="./assets/main-lamVcx2p.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/main-CH2pfKvV.css">
 </head>
 <body>
 <header class="top">
  <div class="wrap tt"><div class="brand"><svg aria-hidden="true" viewBox="0 0 32 32"><rect width="32" height="32" rx="7.2" fill="#16161a"/><g><g fill="none" stroke-width="3.78" stroke-linecap="round"><path d="M8.463 24.6A10.64 10.64 0 0 1 6.52 12.26" stroke="#ff6e57"/><path d="M9.034 9.048A10.64 10.64 0 0 1 22.966 9.048" stroke="#2fd3c1"/><path d="M25.48 12.26A10.64 10.64 0 0 1 23.537 24.6" stroke="#6b84ff"/></g><circle cx="23.537" cy="24.6" r="0.89" fill="#16161a"/></g></svg><h1>Arden</h1></div><span id="st" class="pill local">Sauvegarde locale</span></div>
  <nav class="wrap tabs" id="tabs">
-  <a href="#aujourdhui"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span class="lb"><span class="lf">Aujourd'hui</span><span class="ls">Résumé</span></span></a>
+  <a href="#aujourdhui"><svg viewBox="0 0 24 24"><path style="fill:none" d="M6.34 17.66A8 8 0 1 1 17.66 17.66"/><circle cx="12" cy="12" r="2.6" class="fi"/></svg><span class="lb"><span class="lf">Aujourd'hui</span><span class="ls">Résumé</span></span></a>
   <a href="#sommeil"><svg viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/></svg><span class="lb">Sommeil</span></a>
-  <a href="#recuperation"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span class="lb">Énergie</span></a>
+  <a href="#recuperation" class="dsk"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span class="lb">Énergie</span></a>
   <button type="button" class="tplus" data-act="sheet" aria-label="Noter quelque chose"><span class="pi" aria-hidden="true">+</span><span class="lb">Noter</span></button>
   <a href="#effort"><svg viewBox="0 0 24 24"><path d="M12 2.5c.8 3.8 5.5 5.6 5.5 11a5.5 5.5 0 0 1-11 0c0-2.8 1.6-4.2 2.4-6 .9 1.3 1.8 1.9 2.9 2.2-.3-2.5-.6-4.6.2-7.2z"/></svg><span class="lb">Dépense</span></a>
   <a href="#nutrition" class="dsk"><svg viewBox="0 0 24 24"><path d="M4 11h16a8 8 0 0 1-16 0zM9 7c0-2 1.5-3 3-3s3 1 3 3"/></svg><span class="lb">Nutrition</span></a>
-  <a href="#tendances" class="dsk"><svg viewBox="0 0 24 24"><path d="M4 4v16h16M8 15l4-4 3 3 5-6"/></svg><span class="lb">Tendances</span></a>
+  <a href="#tendances"><svg viewBox="0 0 24 24"><path style="fill:none" d="M3 18.5c3.2 0 4-6.5 7-6.5s3.6 3.2 6.2 3.2c2.3 0 3-5.1 4.3-8.2"/><circle cx="20.5" cy="7" r="1.9" class="fi"/></svg><span class="lb">Tendances</span></a>
   <a href="#plus"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg><span class="lb">Plus</span></a>
  </nav>
 <div id="sheet" hidden><div class="sh" role="dialog" aria-label="Noter"><h3>Noter</h3><button type="button" class="x shx" data-act="qa" data-q="close" aria-label="Fermer">×</button>
@@ -36,15 +36,18 @@
 <div class="wrap pop"><div id="timer" hidden><b id="tval">0:00</b><span class="small" id="tlab">Repos</span><button type="button" data-act="t30">+30 s</button><button type="button" data-act="tstop">Stop</button></div><div id="toast" role="status" aria-live="polite"></div></div>
 <div class="kbd dskonly"><b>←</b><b>→</b> changer de jour<br><b>1</b>–<b>7</b> onglets · <b>N</b> noter<br><b>Échap</b> fermer</div>
 </header>
-<main id="sc"><div class="wrap">
+<main id="sc"><div id="sky" aria-hidden="true"></div><div class="wrap">
 <div id="demobar" hidden><span><b>Démo</b> · profil fictif</span><button type="button" class="btn small" data-act="demoEnd">Utiliser mes données</button></div>
 <div id="syncbar" hidden><span>Lecture d'Apple Santé…</span><div class="bar" style="--c:var(--rec)"><i style="width:0"></i></div></div>
+<button type="button" class="btn small vback dback" id="dback" data-go="aujourdhui" hidden>‹ Résumé</button>
 <div class="daynav" id="dn"><button class="btn icon" data-act="dprev" aria-label="Jour précédent">‹</button><div><h2 id="dtitle"></h2><p id="dsub" class="mute small"></p></div><button class="btn icon" data-act="dnext" aria-label="Jour suivant">›</button></div>
+<p class="lede" id="dlede"></p>
 <div class="wkstrip" id="wk" aria-label="Jours de la semaine"></div>
 <div id="dnote"></div>
 
 <section id="v-aujourdhui" class="view">
- <div class="panel g7 r2 hero"><div class="gauges" id="g3"></div><div class="coach" id="coach"></div></div>
+ <div class="panel g7 r2 hero"><div class="gauges" id="g3"></div><ul class="plan" id="plan"></ul><div class="heroact" id="heroact"></div></div>
+ <div class="g5" id="ritual"></div>
  <div class="panel g5" id="monmini"></div>
  <div class="tiles g5" id="tiles"></div>
  <div class="g12" id="upn"></div>
@@ -55,21 +58,23 @@
 
 <section id="v-sommeil" class="view" hidden>
  <div class="panel g12"><div class="two" style="align-items:center"><div class="gauge big" id="gsl"></div><div><div class="eyebrow">Composantes du score</div><div class="comp" id="slc"></div></div></div><div class="stats" id="sls"></div><div id="hvcmp"></div><div class="coach" id="slcoach"></div></div>
- <div class="panel g8"><div class="ph"><h2>La nuit en détail</h2><span class="mute small" id="hypsub"></span></div><div class="fig hyp" id="fhyp"><svg></svg></div>
+ <div class="panel g8"><div class="ph"><h2>La nuit en détail</h2><span class="mute small" id="hypsub"></span></div><p class="vd" id="vd-hyp"></p><div class="fig hyp" id="fhyp"><svg></svg></div>
   <div class="lg"><span><i style="--c:var(--awake)"></i>Éveil</span><span><i style="--c:var(--rem)"></i>Paradoxal (REM)</span><span><i style="--c:var(--core)"></i>Léger</span><span><i style="--c:var(--deep)"></i>Profond</span><span><i style="--c:var(--hrt)"></i>FC</span><span><i style="--c:var(--mind)"></i>VFC (mesures de la montre)</span></div></div>
- <div class="panel g4"><h2>14 dernières nuits</h2><div id="s14"></div><div class="lg"><span><i style="--c:var(--deep)"></i>Profond</span><span><i style="--c:var(--core)"></i>Léger</span><span><i style="--c:var(--rem)"></i>Paradoxal</span><span><i style="--c:color-mix(in srgb,var(--slp) 30%,var(--field))"></i>Non détaillé</span></div></div>
- <div class="panel g12"><h2>Tendances du sommeil</h2><div class="kpis" id="sk"></div><div class="seg" id="slt"></div><div class="seg" id="slpr" style="margin-left:8px"></div><div class="stats" id="fsk" style="margin:0 0 12px"></div><div class="fig" id="fs"><svg></svg></div><p class="mute small" id="fsn"></p></div>
+ <div class="panel g4"><h2>14 dernières nuits</h2><p class="vd" id="vd-s14"></p><div id="s14"></div><div class="lg"><span><i style="--c:var(--deep)"></i>Profond</span><span><i style="--c:var(--core)"></i>Léger</span><span><i style="--c:var(--rem)"></i>Paradoxal</span><span><i style="--c:color-mix(in srgb,var(--slp) 30%,var(--field))"></i>Non détaillé</span></div></div>
+ <button type="button" class="deep g12" data-act="deep" data-v="sommeil"></button>
+ <div class="panel g12 adv"><h2>Tendances du sommeil</h2><div class="kpis" id="sk"></div><div class="seg" id="slt"></div><div class="seg" id="slpr" style="margin-left:8px"></div><div class="stats" id="fsk" style="margin:0 0 12px"></div><div class="fig" id="fs"><svg></svg></div><p class="mute small" id="fsn"></p></div>
 </section>
 
 <section id="v-recuperation" class="view" hidden>
  <div class="panel g12"><div class="two" style="align-items:center"><div class="gauge big" id="grc"></div><div><div class="eyebrow">Ce qui compose ton énergie</div><div class="comp" id="rcc"></div></div></div><div class="coach" id="rccoach"></div></div>
- <div class="panel g6"><div class="ph"><h2>Moniteur de santé</h2><span class="mute small" id="mons"></span></div><div class="mon" id="mon"></div><p class="mute small">Chaque mesure de la nuit est placée sur ta propre plage normale (zone verte : moyenne ± 1,5 écart-type de tes 30 nuits précédentes). Plusieurs signaux inhabituels en même temps, surtout température, respiration et FC qui montent, précèdent souvent une infection ou un surmenage.</p></div>
- <div class="panel g6"><h2>VFC nocturne</h2><div class="kpis" id="vk2"></div><div class="fig" id="fhv"><svg></svg></div><p class="mute small">Ta variabilité cardiaque pendant le sommeil, nuit par nuit, sur fond de ta plage habituelle (bande colorée). Par défaut, la même valeur que l'app Santé d'Apple (SDNN, moyenne du jour) ; tu peux passer au SDNN du sommeil seul ou au RMSSD dans Plus → Réglages. Sortir durablement sous la bande signale une fatigue accumulée.</p></div>
- <div class="two g12">
-  <div class="panel"><h2>FC nocturne</h2><div class="kpis" id="nhk"></div><div class="fig sm" id="fnh"><svg></svg></div><p class="mute small">Valeur de chaque jour sur 3 mois. Bleu : FC la plus basse de la nuit. Rouge : FC au repos de la journée.</p></div>
-  <div class="panel"><h2>Stress estimé</h2><div class="kpis" id="stk"></div><div id="sth"></div><p class="mute small">Pourcentage de tes mesures de FC en journée qui étaient élevées (FC de repos + 25 % de ta réserve cardiaque) alors que tu bougeais peu, hors sommeil et entraînement. Faible sous 10 %, élevé au-delà de 20 %. Café, chaleur, digestion ou station debout peuvent aussi l'augmenter : c'est une estimation, pas une mesure du stress.</p></div>
+ <div class="panel g6"><div class="ph"><h2>Moniteur de santé</h2></div><p class="vd" id="mons"></p><div class="mon" id="mon"></div><p class="mute small">Chaque mesure de la nuit est placée sur ta propre plage normale (zone verte : moyenne ± 1,5 écart-type de tes 30 nuits précédentes). Plusieurs signaux inhabituels en même temps, surtout température, respiration et FC qui montent, précèdent souvent une infection ou un surmenage.</p></div>
+ <div class="panel g6"><h2>VFC nocturne</h2><p class="vd" id="vd-hv"></p><div class="kpis" id="vk2"></div><div class="fig" id="fhv"><svg></svg></div><p class="mute small">Ta variabilité cardiaque pendant le sommeil, nuit par nuit, sur fond de ta plage habituelle (bande colorée). Par défaut, la même valeur que l'app Santé d'Apple (SDNN, moyenne du jour) ; tu peux passer au SDNN du sommeil seul ou au RMSSD dans Plus → Réglages. Sortir durablement sous la bande signale une fatigue accumulée.</p></div>
+ <button type="button" class="deep g12" data-act="deep" data-v="recuperation"></button>
+ <div class="two g12 adv">
+  <div class="panel"><h2>FC nocturne</h2><p class="vd" id="vd-nh"></p><div class="kpis" id="nhk"></div><div class="fig sm" id="fnh"><svg></svg></div><p class="mute small">Valeur de chaque jour sur 3 mois. Bleu : FC la plus basse de la nuit. Rouge : FC au repos de la journée.</p></div>
+  <div class="panel"><h2>Stress estimé</h2><p class="vd" id="vd-st"></p><div class="kpis" id="stk"></div><div id="sth"></div><p class="mute small">Pourcentage de tes mesures de FC en journée qui étaient élevées (FC de repos + 25 % de ta réserve cardiaque) alors que tu bougeais peu, hors sommeil et entraînement. Faible sous 10 %, élevé au-delà de 20 %. Café, chaleur, digestion ou station debout peuvent aussi l'augmenter : c'est une estimation, pas une mesure du stress.</p></div>
  </div>
- <div class="panel g12"><h2>Signes vitaux</h2><div class="kpis" id="vtk"></div>
+ <div class="panel g12 adv"><h2>Signes vitaux</h2><div class="kpis" id="vtk"></div>
   <label>Courbe<select id="vtm"><option value="o2">Saturation en oxygène (%)</option><option value="rr">Fréquence respiratoire (/min)</option><option value="tp">Température au poignet (écart, °C)</option><option value="hr">FC moyenne de la journée</option><option value="whr">FC moyenne en marchant</option><option value="hrr">Récupération cardiaque à 1 min</option><option value="stz">Stress estimé</option></select></label>
   <div class="fig sm" id="fvt" style="margin-top:12px"><svg></svg></div>
   <p class="mute small">Une température au poignet en hausse de plus de 0,5 °C ou une fréquence respiratoire inhabituelle peuvent précéder une infection. Ces repères ne remplacent pas un avis médical.</p></div>
@@ -78,16 +83,15 @@
 <section id="v-effort" class="view" hidden>
  <div class="panel g12"><div class="two" style="align-items:center"><div class="gauge big" id="gef"></div><div><div class="eyebrow">Zones cardiaques de la journée</div><div id="dz"></div><div class="stats" id="efs"></div></div></div><div class="coach" id="efcoach"></div></div>
  <div class="g12" id="sesscard"></div>
- <div class="panel g6"><h2>Dépense et énergie, 30 jours</h2><div class="fig sm" id="fer"><svg></svg></div><div class="lg"><span><i style="--c:var(--eff)"></i>Dépense</span><span><i style="--c:var(--rec)"></i>Énergie</span></div></div>
- <div class="panel g6"><div class="ph"><h2>Zones cardiaques, 28 jours</h2><span class="mute small">entraînements enregistrés par la montre</span></div><div id="z28"></div></div>
- <div class="panel g12"><div class="ph"><h2>Charge d'entraînement</h2><span class="mute small">7 jours comparés aux 28 derniers</span></div><div class="kpis" id="lk"></div><div class="fig sm" id="fl"><svg></svg></div><p class="mute small">Charge = effort cardiaque (TRIMP) des séances avec la montre, ou minutes × intensité ressentie sans montre. Repère couramment utilisé : entre 0,8 et 1,3, ta charge progresse sans à-coup ; au-delà de 1,5, la hausse est brutale. Cet indicateur est discuté dans la recherche : retiens surtout qu'il vaut mieux augmenter la charge progressivement que viser un chiffre précis.</p></div>
- <div class="two g12">
-  <div class="panel"><h2>Volume muscu, 7 jours</h2><p class="mute small">Séries par groupe musculaire. Zone grisée : 10 à 20 séries par semaine.</p><div id="mg"></div></div>
-  <div class="panel"><h2>16 dernières semaines</h2><div id="heat"></div><div class="lg"><span><i style="--c:var(--trn)"></i>Muscu</span><span><i style="--c:var(--eff)"></i>Autre sport</span></div><p class="mute small" id="heatsum"></p></div>
- </div>
- <div class="panel g7"><h2>Force</h2><label>Exercice<select id="pex"></select></label><div class="kpis" id="pk" style="margin-top:14px"></div><div class="fig" id="f1"><svg></svg></div><p class="mute small">1RM estimé (formule d'Epley) de ta meilleure série à chaque séance. L'estimation est fiable surtout pour les séries de 10 répétitions ou moins.</p><div id="ptab" class="scroll"></div></div>
- <div class="panel g5"><h2>Records</h2><div id="recs" class="scroll"></div></div>
- <div class="panel g12"><h2>Journal d'entraînement</h2><div id="hist"></div></div>
+ <div class="panel g5"><h2>16 dernières semaines</h2><p class="vd" id="vd-heat"></p><div id="heat"></div><div class="lg"><span><i style="--c:var(--trn)"></i>Muscu</span><span><i style="--c:var(--eff)"></i>Autre sport</span></div></div>
+ <div class="panel g7"><h2>Force</h2><p class="vd" id="vd-f1"></p><label>Exercice<select id="pex"></select></label><div class="kpis" id="pk" style="margin-top:14px"></div><div class="fig" id="f1"><svg></svg></div><p class="mute small">1RM estimé (formule d'Epley) de ta meilleure série à chaque séance. L'estimation est fiable surtout pour les séries de 10 répétitions ou moins.</p><div id="ptab" class="scroll adv-s"></div></div>
+ <div class="panel g5"><h2>Records</h2><p class="vd" id="vd-rec"></p><div id="recs" class="scroll"></div></div>
+ <div class="panel g7"><h2>Journal d'entraînement</h2><div id="hist"></div></div>
+ <button type="button" class="deep g12" data-act="deep" data-v="effort"></button>
+ <div class="panel g12 adv"><h2>Dépense et énergie, 30 jours</h2><p class="vd" id="vd-fer"></p><div class="fig sm" id="fer"><svg></svg></div><div class="lg"><span><i style="--c:var(--eff)"></i>Dépense</span><span><i style="--c:var(--rec)"></i>Énergie</span></div></div>
+ <div class="panel g6 adv"><div class="ph"><h2>Zones cardiaques, 28 jours</h2><span class="mute small">entraînements enregistrés par la montre</span></div><p class="vd" id="vd-z28"></p><div id="z28"></div></div>
+ <div class="panel g6 adv"><h2>Volume muscu, 7 jours</h2><p class="vd" id="vd-mg"></p><p class="mute small">Séries par groupe musculaire. Zone grisée : 10 à 20 séries par semaine.</p><div id="mg"></div></div>
+ <div class="panel g12 adv"><div class="ph"><h2>Charge d'entraînement</h2><span class="mute small">7 jours comparés aux 28 derniers</span></div><p class="vd" id="vd-ld"></p><div class="kpis" id="lk"></div><div class="fig sm" id="fl"><svg></svg></div><p class="mute small">Charge = effort cardiaque (TRIMP) des séances avec la montre, ou minutes × intensité ressentie sans montre. Repère couramment utilisé : entre 0,8 et 1,3, ta charge progresse sans à-coup ; au-delà de 1,5, la hausse est brutale. Cet indicateur est discuté dans la recherche : retiens surtout qu'il vaut mieux augmenter la charge progressivement que viser un chiffre précis.</p></div>
 </section>
 
 <section id="v-nutrition" class="view" hidden>
@@ -104,20 +108,22 @@
 </section>
 
 <section id="v-tendances" class="view" hidden>
- <div class="vhead g12"><button type="button" class="btn small vback" data-go="plus">‹ Plus</button><h2 class="ltitle">Tendances</h2></div>
+ <div class="vhead g12"><h2 class="ltitle">Tendances</h2></div>
  <div id="tnote" class="g12"></div>
- <div class="panel g12"><div class="ph"><h2>Bilan santé</h2><span class="mute small">30 derniers jours</span></div><div class="mkrs" id="mkrs"></div><p class="mute small">Repères issus des recommandations courantes (OMS pour l'activité, normes de VO2 max par âge et sexe, etc.), appliqués à tes données. Ce n'est pas un diagnostic : en cas de doute, parles-en à ton médecin.</p></div>
+ <div class="panel g12 recap" id="recap"></div>
+ <div class="panel g12"><div class="ph"><h2>Bilan santé</h2><span class="mute small">30 derniers jours</span></div><p class="vd" id="vd-mk"></p><div class="mkrs" id="mkrs"></div><p class="mute small">Repères issus des recommandations courantes (OMS pour l'activité, normes de VO2 max par âge et sexe, etc.), appliqués à tes données. Ce n'est pas un diagnostic : en cas de doute, parles-en à ton médecin.</p></div>
+ <div class="panel g8"><div class="ph"><h2>Ta semaine</h2><span class="mute small" id="wkr"></span></div><p class="vd" id="vd-wk"></p><div id="week" class="scroll"></div></div>
  <div class="panel g4"><h2>Rigueur du suivi</h2><div class="stats" id="rig"></div><p class="mute small">Sur les 14 derniers jours. Plus le suivi est complet, plus les scores et les analyses sont fiables.</p></div>
- <div class="panel g8"><div class="ph"><h2>Ta semaine</h2><span class="mute small" id="wkr"></span></div><div id="week" class="scroll"></div></div>
- <div class="panel g6"><h2>Ce que disent tes données</h2><ul class="ins" id="insights"></ul><p class="mute small">Analyses sur tes 120 derniers jours. Ce sont des associations observées chez toi, pas des preuves de cause à effet ; elles se fiabilisent avec le temps.</p></div>
- <div class="panel g6"><h2>Bien-être, 60 jours</h2><div class="lg" style="margin:0 0 10px"><span><i style="--c:var(--mind)"></i>Humeur</span><span><i style="--c:var(--nut)"></i>Énergie</span><span><i style="--c:var(--bad)"></i>Stress ressenti</span></div><div class="fig sm" id="fj"><svg></svg></div><p class="mute small">Échelle de 1 à 5, moyenne sur 7 jours, d'après ton check-in.</p></div>
- <div class="panel g7"><h2>Poids</h2><div class="kpis" id="bk"></div><div class="fig" id="fw"><svg></svg></div><p class="mute small">Points : pesées. Ligne : moyenne sur 7 jours. Pointillés : ton objectif.</p></div>
+ <div class="panel g7"><h2>Ce que disent tes données</h2><ul class="ins" id="insights"></ul><p class="mute small">Analyses sur tes 120 derniers jours. Ce sont des associations observées chez toi, pas des preuves de cause à effet ; elles se fiabilisent avec le temps.</p></div>
  <div class="panel g5"><h2>Mensurations</h2>
   <form id="mf"><div class="grid5"><label>Tour de taille (cm)<input id="m-taille" inputmode="decimal"></label><label>Poitrine (cm)<input id="m-poitrine" inputmode="decimal"></label><label>Bras (cm)<input id="m-bras" inputmode="decimal"></label><label>Cuisse (cm)<input id="m-cuisse" inputmode="decimal"></label><label>Hanches (cm)<input id="m-hanches" inputmode="decimal"></label></div>
   <div class="row" style="margin-top:0"><input id="mdate" type="date" style="width:auto" aria-label="Date"><button class="btn pri">Enregistrer</button></div></form>
   <div id="mtab" class="scroll"></div></div>
- <div class="two g12"><div class="panel"><h2>Masse grasse</h2><div class="kpis" id="fk2"></div><div class="fig sm" id="fb"><svg></svg></div></div><div class="panel"><h2>VO2 max</h2><div class="kpis" id="vk"></div><div class="fig sm" id="fo"><svg></svg></div></div></div>
- <div class="panel g12"><h2>Activité quotidienne</h2><div class="kpis" id="ak"></div>
+ <div class="panel g12"><h2>Poids</h2><p class="vd" id="vd-bw"></p><div class="kpis" id="bk"></div><div class="fig" id="fw"><svg></svg></div><p class="mute small">Points : pesées. Ligne : moyenne sur 7 jours. Pointillés : ton objectif.</p></div>
+ <button type="button" class="deep g12" data-act="deep" data-v="tendances"></button>
+ <div class="panel g12 adv"><h2>Bien-être, 60 jours</h2><div class="lg" style="margin:0 0 10px"><span><i style="--c:var(--mind)"></i>Humeur</span><span><i style="--c:var(--nut)"></i>Énergie</span><span><i style="--c:var(--bad)"></i>Stress ressenti</span></div><div class="fig sm" id="fj"><svg></svg></div><p class="mute small">Échelle de 1 à 5, moyenne sur 7 jours, d'après ton check-in.</p></div>
+ <div class="two g12 adv"><div class="panel"><h2>Masse grasse</h2><div class="kpis" id="fk2"></div><div class="fig sm" id="fb"><svg></svg></div></div><div class="panel"><h2>VO2 max</h2><div class="kpis" id="vk"></div><div class="fig sm" id="fo"><svg></svg></div></div></div>
+ <div class="panel g12 adv"><h2>Activité quotidienne</h2><div class="kpis" id="ak"></div>
   <label>Courbe<select id="am"><option value="st">Pas</option><option value="ac">Calories actives</option><option value="ex">Minutes d'exercice</option><option value="km">Distance marche et course (km)</option><option value="fl">Étages montés</option><option value="stt">Temps debout (min)</option><option value="mf">Pleine conscience (min)</option></select></label>
   <div class="fig" id="fa" style="margin-top:12px"><svg></svg></div><p class="mute small">Points : valeur de chaque jour sur 3 mois. Bande : ta plage habituelle.</p></div>
 </section>
@@ -126,7 +132,7 @@
  <div class="panel hub" id="hub">
   <h2>Plus</h2>
   <button class="hr" data-go="nutrition" style="--c:var(--nut)"><i><svg viewBox="0 0 24 24"><path d="M4 11h16a8 8 0 0 1-16 0zM9 7c0-2 1.5-3 3-3s3 1 3 3"/></svg></i><span><b>Nutrition</b><small>Repas, macros, hydratation, compléments, besoins caloriques</small></span><em>›</em></button>
-  <button class="hr" data-go="tendances" style="--c:var(--trn)"><i><svg viewBox="0 0 24 24"><path d="M4 4v16h16M8 15l4-4 3 3 5-6"/></svg></i><span><b>Tendances et bilan santé</b><small>Ta semaine, analyses, poids, mensurations, VO2 max</small></span><em>›</em></button>
+  <button class="hr" data-go="recuperation" style="--c:var(--rec)"><i><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></i><span><b>Énergie et signes vitaux</b><small>Moniteur de santé, VFC, FC nocturne, stress, SpO₂</small></span><em>›</em></button>
   <button class="hr" data-act="psub" data-s="dossier" style="--c:var(--hrt)"><i><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg></i><span><b>Dossier médical</b><small>Rendez-vous, vaccins, analyses, blessures</small></span><em>›</em></button>
   <button class="hr" data-act="psub" data-s="apple" style="--c:var(--rec)"><i><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></i><span><b>Apple Santé</b><small id="hubapple">Importer et mettre à jour tes données</small></span><em>›</em></button>
   <button class="hr" data-act="psub" data-s="reglages" style="--c:var(--mute)"><i><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></i><span><b>Réglages</b><small>Objectifs, profil, VFC, favoris, compléments</small></span><em>›</em></button>
@@ -212,9 +218,10 @@
   <section class="ob" data-step="0">
    <svg class="ob-logo" aria-hidden="true" viewBox="0 0 32 32"><rect width="32" height="32" rx="7.2" fill="#16161a"/><g><g fill="none" stroke-width="3.78" stroke-linecap="round"><path d="M8.463 24.6A10.64 10.64 0 0 1 6.52 12.26" stroke="#ff6e57"/><path d="M9.034 9.048A10.64 10.64 0 0 1 22.966 9.048" stroke="#2fd3c1"/><path d="M25.48 12.26A10.64 10.64 0 0 1 23.537 24.6" stroke="#6b84ff"/></g><circle cx="23.537" cy="24.6" r="0.89" fill="#16161a"/></g></svg>
    <h1 id="onbt">Arden</h1>
-   <p class="ob-lead">Ton coach personnel, qui interprète chaque chiffre de ta montre.</p>
+   <p class="ob-lead">Chaque matin, Arden lit ta montre et te dit quoi faire de ta journée.</p>
+   <div class="ob-demo" aria-hidden="true"><span class="ob-demo-e">Exemple de matin</span><b class="ob-demo-h">Journée de force</b><div class="gauges" id="obg"></div></div>
    <ul class="ob-list">
-    <li style="--c:var(--eff)"><i><svg viewBox="0 0 24 24"><path style="fill:none" d="M6.3 17.7A8 8 0 1 1 17.7 17.7"/><path style="fill:none" d="M9.2 14.8A4 4 0 1 1 14.8 14.8"/></svg></i><span><b>Dépense, énergie, sommeil</b>Trois scores chaque matin, et le conseil qui va avec.</span></li>
+    <li style="--c:var(--eff)"><i><svg viewBox="0 0 24 24"><path style="fill:none" d="M6.3 17.7A8 8 0 1 1 17.7 17.7"/><path style="fill:none" d="M9.2 14.8A4 4 0 1 1 14.8 14.8"/></svg></i><span><b>Dépense, énergie, sommeil</b>Trois scores, un titre pour ta journée et le plan qui va avec.</span></li>
     <li style="--c:var(--trn)"><i><svg viewBox="0 0 24 24"><path d="M3 10v4M6 8v8M18 8v8M21 10v4M6 12h12"/></svg></i><span><b>Entraînement et nutrition</b>Séances de muscu, charge, records, repas et protéines.</span></li>
     <li style="--c:var(--rec)"><i><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></i><span><b>Privé par conception</b>Pas de compte ni de serveur : tes données restent sur ton téléphone.</span></li>
    </ul>
@@ -243,6 +250,16 @@
   <div class="ob-dots" aria-hidden="true"><i></i><i></i><i></i></div>
  </div>
 </div>
+<div id="brief" hidden role="dialog" aria-modal="true" aria-labelledby="brt">
+ <div class="br-in">
+  <p class="br-hi" id="brhi"></p>
+  <h1 id="brt"></h1>
+  <p class="br-lede" id="brlede"></p>
+  <div class="panel br-card"><div class="gauges" id="brg"></div><ul class="plan" id="brplan"></ul></div>
+  <button type="button" class="btn pri ob-cta" data-act="briefok">C'est parti</button>
+ </div>
+</div>
+<div id="cele" hidden role="status" aria-live="polite"><div class="ce-in"><div class="ce-arcs" aria-hidden="true"><i></i><i></i><i></i></div><b id="cet"></b><span id="ces"></span></div></div>
 <datalist id="exlist"></datalist>
 <div id="tip" hidden></div>
 </body>

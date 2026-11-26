@@ -2,6 +2,8 @@
 // Police : SF Pro (police système) sur les appareils Apple ; ailleurs Inter, intégrée à l'appli
 // (aucun appel à un service de polices). Chargée seulement si SF Pro est absent.
 import '@fontsource-variable/inter/opsz.css'; // graisse + taille optique (comme SF Pro Text / Display)
+/* Fraunces : la voix d'Arden (grands titres, titre du jour, titres de cartes), intégrée elle aussi. */
+import '@fontsource-variable/fraunces/full.css';
 import {$,$$,esc,clone,iso,today,addD,dShort,dLong,dWk,num,has,fx,f2,r0,sg,clamp,nid,norm,plain,e1,sortDesc,setTxt,fmtSl,hhmm,hm,avg,sdv} from './utils.js';
 import {BASE_EX,SPORTS,MEALS,WT,MG,SCALES,MEAS,ZC,ZN,IC,DEF} from './constants.js';
 import {readHealth} from './health-import.js';
@@ -11,7 +13,7 @@ import {Capacitor} from '@capacitor/core';
 import {Haptics,ImpactStyle,NotificationType} from '@capacitor/haptics';
 
 const S={set:clone(DEF),sessions:[],days:{},med:[],cur:null,health:{upd:'',d:{}},detail:{d:{}},day:today()};
-let mode='load',resumed=false,histN=15,sv,tt,startMode='mu',medFlt='Tout',psub='',sleepTrend='sl',sleepPer=30;
+let mode='load',resumed=false,histN=6,sv,tt,startMode='mu',medFlt='Tout',psub='',sleepTrend='sl',sleepPer=30;
 const LS='carnet-muscu-v1',pend=[];
 /* Appli iOS : Apple Santé est lu directement (HealthKit) au lieu d'un fichier d'export. */
 let HKN=false,hkBusy=false;const IMP=(web,ios)=>HKN?ios:web;
@@ -228,22 +230,93 @@ function arcRing(cx,cy,r,w,p,col,id,shadow=true,a0=-Math.PI/2,span=2*Math.PI){if
  let g='';for(let k=0;k<N;k++){const s0=a0+(a1-a0)*k/N,s1=Math.min(a1,a0+(a1-a0)*(k+1)/N+0.01),[x0,y0]=P(s0),[x1,y1]=P(s1);g+=`<path d="M${f(x0)} ${f(y0)}A${r} ${r} 0 0 1 ${f(x1)} ${f(y1)}" style="stroke:${mix((k+.5)/N*p)}" stroke-width="${w}" fill="none"/>`}
  const [sx,sy]=P(a0),[ex,ey]=P(a1),dx=Math.cos(a1+Math.PI/2)*w*.22,dy=Math.sin(a1+Math.PI/2)*w*.22;
  return `<circle cx="${f(sx)}" cy="${f(sy)}" r="${w/2}" style="fill:${mix(0)}"/>${g}${shadow&&p>.04?`<circle cx="${f(ex+dx)}" cy="${f(ey+dy)}" r="${w/2}" fill="#000" opacity=".3" filter="url(#${id}b)"/>`:''}<circle cx="${f(ex)}" cy="${f(ey)}" r="${w/2}" style="fill:${mix(p)}"/>${shadow?`<circle cx="${f(ex)}" cy="${f(ey)}" r="${(w*.2).toFixed(2)}" fill="#fff" opacity=".92"/>`:''}`}
-function gaugeSVG(v,col,unit,max=100,key){const r=56,w=10,cy=74,p=v==null?0:clamp(v/max,0,1),id='rg'+(++ringN);
+function gaugeSVG(v,col,unit,max=100,key,zone){const r=56,w=10,cy=74,p=v==null?0:clamp(v/max,0,1),id='rg'+(++ringN);
  const an=!!key&&p>0&&ringSeen.get(key)!==p&&!matchMedia('(prefers-reduced-motion: reduce)').matches;if(key)ringSeen.set(key,p);
  const tick=a=>{const c=Math.cos(a),s=Math.sin(a);return `<line x1="${(70+(r-w/2-5)*c).toFixed(2)}" y1="${(cy+(r-w/2-5)*s).toFixed(2)}" x2="${(70+(r-w/2-2)*c).toFixed(2)}" y2="${(cy+(r-w/2-2)*s).toFixed(2)}" stroke="${col}" stroke-opacity=".45" stroke-width="1.6" stroke-linecap="round"/>`};
- return `<svg viewBox="0 0 140 136" aria-hidden="true"><defs><filter id="${id}b" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2"/></filter>${an?`<mask id="${id}m"><path class="ringgrow" d="${arcPath(70,cy,r,GA0-.2,GA0+GSPAN+.2)}" fill="none" stroke="#fff" pathLength="100" stroke-dasharray="100 100" stroke-dashoffset="100"/></mask>`:''}</defs><path d="${arcPath(70,cy,r,GA0,GA0+GSPAN)}" fill="none" stroke="${col}" stroke-opacity=".15" stroke-width="${w}" stroke-linecap="round"/>${[.25,.5,.75].map(t=>tick(GA0+GSPAN*t)).join('')}<g${an?` mask="url(#${id}m)"`:''}>${arcRing(70,cy,r,w,p,col,id,true,GA0,GSPAN)}</g><text class="gv" x="70" y="${cy+11}" text-anchor="middle">${v==null?'–':Math.round(v)}</text>${unit?`<text class="gu" x="70" y="${cy+r*.71+4}" text-anchor="middle">${unit}</text>`:''}</svg>`}
-function gauge(v,col,label,sub,link,unit='%',big){return `<${link?'button':'div'} class="gauge${big?' big':''}"${link?` data-go="${link}"`:''}>${gaugeSVG(v,col,unit,100,label+'|'+S.day+(big?'|b':''))}<b>${label}</b><span>${sub||''}</span></${link?'button':'div'}>`}
+ return `<svg viewBox="0 0 140 136" aria-hidden="true"><defs><filter id="${id}b" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2"/></filter>${an?`<mask id="${id}m"><path class="ringgrow" d="${arcPath(70,cy,r,GA0-.2,GA0+GSPAN+.2)}" fill="none" stroke="#fff" pathLength="100" stroke-dasharray="100 100" stroke-dashoffset="100"/></mask>`:''}</defs><path d="${arcPath(70,cy,r,GA0,GA0+GSPAN)}" fill="none" stroke="${col}" stroke-opacity=".15" stroke-width="${w}" stroke-linecap="round"/>${zone?zoneArc(70,cy,r,w,zone,col,max):[.25,.5,.75].map(t=>tick(GA0+GSPAN*t)).join('')}<g${an?` mask="url(#${id}m)"`:''}>${arcRing(70,cy,r,w,p,col,id,true,GA0,GSPAN)}</g><text class="gv" x="70" y="${cy+11}" text-anchor="middle">${v==null?'–':Math.round(v)}</text>${unit?`<text class="gu" x="70" y="${cy+r*.71+4}" text-anchor="middle">${unit}</text>`:''}</svg>`}
+/* zone conseillée : bande plus soutenue sur la piste, bornée par deux traits */
+function zoneArc(cx,cy,r,w,[lo,hi],col,max=100){const b0=GA0+GSPAN*lo/max,b1=GA0+GSPAN*hi/max,edge=a=>{const c=Math.cos(a),s=Math.sin(a);return `<line x1="${(cx+(r-w/2-1)*c).toFixed(2)}" y1="${(cy+(r-w/2-1)*s).toFixed(2)}" x2="${(cx+(r+w/2+1)*c).toFixed(2)}" y2="${(cy+(r+w/2+1)*s).toFixed(2)}" stroke="${col}" stroke-opacity=".7" stroke-width="1.6" stroke-linecap="round"/>`};
+ return `<path class="gz" d="${arcPath(cx,cy,r,b0,b1)}" fill="none" stroke="${col}" stroke-opacity=".32" stroke-width="${w}"/>${edge(b0)}${edge(b1)}`}
+function gauge(v,col,label,sub,link,unit='%',big,zone){return `<${link?'button':'div'} class="gauge${big?' big':''}"${link?` data-go="${link}"`:''}>${gaugeSVG(v,col,unit,100,label+'|'+S.day+(big?'|b':''),zone)}<b>${label}</b><span>${sub||''}</span></${link?'button':'div'}>`}
 const zbar=z=>{const t=(z||[]).reduce((a,b)=>a+b,0);return t?`<div class="zb">${z.map((m,i)=>m?`<i style="width:${m/t*100}%;background:${ZC[i]}"></i>`:'').join('')}</div>`:''};
 const zleg=z=>`<div class="zl">${(z||[]).map((m,i)=>m?`<span><i style="--c:${ZC[i]}"></i>Z${i+1} ${m} min</span>`:'').join('')}</div>`;
 
+/* ---------- la voix d'Arden : titre du jour, plan, ciel ---------- */
+/* Dépense : minutes d'effort modéré (≈ 1,5 de charge cardiaque par minute, comme un footing en zone 2) pour entrer dans la zone */
+function effGap(d,tg){if(!tg)return null;const need=-110*Math.log(1-tg[0]/100),dl=need-loadOf(d);return dl<=0?0:Math.max(10,Math.round(dl/1.5/5)*5)}
+const fmtMin=m=>m>=90?'plus d\'1 h 30':m>=60?`${Math.floor(m/60)} h ${String(m%60).padStart(2,'0')}`:m+' min';
+const effSub=(d,ef,tg)=>!tg?'charge du jour':ef!=null&&ef>tg[1]?'au-delà de ta zone':ef!=null&&ef>=tg[0]?'dans ta zone':d===today()?`vise ${tg[0]}–${tg[1]}`:`zone ${tg[0]}–${tg[1]}`;
+function bedOf(d){const nd=needOf(addD(d,1)),wa=wakeAvg(d);return wa==null?null:{need:nd.need,wake:wa,bed:wa-nd.need-15}}
+/* minutes avant l'heure de coucher conseillée (heure « relative » des données : minuit = 720) */
+function bedIn(d){const b=bedOf(d);if(!b||d!==today())return null;const n=new Date(),now=n.getHours()*60+n.getMinutes(),bed=((b.bed+720)%1440+1440)%1440;let m=bed-now;if(m<-240)m+=1440;return m}
+/* Le titre du jour : une conclusion en quelques mots, puis une phrase qui dit quoi faire. */
+function dayStory(d){const h=H(d),rc=recovery(d),sl=sleepScore(d),ef=effortOf(d),tg=effTarget(rc&&rc.s),isT=d===today(),warn=monitor(d).filter(x=>x.warn),bi=bedIn(d);
+ const S1=(t,l,tone)=>({t,l,tone});
+ if(!hKeys().length)return S1(isT?'Ta journée commence ici':'Pas de mesure ce jour',IMP('Note ton check-in, tes séances et tes repas. Importe Apple Santé pour que je calcule aussi ta dépense, ton énergie et ton sommeil.','Note ton check-in, tes séances et tes repas. Connecte Apple Santé pour que je calcule aussi ta dépense, ton énergie et ton sommeil.'),'none');
+ if(!rc&&!sl){const cb=calib(d);return cb<7&&cb>0?S1('Arden apprend à te connaître',`Encore ${7-cb} nuit${7-cb>1?'s':''} pour établir ta normale ; ton énergie s'affichera ensuite chaque matin.`,'none'):S1(isT?'En attente de ta nuit':'Pas de nuit ce jour',isT?IMP('Réimporte ton export Apple Santé pour obtenir tes scores du jour.','Synchronise Apple Santé pour obtenir tes scores du jour.'):'Aucune mesure de sommeil ni de VFC pour cette date.','none')}
+ if(warn.length>=2)return S1('Écoute ton corps',`Plusieurs signaux inhabituels cette nuit (${warn.map(x=>x.l.toLowerCase()).join(', ')}) : journée légère, hydrate-toi et surveille ton ressenti.`,'warn');
+ if(bi!=null&&bi<=120&&new Date().getHours()>=18){const b=bedOf(d);return S1(bi<=10?'C\'est l\'heure':'Prépare ta nuit',bi<=10?`Pour tes ${fmtSl(b.need)} de sommeil, c'est maintenant : lumière douce, écrans de côté.`:`Au lit vers ${hhmm(b.bed)}, dans ${fmtSl(bi)}, pour dormir ${fmtSl(b.need)} et te lever à ${hhmm(b.wake)}.`,'eve')}
+ if(ef!=null&&tg&&ef>tg[1]+5)return S1('Grosse journée',`Dépense de ${ef}, au-delà de ce que ton énergie conseillait : mise sur un vrai repas et une nuit plus longue.`,'mid');
+ if(isT&&ef!=null&&tg&&ef>=tg[0])return S1('Mission accomplie',`Ta dépense (${ef}) est dans ta zone : la suite de la journée, c'est de la récupération.`,'go');
+ if(rc){const s=rc.s;
+  if(s>=67)return sl&&sl.s>=75?S1('Journée de force','Énergie haute et nuit réparatrice : c\'est le jour pour une séance exigeante.','go'):S1('Pleine énergie','Ton corps a bien récupéré malgré une nuit moyenne : fonce, puis couche-toi tôt.','go');
+  if(s>=34)return sl&&sl.s<60?S1('Journée en douceur','Nuit un peu courte : garde une intensité modérée et offre-toi une meilleure nuit ce soir.','mid'):S1('Rythme de croisière','Tes indicateurs sont proches de ta normale : entraîne-toi normalement, sans viser ton maximum.','mid');
+  return S1('Journée de récupération','Tes indicateurs sont sous ta normale : marche, mobilité ou repos, et une nuit plus longue ce soir.','low')}
+ return sl.s>=80?S1('Belle nuit',`${fmtSl(h.sl)} de sommeil réparateur : ta journée part sur de bonnes bases.`,'go'):sl.s>=60?S1('Nuit correcte',`${fmtSl(h.sl)} de sommeil : une journée normale t'attend.`,'mid'):S1('Nuit courte',`${fmtSl(h.sl)} de sommeil seulement : vas-y doucement et vise une meilleure nuit.`,'low')}
+/* Le plan du jour : trois ou quatre lignes, chacune une action concrète. */
+const ARC='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.1 11.9A5.5 5.5 0 1 1 11.9 11.9"/><circle cx="11.9" cy="11.9" r="1.6"/></svg>';
+function planItems(d){const out=[],P=(c,html)=>out.push([c,html]),h=H(d),D=S.days[d]||{},isT=d===today(),hr=new Date().getHours(),rc=recovery(d),ef=effortOf(d),tg=effTarget(rc&&rc.s);
+ if(tg){if(ef!=null&&ef>tg[1])P('var(--eff)',`Dépense <b>${ef}</b>, au-delà de ta zone (${tg[0]}–${tg[1]}) : récupère ce soir.`);
+  else if(ef!=null&&ef>=tg[0])P('var(--eff)',`Dépense <b>${ef}</b> : tu es dans ta zone (${tg[0]}–${tg[1]}).`);
+  else if(isT&&hr>=20)P('var(--eff)',`Dépense de <b>${ef??0}</b> aujourd'hui : trop tard pour une séance, la récupération compte aussi.`);
+  else if(isT){const g=effGap(d,tg);P('var(--eff)',`Bouge : vise une dépense de <b>${tg[0]}–${tg[1]}</b>, soit environ <b>${fmtMin(g)}</b> d'effort modéré (footing, vélo, marche rapide).`)}
+  else P('var(--eff)',`Dépense de ${ef??0}, sous la zone conseillée (${tg[0]}–${tg[1]}).`)}
+ if(rc&&!rc.partial){const low=rc.c.filter(x=>x[1]<45).map(x=>x[0].toLowerCase());if(low.length)P('var(--rec)',`Ce qui freine ton énergie : <b>${low.join(', ')}</b>.`)}
+ if(isT||d===hLast()){const b=bedOf(d);if(b)P('var(--slp)',`Ce soir : <b>${fmtSl(b.need)}</b> de sommeil, au lit vers <b>${hhmm(b.bed)}</b>.`)}
+ if(has(h.tp)){const tb=base('tp',d);if(tb!=null&&h.tp-tb>=0.5)P('var(--hrt)','<b>Température au poignet en hausse</b> : peut précéder une infection, ou venir de l\'alcool ou d\'une chambre chaude.')}
+ if(num(h.stz)>=30)P('var(--str)','<b>Journée stressante</b> : quelques minutes de respiration lente (6 cycles par minute) aident ta FC à redescendre.');
+ if(isT&&hr>=13&&hr<21&&out.length<4){const pr=sum(D.items||[],'p'),T=num(S.set.prot);if(T&&(D.items||[]).length&&pr<T*.5)P('var(--nut)',`Protéines : <b>${r0(pr)} g</b> sur ${r0(T)}, pense à en mettre au prochain repas.`)}
+ if(!out.length){P('var(--mind)','Fais ton <b>check-in</b> : 20 secondes pour dire comment tu te sens.');P('var(--trn)','Note ta prochaine <b>séance</b> ou ton prochain <b>repas</b>.')}
+ return out.slice(0,4)}
+const planHTML=items=>items.map(([c,h])=>`<li style="--c:${c}">${ARC}<span>${h}</span></li>`).join('');
+/* Action principale du moment, puis les autres en capsules grises. */
+function heroActs(d){if(d!==today())return'';const j=J(d),ci=!!(j.mood||j.energy||j.stress||j.sore),T=dayTrain(d),act=T.mu.length+T.sp.length+T.ap.length>0||!!S.cur,hr=new Date().getHours();
+ const A={ci:['ciopen','','Faire mon check-in','Check-in'],mu:['msopen','data-m="mu"',S.cur?'Reprendre ma séance':'Noter une séance','Séance'],food:['foodadd',`data-m="${mealNow()}"`,'Ajouter un repas','Repas']};
+ const first=!ci?'ci':!act&&hr<21?'mu':'food',rest=['ci','mu','food'].filter(k=>k!==first&&!(k==='ci'&&ci)).slice(0,1);
+ const b=(k,pri)=>{const [a,x,l,s]=A[k];return `<button type="button" class="btn${pri?' pri':' small'}" data-act="${a}" ${x}>${pri?l:s}</button>`};
+ return b(first,true)+rest.map(k=>b(k,false)).join('')}
+/* Ciel vivant : la lumière suit l'heure (aube, jour, crépuscule, nuit) et se teinte selon ton état. */
+const TONE={go:'var(--rec)',mid:'var(--str)',low:'var(--trn)',warn:'var(--hrt)',eve:'var(--slp)',none:'var(--eff)'};
+function skyFor(v,tone){const hr=new Date().getHours();
+ if(v==='aujourdhui'){const [a,b]=hr>=5&&hr<10?['#ffb48c','#ffd9a6']:hr>=10&&hr<17?['#ffe1a1','#bfe7df']:hr>=17&&hr<21?['#f59c8e','#c4a7f3']:['#7183e6','#343d86'];return{a,b,c:TONE[tone]||TONE.none,o:1}}
+ const C={sommeil:'var(--slp)',recuperation:'var(--rec)',effort:'var(--eff)',tendances:'var(--trn)',nutrition:'var(--nut)'}[v];
+ return C?{a:C,b:C,c:C,o:.55}:{a:'transparent',b:'transparent',c:'transparent',o:0}}
+function paintSky(el,k){el.style.setProperty('--sk1',k.a);el.style.setProperty('--sk2',k.b);el.style.setProperty('--sk3',k.c);el.style.setProperty('--sko',k.o)}
+
 /* ---------- vue commune : jour ---------- */
 const VT={sommeil:'Sommeil',recuperation:'Énergie',effort:'Dépense'};
-function renderDayNav(){const d=S.day,v0=cur(),rel=d===today()?"Aujourd'hui":d===addD(today(),-1)?'Hier':'';
+/* Phrase de conclusion de chaque section, sous le grand titre : ce qu'il faut retenir avant les chiffres. */
+const SLW={Durée:'un peu courte',Efficacité:'du temps éveillé au lit',Récupératrice:'peu de sommeil profond',Régularité:'un coucher irrégulier',Continuité:'plusieurs réveils'};
+function sectionLede(v,d){const h=H(d);
+ if(v==='sommeil'){const sl=sleepScore(d);if(!sl)return'';const w=sl.c.filter(c=>c[1]<60).sort((a,b)=>a[1]-b[1]).map(c=>SLW[c[0]]).filter(Boolean);const b=d===today()||d===hLast()?bedOf(d):null;
+  return `${sl.s>=80?'Excellente nuit':sl.s>=60?'Nuit correcte':'Nuit insuffisante'} : ${fmtSl(h.sl)} de sommeil${w.length?`, avec ${w.slice(0,2).join(' et ')}`:sl.s>=80?', profonde et régulière':''}.${b?` Ce soir, au lit vers ${hhmm(b.bed)}.`:''}`}
+ if(v==='recuperation'){const rc=recovery(d);if(!rc)return'';const [l]=recLab(rc.s),low=rc.c.filter(x=>x[1]<45).map(x=>x[0].toLowerCase());
+  return `Énergie ${l.toLowerCase()} (${rc.s} %) : ${rc.s>=67?'ton corps a bien récupéré, tu peux pousser.':rc.s>=34?'proche de ta normale, entraîne-toi sans viser ton maximum.':'sous ta normale, privilégie le repos ou une activité légère.'}${low.length?` Ce qui freine : ${low.join(', ')}.`:''}`}
+ if(v==='effort'){const rc=recovery(d),ef=effortOf(d),tg=effTarget(rc&&rc.s);if(ef==null&&!tg)return'';
+  if(!tg)return `Dépense de ${ef} aujourd'hui.`;const e=ef??0;
+  return e>tg[1]?`Dépense de ${e}, au-delà de la zone conseillée (${tg[0]}–${tg[1]}) : récupère ce soir.`:e>=tg[0]?`Dépense de ${e}, dans ta zone conseillée (${tg[0]}–${tg[1]}). Bien joué.`:d===today()?`Dépense de ${e} pour une zone de ${tg[0]}–${tg[1]} : encore environ ${fmtMin(effGap(d,tg))} d'effort modéré pour l'atteindre.`:`Dépense de ${e}, sous la zone conseillée (${tg[0]}–${tg[1]}).`}
+ return''}
+let story=null;
+function renderDayNav(){const d=S.day,v0=cur(),rel=d===today()?"Aujourd'hui":d===addD(today(),-1)?'Hier':'',dayv=['aujourdhui','sommeil','recuperation','effort'].includes(v0);
+ story=dayStory(d);
  if(VT[v0]){$('#dtitle').textContent=VT[v0];$('#dsub').textContent=rel||dLong(d)}
- else{$('#dtitle').textContent=d===today()?"Aujourd'hui":dLong(d);$('#dsub').textContent=d===today()?dLong(d):rel}$('[data-act=dnext]').disabled=d>=today();
- const L=hLast(),v=cur();
- $('#dn').hidden=!['aujourdhui','sommeil','recuperation','effort'].includes(v);$('#wk').hidden=$('#dn').hidden;if(!$('#wk').hidden)renderWeek(v);
- $('#dnote').innerHTML=!['aujourdhui','sommeil','recuperation','effort'].includes(v)?'':(!L?emptyHTML(v):d>L?`<div class="notice">Données Apple jusqu'au ${dShort(L)}. ${IMP('Réimporte ton export','Synchronise Apple Santé')} pour mettre à jour, ou <button class="btn small" data-act="dlast">voir le ${dShort(L)}</button></div>`:'')
+ else{$('#dtitle').textContent=story.t;$('#dsub').textContent=rel?`${rel} · ${dLong(d)}`:dLong(d)}
+ $('#dlede').innerHTML=!dayv?'':v0==='aujourdhui'?esc(story.l):esc(sectionLede(v0,d));
+ $('[data-act=dnext]').disabled=d>=today();$('#dback').hidden=v0!=='recuperation';
+ paintSky($('#sky'),skyFor(v0,story.tone));
+ const L=hLast();
+ $('#dn').hidden=!dayv;$('#wk').hidden=$('#dn').hidden;if(!$('#wk').hidden)renderWeek(v0);
+ $('#dnote').innerHTML=!dayv?'':(!L?emptyHTML(v0):d>L?`<div class="notice">Données Apple jusqu'au ${dShort(L)}. ${IMP('Réimporte ton export','Synchronise Apple Santé')} pour mettre à jour, ou <button class="btn small" data-act="dlast">voir le ${dShort(L)}</button></div>`:'')
 }
 
 /* ---------- frise de la semaine : mini-barres par jour (trois sur le résumé, une sur chaque thème) ---------- */
@@ -291,8 +364,10 @@ function upNextHTML(){const up=S.med.filter(m=>(m.date>=today()&&m.date<=addD(to
 /* ---------- aujourd'hui ---------- */
 function renderToday(){const d=S.day,h=H(d),D=S.days[d]||{},it=D.items||[],T=dayTrain(d),set=S.set;
  const rc=recovery(d),sl=sleepScore(d),ef=effortOf(d),tg=effTarget(rc&&rc.s);
- $('#g3').innerHTML=gauge(ef,'var(--eff)','Dépense',tg?`conseillée ${tg[0]}–${tg[1]}`:'charge du jour','effort','')+gauge(rc&&rc.s,'var(--rec)','Énergie',rc?recLab(rc.s)[0]:(calib(d)<7&&hKeys().length?`calibrage ${calib(d)}/7 nuits`:'en attente de données'),'recuperation')+gauge(sl&&sl.s,'var(--slp)','Sommeil',h.sl?fmtSl(h.sl):'pas de nuit','sommeil');
- $('#coach').innerHTML=coach(d,rc,sl,ef,tg);
+ $('#g3').innerHTML=gauge(tg&&ef==null?0:ef,'var(--eff)','Dépense',effSub(d,ef,tg),'effort','/100',false,tg)+gauge(rc&&rc.s,'var(--rec)','Énergie',rc?recLab(rc.s)[0]:(calib(d)<7&&hKeys().length?`calibrage ${calib(d)}/7 nuits`:'en attente de données'),'recuperation')+gauge(sl&&sl.s,'var(--slp)','Sommeil',h.sl?fmtSl(h.sl):'pas de nuit','sommeil','/100');
+ $('#plan').innerHTML=planHTML(planItems(d));$('#heroact').innerHTML=heroActs(d);
+ $('#ritual').innerHTML=ritualHTML(d);
+ if(d===today()&&tg&&ef!=null&&ef>=tg[0]&&ef<=tg[1]&&S.set.zoneDay!==d&&hKeys().length){S.set.zoneDay=d;put.set();setTimeout(()=>celebrate('Dans ta zone',`Dépense de ${ef} : l'objectif du jour est atteint.`),600)}
  const st=num(h.stz),wat=num(D.w)||num(h.wa),vb=nhrvBase(d);
  const tile=(c,k,v,s,extra='',mk='')=>`<div class="tile${mk?' tap':''}${mk==='burn'?' wide':''}" style="--c:${c}"${mk?` data-act="metric" data-k="${mk}" role="button" tabindex="0" aria-label="${esc(k)} : voir le détail"`:''}><span class="k"><i></i>${k}</span><span class="v">${v}</span><span class="s">${s}</span>${extra}</div>`;
  $('#tiles').innerHTML=[
@@ -340,11 +415,11 @@ function setJ(p){const d=S.day,o=getDay(d);o.j={...(o.j||{}),...p};put.day(d)}
 /* ---------- sommeil ---------- */
 function compHTML(c,col){return c.map(([n,v,,t])=>`<div class="cr"><span>${n}</span><div class="bar" style="--c:${col}"><i style="width:${v}%"></i></div><span class="num">${Math.round(v)}</span><small>${esc(t)}</small></div>`).join('')}
 function renderSleep(){const d=S.day,h=H(d),sl=sleepScore(d),x=X(d),T=num(S.set.sleep);
- $('#gsl').innerHTML=gauge(sl&&sl.s,'var(--slp)','Score de sommeil',h.sl?`nuit du ${dShort(addD(d,-1))} au ${dShort(d)}`:'pas de nuit enregistrée',null,'',true);
+ $('#gsl').innerHTML=gauge(sl&&sl.s,'var(--slp)','Score de sommeil',h.sl?`nuit du ${dShort(addD(d,-1))} au ${dShort(d)}`:'pas de nuit enregistrée',null,'/100',true);
  $('#slc').innerHTML=sl?compHTML(sl.c,'var(--slp)'):'<p class="mute small">Les composantes apparaissent avec une nuit importée.</p>';
  const win=has(h.sw)&&has(h.sb)?((h.sw-h.sb+1440)%1440):null;
  /* la nuit en listes groupées, comme dans Santé : phases, horaires, signes vitaux */
- {const row=(l,v)=>v?`<div class="mrow"><span>${l}</span><b>${v}</b></div>`:'',grp=(t,rows)=>rows.join('')?`<div class="sgh">${t}</div><div class="sgrp">${rows.join('')}</div>`:'',U=(v,u)=>`${v}<small> ${u}</small>`;
+ {const row=(l,v)=>v?`<div class="mrow"><span>${l}</span><b>${v}</b></div>`:'',grp=(t,rows)=>rows.join('')?`<div class="adv-s"><div class="sgh">${t}</div><div class="sgrp">${rows.join('')}</div></div>`:'',U=(v,u)=>`${v}<small> ${u}</small>`;
   const aw=win?Math.max(0,win-h.sl):0,und=Math.max(0,h.sl-num(h.sd)-num(h.sr)-num(h.sc)),tot=aw+h.sl;
   const ph=[['Éveil','var(--awake)',aw],['Paradoxal (REM)','var(--rem)',num(h.sr)],['Léger','var(--core)',num(h.sc)],['Profond','var(--deep)',num(h.sd)],['Endormi, non détaillé','color-mix(in srgb,var(--slp) 30%,var(--field))',und>5?und:0]].filter(x=>x[2]>0);
   $('#sls').innerHTML=h.sl?`${ph.length>1?`<div class="sgh">Phases</div><div class="phbar">${ph.map(([,c,m])=>`<i style="flex:${m};background:${c}"></i>`).join('')}</div><div class="sgrp">${ph.map(([l,c,m])=>`<div class="mrow"><span><i class="pdot" style="background:${c}"></i>${l}</span><b>${fmtSl(m)}<small> · ${r0(m/tot*100)} %</small></b></div>`).join('')}</div>`:''}`
@@ -355,10 +430,11 @@ function renderSleep(){const d=S.day,h=H(d),sl=sleepScore(d),x=X(d),T=num(S.set.
  const lastTxt=S.health.last?`Ton export s'arrête le ${dShort(S.health.last.slice(0,10))} à ${S.health.last.slice(11,16)}. `:'';
  const srcRows=(h.hvsrc||[]).map(([n,v,c])=>`<tr><td><b>Source : ${esc(n)}</b><br><span class="mute small">${c} mesure${c>1?'s':''} ce jour-là</span></td><td class="num"><b>${v} ms</b></td></tr>`).join('');
  const list=hl.length?`<details class="hvl"><summary>Voir les ${hl.length} mesures du ${dShort(d)} une par une</summary><p class="mute small">Compare avec l'app Santé : Parcourir → Cœur → Variabilité du rythme cardiaque → Afficher toutes les données. Chaque ligne doit s'y retrouver avec la même heure et la même valeur.</p><table><tbody>${hl.map(([m,v,i])=>`<tr${inSl(m)?' class="insl"':''}><td class="num">${hhmm(m-720)}</td><td>${inSl(m)?'<span class="mute small">pendant le sommeil</span>':''}${hsn.length>1?` <span class="mute small">${esc(hsn[i]||'')}</span>`:''}</td><td class="num"><b>${r0(v)} ms</b></td></tr>`).join('')}</tbody></table><p class="mute small">Moyenne de ces ${hl.length} mesures : <b>${r0(avg(hl.map(x=>x[1])))} ms</b>.</p></details>`:(h.hrv?'<p class="mute small">'+IMP('Réimporte ton export','Synchronise Apple Santé')+' pour voir chaque mesure de VFC une par une, avec son heure et sa source.</p>':'');
- $('#hvcmp').innerHTML=hvRows.length?`<details class="disc"><summary>Toutes les mesures de VFC<small>nuit du ${dShort(addD(d,-1))} au ${dShort(d)}</small></summary><p class="mute small">${lastTxt}Si l'app Santé affiche une autre valeur, vérifie d'abord que tu regardes la même date${S.health.last&&S.health.last.slice(0,10)<today()?IMP(' : la nuit dernière n\'est pas dans ton export, réimporte-le',' : la nuit dernière n\'est pas encore synchronisée'):''}.</p><table><tbody>${hvRows.map(([l,v,t])=>`<tr><td><b>${l}</b><br><span class="mute small">${t}</span></td><td class="num"><b>${r0(v)} ms</b></td></tr>`).join('')}${srcRows}</tbody></table>${list}<p class="mute small">RMSSD et SDNN mesurent deux choses différentes et ne se comparent pas entre eux. Choisis celle qui sert à tes scores dans Plus → Réglages.</p></details>`:'';
+ $('#hvcmp').innerHTML=hvRows.length?`<details class="disc adv-s"><summary>Toutes les mesures de VFC<small>nuit du ${dShort(addD(d,-1))} au ${dShort(d)}</small></summary><p class="mute small">${lastTxt}Si l'app Santé affiche une autre valeur, vérifie d'abord que tu regardes la même date${S.health.last&&S.health.last.slice(0,10)<today()?IMP(' : la nuit dernière n\'est pas dans ton export, réimporte-le',' : la nuit dernière n\'est pas encore synchronisée'):''}.</p><table><tbody>${hvRows.map(([l,v,t])=>`<tr><td><b>${l}</b><br><span class="mute small">${t}</span></td><td class="num"><b>${r0(v)} ms</b></td></tr>`).join('')}${srcRows}</tbody></table>${list}<p class="mute small">RMSSD et SDNN mesurent deux choses différentes et ne se comparent pas entre eux. Choisis celle qui sert à tes scores dans Plus → Réglages.</p></details>`:'';
  const nd=needOf(addD(d,1)),wa=wakeAvg(d);
  $('#slcoach').innerHTML=(sl?`${sl.s>=80?'<b>Excellente nuit.</b> ':sl.s>=60?'<b>Nuit correcte.</b> ':'<b>Nuit insuffisante.</b> '}`+(sl.c.filter(c=>c[1]<50).map(c=>c[0]==='Durée'?`Il t'a manqué ${fmtSl(Math.max(0,sl.nd.need-h.sl))} par rapport à ton besoin.`:c[0]==='Régularité'?'Ton heure de coucher s\'écarte de ton habitude : la régularité améliore la qualité du sommeil.':c[0]==='Récupératrice'?'Peu de sommeil profond et paradoxal : alcool, repas tardif ou écrans peuvent jouer.':c[0]==='Continuité'?'Nuit fragmentée par plusieurs réveils.':'').join(' '))+(has(h.dip)&&h.dip<10?` Ta FC n'a baissé que de ${h.dip} % pendant la nuit (normal : 10 à 20 %) : repas tardif, alcool, stress ou séance du soir peuvent l'expliquer.`:'')+(has(h.lat)&&h.lat>30?` Il t'a fallu ${h.lat} min pour t'endormir : au-delà de 30 min de façon répétée, avance la lumière du matin et réduis les écrans le soir.`:''):'')+
   (wa!=null?` Besoin pour la prochaine nuit : <b>${fmtSl(nd.need)}</b> (base ${fmtSl(nd.T)}${nd.debt?` + ${nd.debt} min de dette`:''}${nd.eff?` + ${nd.eff} min liés à l'effort`:''}). Pour te lever à ${hhmm(wa)}, endors-toi vers <b>${hhmm(wa-nd.need)}</b>.`:'');
+ $('#vd-hyp').innerHTML=h.sl&&(h.sd||h.sr)?`<b>${fmtSl(num(h.sd))}</b> de sommeil profond et <b>${fmtSl(num(h.sr))}</b> de paradoxal${has(h.wu)?`, ${h.wu} réveil${h.wu>1?'s':''}`:''}${h.nmin?`, FC au plus bas à ${h.nmin} bpm`:''}.`:'';
  $('#hypsub').textContent=x&&x.hy?`${x.hy.length} phases · ${x.nv?x.nv.length:0} mesures de VFC pendant la nuit`:'';
  setFig('#fhyp',{type:'hyp',segs:x&&x.hy,nh:x&&x.nh,nh0:x&&x.nh0,nv:x&&x.nv,empty:h.sl?'Le détail minute par minute est gardé pour les 35 dernières nuits importées. '+IMP('Réimporte ton export','Synchronise Apple Santé')+' pour l\'obtenir.':'Pas de nuit enregistrée pour ce jour'});
  const L=hLast()||today(),N=[];for(let i=13;i>=0;i--){const k=addD(L,-i);N.push({k,h:H(k)})}
@@ -366,6 +442,7 @@ function renderSleep(){const d=S.day,h=H(d),sl=sleepScore(d),x=X(d),T=num(S.set.
  $('#s14').innerHTML=N.map(({k,h})=>{const und=Math.max(0,num(h.sl)-num(h.sd)-num(h.sc)-num(h.sr)),ss=sleepScore(k);const tip=h.sl?[dLong(k),`Endormi ${fmtSl(h.sl)}${has(h.sb)?` (${hhmm(h.sb)} → ${hhmm(h.sw)})`:''}`,h.sd?`Profond ${fmtSl(h.sd)} · paradoxal ${fmtSl(h.sr||0)} · léger ${fmtSl(h.sc||0)}`:'',has(h.wu)?`${h.wu} réveil${h.wu>1?'s':''}`:'',nhrv(k)?`VFC ${hvLab()} ${r0(nhrv(k))} ms`:'',h.nmin?`FC min. ${h.nmin} bpm`:'',ss?`Score ${ss.s} / 100`:''].filter(Boolean).join('\n'):dLong(k)+' : pas de nuit enregistrée';return `<div class="hrow" data-tip="${esc(tip)}"><span>${dWk(k)}</span><div class="stk">${seg(num(h.sd),'var(--deep)')}${seg(num(h.sc),'var(--core)')}${seg(num(h.sr),'var(--rem)')}${seg(und,'color-mix(in srgb,var(--slp) 30%,var(--field))')}<b class="tg" style="left:${T/mx*100}%"></b></div><span class="num">${h.sl?fmtSl(h.sl):'–'}${ss?` · <b style="color:var(--slp)">${ss.s}</b>`:''}</span></div>`}).join('');
  const sl14=N.filter(x=>x.h.sl),bt=sl14.filter(x=>has(x.h.sb)).map(x=>x.h.sb),wt=sl14.filter(x=>has(x.h.sw)).map(x=>x.h.sw),debt=sl14.slice(-7).reduce((a,x)=>a+Math.max(0,T-x.h.sl),0);
  $('#sk').innerHTML=sl14.length?[`<div><b>${fmtSl(avg(sl14.map(x=>x.h.sl)))}</b><span>moyenne 14 nuits</span></div>`,`<div><b class="${debt>120?'dn':''}">${fmtSl(debt)}</b><span>dette sur 7 nuits</span></div>`,bt.length?`<div><b>${hhmm(avg(bt))} → ${hhmm(avg(wt))}</b><span>horaires moyens</span></div>`:'',bt.length>3?`<div><b>± ${r0(sdv(bt))} min</b><span>régularité du coucher</span></div>`:''].join(''):'';
+ $('#vd-s14').innerHTML=sl14.length?`Moyenne de <b>${fmtSl(avg(sl14.map(x=>x.h.sl)))}</b> par nuit${debt>=30?`, et <b>${fmtSl(debt)}</b> de dette sur 7 nuits`:', sans dette de sommeil'}.`:'';
  const opts=[['sl','Durée'],['score','Score'],['phases','Phases'],['nhv','VFC'],['nmin','FC nocturne'],['dip','Baisse de FC'],['horaires','Horaires'],['eff','Efficacité'],['wu','Réveils'],['lat','Endormissement']];
  $('#slt').innerHTML=opts.map(([k,l])=>`<button data-act="slt" data-k="${k}" class="${sleepTrend===k?'on':''}">${l}</button>`).join('');
  $('#slpr').innerHTML=[[14,'14 j'],[30,'30 j'],[90,'3 mois'],[182,'6 mois']].map(([n,l])=>`<button data-act="slper" data-n="${n}" class="${sleepPer===n?'on':''}">${l}</button>`).join('');
@@ -392,15 +469,17 @@ function renderRec(){const d=S.day,h=H(d),rc=recovery(d);
  const cb=calib(d);$('#grc').innerHTML=gauge(rc&&rc.s,rc?recLab(rc.s)[1]:'var(--rec)','Énergie',rc?recLab(rc.s)[0]:cb<7&&hKeys().length?`calibrage : ${cb} / 7 nuits`:'en attente de données',null,'%',true);
  $('#rcc').innerHTML=rc?compHTML(rc.c,'var(--rec)'):'<p class="mute small">Il faut au moins ta VFC ou ta FC nocturne de ce jour.</p>';
  $('#rccoach').innerHTML=rc?`${coach(d,rc,null,null,effTarget(rc.s)).split('Ce soir')[0]} L'énergie compare ta VFC et ta FC de la nuit à ta propre normale des 30 derniers jours : c'est ton évolution qui compte, pas la valeur brute.`:'L\'énergie s\'appuie surtout sur la VFC mesurée pendant ton sommeil : '+IMP('importe ton export Apple Santé pour l\'activer.','connecte Apple Santé pour l\'activer.')+'';
- const mo=monitor(d),bad=mo.filter(x=>x.warn);$('#mons').textContent=mo.length?(bad.length?`${bad.length} ${bad.length>1?'signaux':'signal'} à surveiller`:'tout est dans ta normale'):'';
+ const mo=monitor(d),bad=mo.filter(x=>x.warn);$('#mons').innerHTML=mo.length?(bad.length?`<b>${bad.length} ${bad.length>1?'signaux':'signal'} à surveiller</b> : ${esc(bad.map(x=>x.l.toLowerCase()).join(', '))}.`:'Tous tes signes vitaux sont dans ta normale.'):'';
  $('#mon').innerHTML=mo.length?mo.map(x=>{const lo=x.m-3*x.sd,hi=x.m+3*x.sd,P=v=>clamp((v-lo)/(hi-lo)*100,2,98);return `<div class="mr" data-tip="${esc(`${x.l}\nCette nuit : ${monFmt(x,x.v)}\nTa normale : ${x.k==='tp'?'± '+f2(1.5*x.sd)+' °C':monFmt(x,x.m-1.5*x.sd)+' à '+monFmt(x,x.m+1.5*x.sd)}\nÉcart : ${sg(Math.round(x.z*10)/10)} écart-type`)}"><div class="n">${x.l}<small>normale ${x.k==='tp'?'± '+f2(1.5*x.sd)+' °C':monFmt(x,x.m)}</small></div><div class="rng"><i class="nb" style="left:${P(x.m-1.5*x.sd)}%;right:${100-P(x.m+1.5*x.sd)}%"></i><i class="pt" style="left:${P(x.v)}%;--c:${x.col}"></i></div><div class="v">${monFmt(x,x.v)}<small><span class="st" style="--c:${x.col}">${x.lab}</span></small></div></div>`}).join(''):'<p class="mute small">Il faut au moins 7 nuits importées avant ce jour pour établir ta normale.</p>';
  const L=hLast()||today(),from=addD(L,-182),vb=nhrvBase(L),pts=[];for(let k=from;k<=L;k=addD(k,1)){if(!nhrv(k))continue;const v=[];for(let i=0;i<7;i++){const y=nhrv(addD(k,-i));if(y)v.push(y)}pts.push({x:k,y:Math.round(avg(v))})}
  const raw=[];for(let k=from;k<=L;k=addD(k,1))if(nhrv(k))raw.push({x:k,y:nhrv(k)});
  setFig('#fhv',{unit:'ms',series:[{name:'VFC de la nuit',avg:true,last:true,pts:raw,col:'var(--mind)',dots:true,r:3,w:1.5,op:.9}],empty:IMP('Réimporte ton export','Synchronise Apple Santé')+' : la VFC nocturne est calculée à partir des mesures prises pendant ton sommeil'});
  const v7=avg(raw.slice(-7).map(p=>p.y));$('#vk2').innerHTML=(hvm()==='rmssd'&&!S.health.rm&&hKeys().length?'<p class="notice" style="width:100%">Ta VFC est encore en SDNN (valeur d\'Apple). '+IMP('Réimporte ton export pour la calculer en RMSSD battement par battement.','Le RMSSD battement par battement n\'est disponible qu\'avec un fichier d\'export Apple Santé (Plus → Apple Santé).')+'</p>':'')+(v7?`<div><b>${r0(v7)} ms</b><span>${hvLab()}, moyenne des 7 dernières nuits</span></div>`+(vb?`<div><b>${r0(vb.m)} ms</b><span>ta normale (30 j)</span></div><div><b class="${v7>=vb.m?'gd':'dn'}">${sg(Math.round((v7/vb.m-1)*100))} %</b><span>écart à ta normale</span></div>`:''):'');
+ {const pc=v7&&vb?Math.round((v7/vb.m-1)*100):null;$('#vd-hv').innerHTML=pc==null?'':pc>=5?`VFC des 7 dernières nuits <b>${sg(pc)} %</b> au-dessus de ta normale : bonne récupération.`:pc<=-5?`VFC des 7 dernières nuits <b>${pc} %</b> sous ta normale : pense sommeil, stress et charge d'entraînement.`:'VFC stable, dans ta normale.'}
  const f90=addD(L,-89);setFig('#fnh',{unit:'bpm',series:[{name:'FC min. nocturne',avg:true,pts:dailyPts(d=>num(H(d).nmin)||null,f90,L),col:'var(--trn)',w:1.8,last:true},{name:'FC au repos',avg:true,pts:dailyPts(d=>num(H(d).rhr)||null,f90,L),col:'var(--hrt)',w:1.8,last:true}],empty:'Pas encore de FC nocturne'});
- const nm=winAvg('nmin',L,7),nb=base('nmin',addD(L,-7));$('#nhk').innerHTML=nm?`<div><b>${r0(nm)} bpm</b><span>FC min. nocturne, 7 j${nb?` · <span class="${nm<=nb?'gd':'dn'}">${sg(Math.round(nm-nb))}</span>`:''}</span></div>`:'';
- const x=X(d),sv=num(h.stz);$('#stk').innerHTML=has(h.stz)?`<div><b style="color:var(--str)">${sv}</b><span>stress du ${dShort(d)} : ${stressLab(sv).toLowerCase()}</span></div><div><b>${r0(winAvg('stz',d,7)||0)}</b><span>moyenne 7 j</span></div>`:'<p class="mute small">'+(hKeys().length?'Pas encore de stress estimé pour ce jour : il se calcule au fil de la journée, à partir de ta fréquence cardiaque.':IMP('Le stress estimé apparaît après un import Apple Santé.','Le stress estimé apparaît après la synchro Apple Santé.'))+'</p>';
+ const nm=winAvg('nmin',L,7),nb=base('nmin',addD(L,-7));{const df=nm&&nb?nm-nb:null;$('#vd-nh').innerHTML=df==null?'':Math.abs(df)<1.5?'FC nocturne stable sur 7 jours.':df<0?`En baisse de <b>${r0(-df)} bpm</b> sur 7 jours : bon signe de récupération.`:`En hausse de <b>${r0(df)} bpm</b> sur 7 jours : fatigue, alcool ou maladie possibles.`}
+ $('#nhk').innerHTML=nm?`<div><b>${r0(nm)} bpm</b><span>FC min. nocturne, 7 j${nb?` · <span class="${nm<=nb?'gd':'dn'}">${sg(Math.round(nm-nb))}</span>`:''}</span></div>`:'';
+ const x=X(d),sv=num(h.stz);$('#vd-st').innerHTML=has(h.stz)?`<b>${sv<10?'Journée calme':sv<20?'Stress modéré':sv<35?'Journée chargée':'Journée très tendue'}</b> : ${sv} / 100 ce jour, ${r0(winAvg('stz',d,7)||0)} en moyenne sur 7 jours.`:'';$('#stk').innerHTML=has(h.stz)?`<div><b style="color:var(--str)">${sv}</b><span>stress du ${dShort(d)} : ${stressLab(sv).toLowerCase()}</span></div><div><b>${r0(winAvg('stz',d,7)||0)}</b><span>moyenne 7 j</span></div>`:'<p class="mute small">'+(hKeys().length?'Pas encore de stress estimé pour ce jour : il se calcule au fil de la journée, à partir de ta fréquence cardiaque.':IMP('Le stress estimé apparaît après un import Apple Santé.','Le stress estimé apparaît après la synchro Apple Santé.'))+'</p>';
  $('#sth').innerHTML=x&&x.sh?`<div style="display:grid;grid-template-columns:repeat(24,minmax(0,1fr));gap:2px;align-items:end;height:80px">${x.sh.map((v,i)=>`<i data-tip="${esc(`${i}h – ${i+1}h : stress ${v} / 100`)}" style="display:block;height:${Math.max(4,v)}%;border-radius:3px;background:${v>=50?'var(--str)':v>0?'color-mix(in srgb,var(--str) 45%,var(--field))':'var(--field)'}"></i>`).join('')}</div><div style="display:flex;justify-content:space-between" class="mute small"><span>0h</span><span>6h</span><span>12h</span><span>18h</span><span>24h</span></div>`:'';
  const vk=(key,lab,f,dev)=>{const v=vals(key,L,7,0);if(!v.length)return'';const a=avg(v),b=base(key,addD(L,-7),30);return `<div><b>${dev&&b!=null?sg(Math.round((a-b)*100)/100)+' °C':f(a)}</b><span>${lab}${dev?' vs normale':''}, 7 j</span></div>`};
  $('#vtk').innerHTML=[vk('o2','SpO2',v=>fx(v)+' %'),vk('rr','respirations / min',fx),vk('tp','température poignet',fx,true),vk('hr','FC moyenne',v=>r0(v)+' bpm'),vk('whr','FC en marchant',v=>r0(v)+' bpm'),vk('hrr','récupération à 1 min',v=>r0(v)+' bpm')].join('')||'<p class="mute small">'+IMP('Réimporte ton export Apple Santé','Synchronise Apple Santé')+' pour ajouter ces mesures.</p>';
@@ -409,16 +488,18 @@ function renderRec(){const d=S.day,h=H(d),rc=recovery(d);
 
 /* ---------- effort ---------- */
 function renderEffort(){renderSessCard();const d=S.day,h=H(d),rc=recovery(d),ef=effortOf(d),tg=effTarget(rc&&rc.s),T=dayTrain(d);
- $('#gef').innerHTML=gauge(ef,'var(--eff)','Dépense du jour',tg?`conseillée ${tg[0]}–${tg[1]} selon ton énergie`:'',null,'',true);
+ $('#gef').innerHTML=gauge(tg&&ef==null?0:ef,'var(--eff)','Dépense du jour',tg?`zone conseillée ${tg[0]}–${tg[1]} selon ton énergie`:'',null,'/100',true,tg);
  const Z=[0,0,0,0,0];for(const w of h.wk||[])(w.z||[]).forEach((m,i)=>Z[i]+=m);const zt=Z.reduce((a,b)=>a+b,0);
  $('#dz').innerHTML=zt?zbar(Z)+`<div class="comp" style="margin-top:10px">${Z.map((m,i)=>`<div class="cr"><span>${ZN[i]}</span><div class="bar" style="--c:${ZC[i]}"><i style="width:${m/zt*100}%"></i></div><span class="num">${m}′</span></div>`).join('')}</div>`:'<p class="mute small">Pas d\'entraînement enregistré par la montre ce jour.</p>';
  const ac=acwr(d),hmx=num(S.health.hrmax);
- $('#efs').innerHTML=[`<div class="stat"><b>${r0(loadOf(d))}</b><span>charge cardiaque (TRIMP)</span></div>`,T.min?`<div class="stat"><b>${r0(T.min)} <small>min</small></b><span>d'entraînement</span></div>`:'',h.ac?`<div class="stat"><b>${r0(h.ac)} <small>kcal</small></b><span>actives</span></div>`:'',ac.r!=null?`<div class="stat"><b class="${ac.r>1.5?'dn':''}">${f2(ac.r)}</b><span>ratio de charge 7/28 j</span></div>`:'',hmx?`<div class="stat"><b>${hmx} <small>bpm</small></b><span>FC max. (déduite)</span></div>`:''].join('');
- $('#efcoach').innerHTML=(ef==null?'Aucune dépense mesurée ce jour.':ef<tg?.[0]?`Dépense de ${ef}, sous la zone conseillée : tu as de la marge pour une activité.`:tg&&ef>tg[1]?`Dépense de ${ef}, au-dessus de ce que ton énergie conseillait : prévois du sommeil en plus ce soir.`:`Dépense de ${ef}${tg?', dans la zone conseillée':''}.`)+(actsHTML(d,T)?'':'')+` La dépense est calculée à partir de ta FC minute par minute (méthode TRIMP), sur une échelle de 0 à 100 qui sature : passer de 80 à 90 demande beaucoup plus que de 20 à 30.`;
+ $('#efs').innerHTML=[`<div class="stat adv-s"><b>${r0(loadOf(d))}</b><span>charge cardiaque (TRIMP)</span></div>`,T.min?`<div class="stat"><b>${r0(T.min)} <small>min</small></b><span>d'entraînement</span></div>`:'',h.ac?`<div class="stat"><b>${r0(h.ac)} <small>kcal</small></b><span>actives</span></div>`:'',ac.r!=null?`<div class="stat adv-s"><b class="${ac.r>1.5?'dn':''}">${f2(ac.r)}</b><span>ratio de charge 7/28 j</span></div>`:'',hmx?`<div class="stat adv-s"><b>${hmx} <small>bpm</small></b><span>FC max. (déduite)</span></div>`:''].join('');
+ $('#efcoach').classList.add('adv-s');$('#efcoach').innerHTML=(ef==null?'Aucune dépense mesurée ce jour.':ef<tg?.[0]?`Dépense de ${ef}, sous la zone conseillée : tu as de la marge pour une activité.`:tg&&ef>tg[1]?`Dépense de ${ef}, au-dessus de ce que ton énergie conseillait : prévois du sommeil en plus ce soir.`:`Dépense de ${ef}${tg?', dans la zone conseillée':''}.`)+(actsHTML(d,T)?'':'')+` La dépense est calculée à partir de ta FC minute par minute (méthode TRIMP), sur une échelle de 0 à 100 qui sature : passer de 80 à 90 demande beaucoup plus que de 20 à 30.`;
  const e=today(),fr=addD(e,-29),E=[],R=[];for(let k=fr;k<=e;k=addD(k,1)){const a=effortOf(k);if(a!=null)E.push({x:k,y:a});const r=recovery(k);if(r)R.push({x:k,y:r.s})}
+ {const ae=avg(E.map(p=>p.y)),ar=avg(R.map(p=>p.y));$('#vd-fer').innerHTML=ae!=null?`Sur 30 jours : dépense moyenne de <b>${r0(ae)}</b>${ar!=null?`, énergie moyenne de <b>${r0(ar)} %</b>`:''}.`:''}
  setFig('#fer',{series:[{name:'Dépense',avg:true,pts:E,col:'var(--eff)',bars:true,op:.75},{name:'Énergie',avg:true,df:v=>r0(v)+' pts',tf:v=>r0(v)+' %',pts:R,col:'var(--rec)',last:true}],ymin:0,ymax:100,empty:'Pas encore de données'});
   const Zs=zones28(),zt2=Zs.reduce((a,b)=>a+b,0);if(zt2){const pc=Zs.map(m=>m/zt2*100),low=pc[0]+pc[1],mid=pc[2],hi=pc[3]+pc[4];
   $('#z28').innerHTML=zbar(Zs)+`<div class="comp" style="margin-top:12px">${Zs.map((m,i)=>`<div class="cr"><span>${ZN[i]}</span><div class="bar" style="--c:${ZC[i]}"><i style="width:${pc[i]}%"></i></div><span class="num">${r0(pc[i])} %</span><small>${r0(m)} min sur 28 jours</small></div>`).join('')}</div><div class="coach">${low>=70&&hi>=10?'<b>Répartition polarisée</b> : surtout de la basse intensité et un peu de haute intensité, une répartition que la recherche associe à de bons progrès en endurance et en VO2 max.':mid>=35?'<b>Beaucoup de temps en zone 3</b> (tempo) : c\'est fatigant, et la plupart des programmes d\'endurance conseillent plutôt de rendre les sorties faciles vraiment faciles (zone 2) et les séances dures vraiment dures.':hi<5?'<b>Presque pas de haute intensité</b> : ajoute une séance de fractionné par semaine pour faire progresser ta VO2 max.':low<60?'<b>Peu de basse intensité</b> : ajoute du volume facile en zone 2 (tu peux parler en faisant l\'effort) pour construire ta base aérobie.':'Répartition équilibrée de tes intensités.'} Zones calculées avec ta FC max. de ${S.health.hrmax||'–'} bpm.</div>`}else $('#z28').innerHTML='<p class="mute small">Pas d\'entraînement avec FC enregistré par la montre sur 28 jours.</p>';
+ {const co=$('#z28 .coach');$('#vd-z28').innerHTML=co?co.innerHTML:'';if(co)co.remove()}
  renderLoad();renderMG();renderHeat();renderForce();renderRecs();renderHist()}
 function lastFor(name,excl){const k=norm(name);if(!k)return null;for(const s of done()){if(s.id===excl||s.kind==='sport')continue;const e=(s.ex||[]).find(e=>norm(e.n)===k&&e.sets.some(x=>num(x.r)>0));if(e)return{s,e}}return null}
 function suggest(name,excl){const L=lastFor(name,excl);if(!L)return null;const sets=L.e.sets.filter(x=>num(x.r)>0);const top=Math.max(...sets.map(x=>num(x.w)));const up=top>0&&sets.filter(x=>num(x.w)===top).every(x=>num(x.r)>=S.set.rmax);return{L,sets,top,up,w:up?top+num(S.set.inc):top}}
@@ -465,7 +546,7 @@ function finish(){const c=S.cur;clearTimeout(sv);
  const o={id:c.id,name:(c.name||'').trim()||'Séance',date:c.date||today(),ex,t:c.t||Date.now(),dur,rpe:num(c.rpe)||''};
  upsert(o);put.sess(o);S.cur=null;stopTimer();renderEditor();closeSheet();renderSoft();buzz('ok');
  const prs=ex.filter(e=>{const b=bestE1(e.n,o.id);return b&&Math.max(...e.sets.map(x=>e1(x.w,x.r)))>b}).map(e=>e.n);
- toast('Séance enregistrée'+(dur?` (${dur} min)`:'')+(prs.length?` · record sur ${prs.join(', ')}`:''))}
+ if(prs.length)celebrate(prs.length>1?'Nouveaux records':'Nouveau record',prs.join(', '));else toast('Séance enregistrée'+(dur?` (${dur} min)`:'')+'. Bien joué.')}
 function discard(){const c=S.cur;clearTimeout(sv);S.cur=null;stopTimer();S.sessions=S.sessions.filter(s=>s.id!==c.id);put.delSess(c.id);renderEditor();closeSheet();renderSoft();
  toast('Séance abandonnée',()=>{if(S.cur)return toast("Termine d'abord la séance en cours");S.cur=c;saveCur();renderEditor();renderSoft()})}
 function editSess(id){if(S.cur)return toast("Termine d'abord la séance en cours");const s=S.sessions.find(s=>s.id===id);if(!s||s.kind==='sport')return;
@@ -479,12 +560,15 @@ function tick(){const r=Math.round((tEnd-Date.now())/1000),el=$('#tval');if(r<=0
 function stopTimer(){clearInterval(tInt);$('#timer').hidden=true;document.body.classList.remove('timing')}
 function renderMG(){const from=addD(today(),-6),cnt={};MG.forEach(([n])=>cnt[n]=0);let other=0;
  for(const s of done())if(s.kind!=='sport'&&s.date>=from)for(const e of s.ex||[]){const p=plain(e.n),k=e.sets.filter(x=>num(x.r)>0).length;let hit=false;for(const [n,re] of MG)if(re.test(p)){cnt[n]+=k;hit=true}if(!hit)other+=k}
- const mx=25;$('#mg').innerHTML=MG.map(([n])=>`<div class="hrow" data-tip="${esc(`${n} : ${cnt[n]} séries effectives sur 7 jours\n${cnt[n]<10?'sous':cnt[n]>20?'au-dessus de':'dans'} la zone 10 à 20 séries`)}"><span>${n}</span><div class="bar" style="--c:${cnt[n]>=10?'var(--trn)':'color-mix(in srgb,var(--trn) 45%,var(--field))'}"><b class="band" style="left:${10/mx*100}%;width:${10/mx*100}%"></b><i style="width:${Math.min(100,cnt[n]/mx*100)}%"></i></div><span class="num">${cnt[n]} série${cnt[n]>1?'s':''}</span></div>`).join('')+(other?`<p class="mute small">${other} séries sur des exercices non classés.</p>`:'')}
+ const mx=25;$('#mg').innerHTML=MG.map(([n])=>`<div class="hrow" data-tip="${esc(`${n} : ${cnt[n]} séries effectives sur 7 jours\n${cnt[n]<10?'sous':cnt[n]>20?'au-dessus de':'dans'} la zone 10 à 20 séries`)}"><span>${n}</span><div class="bar" style="--c:${cnt[n]>=10?'var(--trn)':'color-mix(in srgb,var(--trn) 45%,var(--field))'}"><b class="band" style="left:${10/mx*100}%;width:${10/mx*100}%"></b><i style="width:${Math.min(100,cnt[n]/mx*100)}%"></i></div><span class="num">${cnt[n]} série${cnt[n]>1?'s':''}</span></div>`).join('')+(other?`<p class="mute small">${other} séries sur des exercices non classés.</p>`:'');
+ const tot=Object.values(cnt).reduce((a,b)=>a+b,0)+other,top=MG.map(([n])=>n).filter(n=>cnt[n]>0).sort((a,b)=>cnt[b]-cnt[a]),zero=MG.map(([n])=>n).filter(n=>!cnt[n]);
+ $('#vd-mg').innerHTML=tot?`<b>${tot} séries</b> cette semaine, surtout ${esc(top.slice(0,2).join(' et ').toLowerCase())}${zero.length&&zero.length<MG.length?`. Rien encore pour ${esc(zero.slice(0,3).join(', ').toLowerCase())}${zero.length>3?'…':'.'}`:'.'}`:'Pas encore de séance de muscu cette semaine.'}
 function renderHeat(){const end=today(),wd=(new Date(end+'T12:00').getDay()+6)%7,start=addD(end,-wd-15*7),cells=[];let act28=0;
  for(let i=0;i<16*7;i++){const k=addD(start,i);if(k>end){cells.push('<i class="c f"></i>');continue}const t=dayTrain(k),m=t.mu.length>0||t.ap.some(isStr),s=t.sp.length+t.ap.filter(w=>!isStr(w)).length>0;if((m||s)&&k>addD(end,-28))act28++;const lab=[...t.mu.map(x=>x.name),...t.sp.map(x=>x.type+' '+x.min+' min'),...t.ap.map(w=>(WT[w.ty]||w.ty)+' '+w.min+' min')];const ef=effortOf(k);cells.push(`<i class="c ${m&&s?'b':m?'m':s?'s':''}" data-tip="${esc(dLong(k)+'\n'+(lab.join('\n')||'Repos')+(ef!=null?'\nEffort '+ef:''))}"></i>`)}
- $('#heat').innerHTML=`<div class="hm">${cells.join('')}</div>`;$('#heatsum').textContent=`${act28} jours actifs sur les 28 derniers. Une colonne par semaine, du lundi au dimanche.`}
+ $('#heat').innerHTML=`<div class="hm">${cells.join('')}</div>`;$('#vd-heat').innerHTML=`<b>${act28} jour${act28>1?'s':''} actif${act28>1?'s':''}</b> sur les 28 derniers${act28>=12?' : belle régularité.':act28>=6?'.':' : un peu de mouvement en plus ferait du bien.'}`}
 function renderLoad(){const e=today(),from=addD(e,-120),A=[],C=[];for(let d=from;d<=e;d=addD(d,1)){const x=acwr(d);A.push({x:d,y:Math.round(x.a)});C.push({x:d,y:Math.round(x.c)})}
- const x=acwr(e);$('#lk').innerHTML=`<div><b>${r0(x.a)}</b><span>charge des 7 derniers jours</span></div><div><b>${r0(x.c)}</b><span>moyenne hebdo sur 28 jours</span></div>`+(x.r!=null?`<div><b class="${x.r>1.5?'dn':x.r>=0.8&&x.r<=1.3?'gd':''}">${f2(x.r)}</b><span>ratio aigu / chronique</span></div>`:'')+(()=>{const mo=monotony(e);return mo?`<div><b class="${mo.mono>2?'dn':''}">${f2(mo.mono)}</b><span>monotonie (risque au-delà de 2)</span></div>`:''})();
+ const x=acwr(e),mo0=monotony(e);$('#vd-ld').innerHTML=x.r==null?'Il faut 3 semaines de suivi pour comparer ta charge à ton habitude.':x.r>1.5?'<b>Hausse brutale de la charge</b> : lève le pied quelques jours pour laisser ton corps suivre.':x.r>1.3?'<b>Charge en hausse</b> : surveille ton énergie et ton sommeil.':x.r>=0.8?'<b>Charge stable</b> : tu progresses sans à-coup.'+(mo0&&mo0.mono>2?' Varie davantage les intensités d\'un jour à l\'autre.':''):'<b>Charge en baisse</b> : tu as de la marge pour augmenter progressivement.';
+ $('#lk').innerHTML=`<div><b>${r0(x.a)}</b><span>charge des 7 derniers jours</span></div><div><b>${r0(x.c)}</b><span>moyenne hebdo sur 28 jours</span></div>`+(x.r!=null?`<div><b class="${x.r>1.5?'dn':x.r>=0.8&&x.r<=1.3?'gd':''}">${f2(x.r)}</b><span>ratio aigu / chronique</span></div>`:'')+(()=>{const mo=monotony(e);return mo?`<div><b class="${mo.mono>2?'dn':''}">${f2(mo.mono)}</b><span>monotonie (risque au-delà de 2)</span></div>`:''})();
  setFig('#fl',{series:[{name:'Moyenne hebdo 28 j',pts:C,col:'var(--mute)',w:2,dash:true},{name:'Charge 7 j',pts:A,col:'var(--eff)',last:true}],zero:true,fmt:r0,empty:"Pas encore de charge mesurée"})}
 function exNames(){const m=new Map();for(const s of done())for(const e of s.ex||[]){const k=norm(e.n);if(!k)continue;if(!m.has(k))m.set(k,{n:e.n,c:0});m.get(k).c++}return[...m.values()].sort((a,b)=>b.c-a.c)}
 function renderForce(){const names=exNames(),sel=$('#pex'),cv=sel.value;
@@ -495,9 +579,11 @@ function renderForce(){const names=exNames(),sel=$('#pex'),cv=sel.value;
  const bodyw=rows.length&&rows.every(r=>!r.v),pts=rows.map(r=>({x:r.d,y:bodyw?num(r.x.r):Math.round(r.v*10)/10})).filter(p=>p.y>0),u=bodyw?' reps':' kg';
  setFig('#f1',{unit:u.trim(),series:[{name:bodyw?'Reps max':'1RM estimé',pts,col:'var(--trn)',dots:pts.length<=40,last:true}],empty:'Encore une séance sur cet exercice et la courbe apparaît'});
  $('#pk').innerHTML=pts.length?`<div><b>${fx(pts[pts.length-1].y)}${u}</b><span>${bodyw?'reps max':'1RM estimé'}, dernière séance</span></div><div><b>${fx(Math.max(...pts.map(p=>p.y)))}${u}</b><span>meilleur</span></div><div><b class="${pts[pts.length-1].y>=pts[0].y?'up':''}">${sg(pts[pts.length-1].y-pts[0].y)}${u}</b><span>depuis le ${dShort(pts[0].x)}</span></div>`:'';
+ $('#vd-f1').innerHTML=pts.length>=2?`${esc(sel.value)} : <b>${sg(Math.round((pts[pts.length-1].y-pts[0].y)*10)/10)}${u}</b> ${bodyw?'':'d\'1RM estimé '}depuis le ${dShort(pts[0].x)}.`:'';
  $('#ptab').innerHTML=rows.length?`<table><thead><tr><th>Date</th><th>Meilleure série</th><th class="num">1RM est.</th></tr></thead><tbody>${rows.slice(-6).reverse().map(r=>`<tr><td>${dShort(r.d)}</td><td>${esc(setTxt(r.x))}</td><td class="num">${r.v?fx(r.v)+' kg':'–'}</td></tr>`).join('')}</tbody></table>`:''}
 function renderRecs(){const m=new Map();for(const s of done())if(s.kind!=='sport')for(const e of s.ex||[]){const k=norm(e.n);if(!k)continue;const o=m.get(k)||{n:e.n,e1:0,e1d:'',hw:0,hwd:'',hws:null,mr:0};for(const x of e.sets){const v=e1(num(x.w),num(x.r));if(v>o.e1){o.e1=v;o.e1d=s.date}if(num(x.w)>o.hw||(num(x.w)===o.hw&&num(x.r)>num(o.hws&&o.hws.r))){o.hw=num(x.w);o.hwd=s.date;o.hws=x}o.mr=Math.max(o.mr,num(x.r))}m.set(k,o)}
- const L=[...m.values()].sort((a,b)=>b.e1-a.e1);
+ const L=[...m.values()].sort((a,b)=>b.e1-a.e1),lr=L.filter(o=>o.e1d).sort((a,b)=>b.e1d.localeCompare(a.e1d))[0];
+ $('#vd-rec').innerHTML=lr?`Dernier record : <b>${esc(lr.n)}</b>, ${fx(lr.e1)} kg estimés le ${dShort(lr.e1d)}.`:'';
  $('#recs').innerHTML=L.length?`<table><thead><tr><th>Exercice</th><th>Série la plus lourde</th><th class="num">Meilleur 1RM est.</th><th class="num">Date</th></tr></thead><tbody>${L.map(o=>`<tr><td>${esc(o.n)}</td><td>${o.hws?esc(setTxt(o.hws)):'–'}</td><td class="num">${o.e1?fx(o.e1)+' kg':o.mr+' reps'}</td><td class="num">${dShort(o.e1d||o.hwd)}</td></tr>`).join('')}</tbody></table>${L.length>6?`<button type="button" class="btn small mall" data-act="showall" data-t="#recs">Afficher les ${L.length} exercices</button>`:''}`:'<p class="mute empty">Tes records apparaîtront après tes premières séances.</p>'}
 function renderHist(){const open=new Set($$('#hist details[open]').map(d=>d.dataset.id)),E=[];
  const dates=new Set(done().map(s=>s.date));for(const d of hKeys().slice(-120))if((H(d).wk||[]).length)dates.add(d);
@@ -541,18 +627,20 @@ function addFood(f,m){if(!f)return;const d=S.day,o={n:f.n,p:num(f.p),k:Math.roun
 function delFood(k){const d=S.day,D=getDay(d),x=D.items.splice(k,1)[0];put.day(d);renderNutri();toast('Aliment retiré',()=>{getDay(d).items.splice(k,0,x);put.day(d);renderNutri()})}
 
 /* ---------- tendances ---------- */
- function renderMarkers(){const m=markers();$('#mkrs').innerHTML=m.length?m.map(x=>`<div class="mkr"><div class="t2"><span>${x.t}</span><span class="st" style="--c:${x.st[1]}">${x.st[0]}</span></div><b>${esc(x.v)}</b><p>${x.p}</p></div>`).join('')+(m.length>4?`<button type="button" class="btn mall" data-act="showall" data-t="#mkrs">Afficher les ${m.length} repères</button>`:''):'<p class="mute small">'+IMP('Importe Apple Santé et note ton poids pour obtenir ton bilan.','Connecte Apple Santé et note ton poids pour obtenir ton bilan.')+'</p>';
+ function renderMarkers(){const m=markers(),gm=m.filter(x=>x.st[1]==='var(--rec)'),wm=m.filter(x=>x.st[1]==='var(--bad)'||x.st[0]==='À améliorer');$('#vd-mk').innerHTML=m.length?`<b>${gm.length} repère${gm.length>1?'s':''} sur ${m.length}</b> au vert${wm.length?`. À travailler : ${esc(wm.slice(0,2).map(x=>x.t.toLowerCase()).join(', '))}`:''}.`:'';$('#mkrs').innerHTML=m.length?m.map(x=>`<div class="mkr"><div class="t2"><span>${x.t}</span><span class="st" style="--c:${x.st[1]}">${x.st[0]}</span></div><b>${esc(x.v)}</b><p>${x.p}</p></div>`).join('')+(m.length>4?`<button type="button" class="btn mall" data-act="showall" data-t="#mkrs">Afficher les ${m.length} repères</button>`:''):'<p class="mute small">'+IMP('Importe Apple Santé et note ton poids pour obtenir ton bilan.','Connecte Apple Santé et note ton poids pour obtenir ton bilan.')+'</p>';
  const R14=k=>{let n=0;for(let i=0;i<14;i++)if(k(addD(today(),-i)))n++;return n};let streak=0;for(let i=0;i<400;i++){const d=addD(today(),-i);const j=J(d);if(j.mood||j.energy||j.stress||j.sore)streak++;else if(i>0)break}
  const W=weights(),L=hLast(),rs=[['Nuits suivies',R14(d=>H(d).sl),'montre portée la nuit'],['Repas notés',R14(d=>dayIt(d).length),'jours avec nutrition'],['Check-ins',R14(d=>J(d).mood||J(d).energy),'jours remplis'],['Pesées',R14(d=>W[d]),'jours pesés']];
  $('#rig').innerHTML=rs.map(([t,n,s])=>`<div class="stat"><b style="color:${n>=11?'var(--rec)':n>=6?'var(--str)':'var(--bad)'}">${n} <small>/ 14</small></b><span>${t} · ${s}</span></div>`).join('')+`<div class="stat"><b>${streak} <small>j</small></b><span>série de check-ins en cours</span></div>`+(L?`<div class="stat"><b>${dShort(L)}</b><span>dernières données Apple${today()>addD(L,3)?IMP(' : pense à réimporter',' : synchronise Apple Santé'):''}</span></div>`:'')}
-function renderTrends(){renderMarkers();const e=today(),s0=addD(e,-6),p0=addD(e,-13),p1=addD(e,-7);$('#wkr').textContent=`du ${dShort(s0)} au ${dShort(e)}, vs les 7 jours d'avant`;
+function renderTrends(){renderMarkers();renderRecap();const e=today(),s0=addD(e,-6),p0=addD(e,-13),p1=addD(e,-7);$('#wkr').textContent=`du ${dShort(s0)} au ${dShort(e)}, vs les 7 jours d'avant`;
  const rng=(a,b)=>{const r=[];for(let d=a;d<=b;d=addD(d,1))r.push(d);return r},A=rng(s0,e),B=rng(p0,p1);
  const hv=(ds,k)=>avg(ds.map(d=>num(H(d)[k])).filter(x=>x>0)),sc=(ds,f)=>avg(ds.map(f).filter(x=>x!=null));
  const nut=(ds,f)=>avg(ds.filter(d=>dayIt(d).length).map(f));
  const tr=ds=>{let n=0,m=0,t=0;for(const d of ds){const x=dayTrain(d);n+=x.mu.length+x.sp.length+x.ap.length;m+=x.min;for(const s of x.mu)t+=(s.ex||[]).reduce((a,y)=>a+y.sets.reduce((b,z)=>b+num(z.w)*num(z.r),0),0)}return{n,m,t}};
  const W=weights(),jm=(ds,k)=>avg(ds.map(d=>J(d)[k]).filter(Boolean)),ta=tr(A),tb=tr(B);
  const rows=[['Énergie',sc(A,d=>recovery(d)?.s),sc(B,d=>recovery(d)?.s),v=>r0(v)+' %',1,3],['Dépense moyenne',sc(A,effortOf),sc(B,effortOf),r0,0,3],['Score de sommeil',sc(A,d=>sleepScore(d)?.s),sc(B,d=>sleepScore(d)?.s),r0,1,3],['Sommeil moyen',hv(A,'sl'),hv(B,'sl'),fmtSl,1,15],['VFC nocturne',avg(A.map(nhrv).filter(Boolean)),avg(B.map(nhrv).filter(Boolean)),v=>r0(v)+' ms',1,2],['FC au repos',hv(A,'rhr'),hv(B,'rhr'),v=>r0(v)+' bpm',-1,1],['Stress estimé',hv(A,'stz'),hv(B,'stz'),r0,-1,5],['Pas par jour',hv(A,'st'),hv(B,'st'),r0,1,500],['Séances',ta.n,tb.n,r0,1,1],['Temps d\'entraînement',ta.m,tb.m,v=>r0(v)+' min',1,20],['Tonnage muscu',ta.t,tb.t,v=>fx(v/1000)+' t',1,500],['Protéines / jour',nut(A,d=>sum(dayIt(d),'p')),nut(B,d=>sum(dayIt(d),'p')),v=>r0(v)+' g',1,5],['Calories / jour',nut(A,d=>dayIt(d).reduce((a,x)=>a+kcalOf(x),0)),nut(B,d=>dayIt(d).reduce((a,x)=>a+kcalOf(x),0)),r0,0,100],['Poids (moy. 7 j)',wAvg(W,e),wAvg(W,p1),v=>fx(v)+' kg',0,.2],['Humeur',jm(A,'mood'),jm(B,'mood'),v=>fx(v)+' / 5',1,.3],['Énergie',jm(A,'energy'),jm(B,'energy'),v=>fx(v)+' / 5',1,.3],['Stress ressenti',jm(A,'stress'),jm(B,'stress'),v=>fx(v)+' / 5',-1,.3]];
- $('#week').innerHTML=`<table><thead><tr><th>Mesure</th><th class="num">Cette semaine</th><th class="num">Semaine d'avant</th><th class="num">Évolution</th></tr></thead><tbody>${rows.filter(r=>r[1]!=null||r[2]!=null).map(([l,a,b,f,dir,th])=>{let ev='–';if(a!=null&&b!=null){const df=a-b;ev=Math.abs(df)<th?'stable':`<span class="${dir===0?'':(df*dir>0?'gd':'dn')}">${df>0?'▲':'▼'} ${f(Math.abs(df))}</span>`}return `<tr><td>${l}</td><td class="num" data-l="Cette semaine">${a!=null?f(a):'–'}</td><td class="num" data-l="Semaine d'avant">${b!=null?f(b):'–'}</td><td class="num" data-l="Évolution">${ev}</td></tr>`}).join('')}</tbody></table>`;
+ $('#week').innerHTML=`<table><thead><tr><th>Mesure</th><th class="num">Cette semaine</th><th class="num">Semaine d'avant</th><th class="num">Évolution</th></tr></thead><tbody>${rows.map((r,i)=>[...r,[0,1,2,3,7,8,9,13].includes(i)]).filter(r=>r[1]!=null||r[2]!=null).map(([l,a,b,f,dir,th,ess])=>{let ev='–';if(a!=null&&b!=null){const df=a-b;ev=Math.abs(df)<th?'stable':`<span class="${dir===0?'':(df*dir>0?'gd':'dn')}">${df>0?'▲':'▼'} ${f(Math.abs(df))}</span>`}return `<tr${ess?'':' class="adv-s"'}><td>${l}</td><td class="num" data-l="Cette semaine">${a!=null?f(a):'–'}</td><td class="num" data-l="Semaine d'avant">${b!=null?f(b):'–'}</td><td class="num" data-l="Évolution">${ev}</td></tr>`}).join('')}</tbody></table>`;
+ {const R=rows.filter(r=>r[1]!=null&&r[2]!=null&&r[4]!==0&&Math.abs(r[1]-r[2])>=r[5]),up=R.filter(r=>(r[1]-r[2])*r[4]>0).map(r=>r[0].toLowerCase()),dn=R.filter(r=>(r[1]-r[2])*r[4]<0).map(r=>r[0].toLowerCase()),uq=a=>[...new Set(a)];
+  $('#vd-wk').innerHTML=R.length?`Par rapport à la semaine d'avant : <b>${up.length} en progrès</b>${up.length?` (${esc(uq(up).slice(0,3).join(', '))})`:''}${dn.length?`, ${dn.length} en recul (${esc(uq(dn).slice(0,3).join(', '))})`:''}.`:'Pas encore deux semaines à comparer.'}
  const ins=insights();$('#insights').innerHTML=ins.length?ins.map(x=>`<li style="--c:${x.c}"><div><b>${x.t}</b><span>${x.s}</span></div></li>`).join(''):'<li style="--c:var(--line)"><div><b>Pas encore assez de données croisées.</b><span>'+IMP('Importe Apple Santé et remplis ton check-in quelques semaines.','Connecte Apple Santé et remplis ton check-in quelques semaines.')+'</span></div></li>';
  const fr=addD(e,-60),js=k=>{const o=[];for(let d=fr;d<=e;d=addD(d,1)){const v=[];for(let i=0;i<7;i++){const x=J(addD(d,-i))[k];if(x)v.push(x)}if(J(d)[k]&&v.length)o.push({x:d,y:Math.round(avg(v)*100)/100})}return o};
  setFig('#fj',{tf:v=>fx(v)+' / 5',series:[{name:'Humeur',avg:true,pts:js('mood'),col:'var(--mind)',last:true},{name:'Énergie',avg:true,pts:js('energy'),col:'var(--nut)',last:true},{name:'Stress ressenti',pts:js('stress'),col:'var(--bad)',last:true}],ymin:1,ymax:5,empty:'Remplis ton check-in pour voir cette courbe'});
@@ -587,7 +675,9 @@ function insights(){const e=hLast()||today(),from=addD(e,-120),out=[],T=num(S.se
  return out}
 function renderBody(){const W=weights(),wk=Object.keys(W).sort(),L=hLast()||today(),gw=num(S.set.goalw);
  setFig('#fw',{unit:'kg',series:[{name:'Pesée',pts:wk.map(x=>({x,y:W[x]})),col:'var(--bod)',dots:true,line:false,r:2.5,op:.4},{name:'Moyenne 7 j',pts:wk.map(x=>({x,y:Math.round(wAvg(W,x)*10)/10})),col:'var(--bod)',last:true}],hline:gw||null,fmt:v=>fx(v),empty:''+IMP('Note ton poids (Nutrition) ou importe Apple Santé','Note ton poids (Nutrition) ou connecte Apple Santé')+''});
+ $('#vd-bw').innerHTML='';
  if(wk.length){const ld=wk[wk.length-1],a=wAvg(W,ld),b=wAvg(W,addD(ld,-28)),c=wAvg(W,addD(ld,-84)),rate=b?(a-b)/4:null;let proj='';
+  if(b)$('#vd-bw').innerHTML=Math.abs(a-b)<0.3?`<b>Poids stable</b> sur 4 semaines, autour de ${fx(a)} kg.`:`${a<b?'En baisse':'En hausse'} de <b>${fx(Math.abs(a-b))} kg</b> en 4 semaines (moyenne sur 7 jours : ${fx(a)} kg).`;
   if(gw&&rate){const left=gw-a;if(Math.abs(left)<0.3)proj=`<div><b class="gd">Atteint</b><span>objectif ${fx(gw)} kg</span></div>`;else if(left*rate>0){const w=left/rate;proj=`<div><b>${w>104?'> 2 ans':dShort(addD(ld,Math.round(w*7)))}</b><span>objectif ${fx(gw)} kg au rythme actuel</span></div>`}else proj=`<div><b class="dn">${fx(Math.abs(left))} kg</b><span>de l'objectif, tendance inverse</span></div>`}
   $('#bk').innerHTML=`<div><b>${fx(a)} kg</b><span>moyenne 7 j au ${dShort(ld)}</span></div>`+(b?`<div><b>${sg(a-b)} kg</b><span>4 semaines (${sg(rate)} kg/sem.)</span></div>`:'')+(c?`<div><b>${sg(a-c)} kg</b><span>12 semaines</span></div>`:'')+proj}else $('#bk').innerHTML='';
  const md=$('#mdate');if(!md.value)md.value=today();
@@ -655,13 +745,13 @@ function updateDatalist(){const m=new Map();for(const x of exNames())m.set(norm(
 function resumeOnce(){if(resumed)return;resumed=true;const o=S.sessions.filter(s=>s.open).sort(sortDesc)[0];if(o&&!S.cur){S.cur=clone(o);renderEditor()}}
 const views=['aujourdhui','sommeil','recuperation','effort','nutrition','tendances','plus'];
 const cur=()=>{const h=location.hash.slice(1);return views.includes(h)?h:'aujourdhui'};
-function markMore(){if(!matchMedia('(max-width:800px)').matches)return;requestAnimationFrame(()=>$$('.view:not([hidden]) :is(.panel>p.mute.small,.mkr p,#coach):not(.open)').forEach(p=>p.classList.toggle('more',p.scrollHeight>p.clientHeight+2)))}
-function renderView(v){const sec=$('#v-'+v);if(sec){sec.classList.toggle('nohd',!hKeys().length);sec.classList.toggle('nosess',!done().length)}if(v==='tendances')$('#tnote').innerHTML=hKeys().length?'':emptyHTML('tendances');setTimeout(markMore,0);setTimeout(syncNav,0);renderDayNav();$('#demobar').hidden=!S.set.demo;try{({aujourdhui:renderToday,sommeil:renderSleep,recuperation:renderRec,effort:renderEffort,nutrition:renderNutri,tendances:renderTrends,plus:renderPlus})[v]()}catch(e){console.error(e)}}
+function markMore(){if(!matchMedia('(max-width:800px)').matches)return;requestAnimationFrame(()=>$$('.view:not([hidden]) :is(.panel>p.mute.small,.mkr p):not(.open)').forEach(p=>p.classList.toggle('more',p.scrollHeight>p.clientHeight+2)))}
+function renderView(v){const sec=$('#v-'+v);if(sec){sec.classList.toggle('nohd',!hKeys().length);sec.classList.toggle('nosess',!done().length)}if(v==='tendances')$('#tnote').innerHTML=hKeys().length?'':emptyHTML('tendances');setTimeout(markMore,0);setTimeout(syncNav,0);renderDayNav();applyDeep();$('#demobar').hidden=!S.set.demo;try{({aujourdhui:renderToday,sommeil:renderSleep,recuperation:renderRec,effort:renderEffort,nutrition:renderNutri,tendances:renderTrends,plus:renderPlus})[v]()}catch(e){console.error(e)}}
 function renderSoft(){updateDatalist();
  if(!S.cur&&!$('#editor').contains(document.activeElement))renderStart();
  if(S.cur)S.cur.ex.forEach((e,i)=>updateHint(i));
  const v=cur();if(v==='aujourdhui'&&$('#checkin').contains(document.activeElement))return;if(v==='effort'&&$('#editor').contains(document.activeElement))return;renderView(v)}
-function route(){const v=cur();views.forEach(n=>$('#v-'+n).hidden=n!==v);$$('#tabs a').forEach(a=>{a.setAttribute('aria-current',a.getAttribute('href')==='#'+v?'page':'false');a.classList.toggle('sub-on',a.getAttribute('href')==='#plus'&&['nutrition','tendances'].includes(v))});renderView(v)}
+function route(){const v=cur();views.forEach(n=>$('#v-'+n).hidden=n!==v);$$('#tabs a').forEach(a=>{a.setAttribute('aria-current',a.getAttribute('href')==='#'+v?'page':'false');a.classList.toggle('sub-on',(a.getAttribute('href')==='#plus'&&v==='nutrition')||(a.getAttribute('href')==='#aujourdhui'&&v==='recuperation'))});renderView(v)}
 
 $('#editor').addEventListener('input',ev=>{const t=ev.target,c=S.cur;if(!c)return;
  if(t.id==='cn'){c.name=t.value;return dirty()}if(t.id==='cd'){c.date=t.value;return dirty()}if(t.id==='crpe'){c.rpe=num(t.value)||'';return dirty()}
@@ -671,11 +761,15 @@ $('#editor').addEventListener('change',ev=>{const t=ev.target,c=S.cur;if(!c)retu
  if(t.dataset.f==='r'&&num(t.value)>0&&S.set.auto!==false)startTimer();
  if(!t.classList.contains('exn'))return;const a=t.closest('.ex'),i=+a.dataset.i,e=c.ex[i];
  if(e.sets.every(s=>s.w===''&&s.r==='')&&suggest(e.n,c.id)){e.sets=prefill(e.n,c.id);a.outerHTML=exHTML(e,i);dirty()}updateHint(i)});
-document.addEventListener('click',ev=>{unlockAudio();if(matchMedia('(max-width:800px)').matches){const nt=ev.target.closest('.panel>p.mute.small,.mkr p,#coach');if(nt&&!ev.target.closest('a,button')){nt.classList.toggle('open');return}}if(ev.target.id==='sheet'){quick('close');return}const go=ev.target.closest('[data-go]');if(go){location.hash=go.dataset.go;return}
+document.addEventListener('click',ev=>{unlockAudio();if(ev.target.closest('#cele')){hideCele();return}if(matchMedia('(max-width:800px)').matches){const nt=ev.target.closest('.panel>p.mute.small,.mkr p');if(nt&&!ev.target.closest('a,button')){nt.classList.toggle('open');return}}if(ev.target.id==='sheet'){quick('close');return}const go=ev.target.closest('[data-go]');if(go){location.hash=go.dataset.go;return}
  const b=ev.target.closest('[data-act]');if(!b)return;const act=b.dataset.act,c=S.cur,a=b.closest('.ex'),i=a?+a.dataset.i:-1;
  switch(act){
  case'sheet':{const sh=$('#sheet');sh.hidden=!sh.hidden;setTimeout(()=>{document.documentElement.style.setProperty('--hh',$('.top').offsetHeight+'px')},0);return}
  case'qa':return quick(b.dataset.q);
+ case'deep':{buzz();const v=b.dataset.v;S.set.deep={...(S.set.deep||{}),[v]:!(S.set.deep||{})[v]};put.set();applyDeep();return}
+ case'share':return shareWeek();
+ case'briefok':return hideBrief();
+ case'briefopen':return showBrief();
  case'dpick':buzz();S.day=b.dataset.d;return renderView(cur());
  case'msclose':return closeSheet();
  case'showall':buzz();$(b.dataset.t).classList.add('all');return;
@@ -700,7 +794,7 @@ document.addEventListener('click',ev=>{unlockAudio();if(matchMedia('(max-width:8
  case'psub':psub=b.dataset.s;scrollTo(0,0);if(cur()!=='plus'){ev.preventDefault();location.hash='plus';return}return renderPlus();
  case'slt':sleepTrend=b.dataset.k;return renderSleep();
  case'slper':sleepPer=+b.dataset.n;return renderSleep();
- case'jset':buzz();{const k=b.dataset.k,v=+b.dataset.v;setJ({[k]:J(S.day)[k]===v?undefined:v});return renderCheckin()}
+ case'jset':buzz();{const k=b.dataset.k,v=+b.dataset.v;setJ({[k]:J(S.day)[k]===v?undefined:v});const n=ciStreak();if(S.day===today()&&n>=7&&n%7===0&&S.set.streakCel!==today()){S.set.streakCel=today();put.set();celebrate(`${n} jours d'affilée`,'Ton check-in devient un rituel.')}return renderCheckin()}
  case'jtag':buzz();{const t=b.dataset.t,tg=(J(S.day).tags||[]).slice(),x=tg.indexOf(t);if(x<0)tg.push(t);else tg.splice(x,1);setJ({tags:tg});return renderCheckin()}
  case'water':{buzz('light');const d=S.day,o=getDay(d);o.w=Math.max(0,num(o.w)+ +b.dataset.v);put.day(d);return renderView(cur())}
  case'sup':{const d=S.day,o=getDay(d),s=b.dataset.s,l=(o.sup||[]).slice(),x=l.indexOf(s);if(x<0)l.push(s);else l.splice(x,1);o.sup=l;put.day(d);return renderNutri()}
@@ -763,7 +857,7 @@ $('#hfile').addEventListener('change',async ev=>{const f=ev.target.files[0];ev.t
 addEventListener('hashchange',()=>{$('#sheet').hidden=true;buzz();route();scrollTo(0,0)});
 document.addEventListener('keydown',e=>{if(e.metaKey||e.ctrlKey||e.altKey)return;const t=e.target;if(t.closest&&t.closest('input,textarea,select,[contenteditable]'))return;
  const tabs=['aujourdhui','sommeil','recuperation','effort','nutrition','tendances','plus'];
- if(e.key==='Escape'){$('#sheet').hidden=true;closeSheet();return}
+ if(e.key==='Escape'){$('#sheet').hidden=true;closeSheet();if(!$('#brief').hidden)hideBrief();hideCele();return}
  if(/^[1-7]$/.test(e.key)){location.hash=tabs[+e.key-1];return}
  if(e.key==='n'||e.key==='N'){e.preventDefault();$('.tplus').click();return}
  if(!$('#dn').hidden){if(e.key==='ArrowLeft'){S.day=addD(S.day,-1);renderView(cur())}else if(e.key==='ArrowRight'&&S.day<today()){S.day=addD(S.day,1);renderView(cur())}}});
@@ -821,7 +915,7 @@ async function hkSync({full=false,quiet=false}={}){
   applyHealth(R,inc);S.health.src='hk';S.health.sync=Date.now();put.health();
   if(!inc)toast(`Apple Santé connecté : ${Object.keys(R.d).length} jours lus.`);else if(!quiet)toast('Apple Santé à jour.')
  }catch(e){console.error(e);toast("Lecture d'Apple Santé impossible : "+String(e&&e.message||e))}
- finally{hkBusy=false;bar.hidden=true;renderSoft()}}
+ finally{hkBusy=false;bar.hidden=true;renderSoft();maybeBrief()}}
 /* Textes et boutons propres à l'appli iOS */
 function setupHK(){
  document.documentElement.classList.add('hk');
@@ -890,6 +984,77 @@ function renderMetric(){const m=MET[metK];if(!m)return;const end=S.day,from=addD
  setFig('#mfig',{series:[{name:m.t,pts,col:m.col,bars:!!m.bars,dots:!m.bars&&metP<=30,r:3,w:2,last:!m.bars}],unit:m.u,zero:!!m.bars,hline:goal||null,band:b?[b.m-b.s,b.m+b.s]:null,fmt:m.fmt,empty:'Pas de mesure sur cette période'});
  if(msKind==='metric')msBar()}
 
+/* ---------- rituels : la soirée, la semaine, le briefing du matin ---------- */
+const NIGHT_TIPS=['Lumière tamisée et écrans en mode nuit','Chambre fraîche, autour de 18 °C','Pas de caféine après 14 h, dîner léger','Dix minutes de lecture ou de respiration lente','Même heure de coucher que d\'habitude, à 30 min près'];
+function ritualHTML(d){if(d!==today()||!hKeys().length)return'';const n=new Date(),hr=n.getHours(),wd=n.getDay(),b=bedOf(d),bi=bedIn(d);
+ if(b&&bi!=null&&hr>=18&&bi<=240){const k=+d.slice(8)%NIGHT_TIPS.length,tips=[0,1,2].map(i=>NIGHT_TIPS[(k+i)%NIGHT_TIPS.length]);
+  return `<div class="panel ritual eve"><span class="eyebrow">Ce soir</span><b class="rt">${bi<=10?'C\'est l\'heure de dormir':'Au lit dans '+fmtSl(bi)}</b><p>Vers ${hhmm(b.bed)}, pour ${fmtSl(b.need)} de sommeil et un réveil à ${hhmm(b.wake)}.</p><ul class="tips">${tips.map(t=>`<li>${t}</li>`).join('')}</ul></div>`}
+ if(wd===1||(wd===0&&hr>=17)){const w=weekRecap();if(w)return `<button type="button" class="panel ritual wkr" data-go="tendances"><span class="eyebrow">Ta semaine est prête</span><b class="rt">${w.title}</b><p>${w.line}</p><span class="go">Voir et partager ›</span></button>`}
+ if(hr<12&&S.set.brief===d&&(H(d).sl||recovery(d)))return `<button type="button" class="ritual-link" data-act="briefopen">${ARC}<span>Revoir le briefing du matin</span><em>›</em></button>`;
+ return''}
+/* La semaine en un coup d'œil : moyennes, jours actifs, et une image à partager. Le lundi, la semaine qui vient de finir. */
+function weekRecap(e){e=e||(new Date().getDay()===1?addD(today(),-1):today());const ds=[];for(let i=6;i>=0;i--)ds.push(addD(e,-i));
+ const val=f=>ds.map(d=>{const r=f(d);return r==null?null:typeof r==='object'?r.s:r}),av=a=>{const x=a.filter(y=>y!=null);return x.length?avg(x):null};
+ const E=val(effortOf),R=val(recovery),Sl=val(sleepScore),act=ds.filter(d=>{const t=dayTrain(d);return t.mu.length+t.sp.length+t.ap.length>0}).length;
+ const sl=avg(ds.map(d=>num(H(d).sl)).filter(x=>x>0)),r=av(R),s2=av(Sl),e2=av(E),n=ds.filter((d,i)=>R[i]!=null||Sl[i]!=null||E[i]!=null).length;
+ if(n<3&&act<2)return null;
+ const pv=ds.map(d=>addD(d,-7)),rp=av(pv.map(d=>recovery(d)?.s??null));
+ const title=act>=4&&(r==null||r>=50)?'Semaine solide':act>=4?'Semaine chargée':r!=null&&r>=67?'Semaine pleine d\'énergie':act<=1?'Semaine calme':'Semaine régulière';
+ const bi=R.reduce((b,v,i)=>v!=null&&(b<0||v>R[b])?i:b,-1);
+ const line=[`${act} jour${act>1?'s':''} actif${act>1?'s':''}`,sl?`${fmtSl(sl)} de sommeil par nuit`:'',r!=null?`énergie moyenne de ${r0(r)} %${rp!=null&&Math.abs(r-rp)>=3?` (${sg(Math.round(r-rp))} vs la semaine d'avant)`:''}`:''].filter(Boolean).join(', ')+'.';
+ return{ds,E,R,Sl,e:e2,r,s:s2,act,sl,title,line,best:bi>=0?ds[bi]:null,from:ds[0],to:e}}
+const WL='LMMJVSD',wdl=d=>WL[(new Date(d+'T12:00').getDay()+6)%7];
+function renderRecap(){const w=weekRecap(),el=$('#recap');if(!w){el.hidden=true;return}el.hidden=false;
+ el.innerHTML=`<div class="rc-h"><span class="eyebrow">Ta semaine · du ${dShort(w.from)} au ${dShort(w.to)}</span><b class="rt">${w.title}</b><p>${w.line}</p></div>
+ <div class="gauges rc-g">${[[w.e,'var(--eff)','Dépense','/100'],[w.r,'var(--rec)','Énergie','%'],[w.s,'var(--slp)','Sommeil','/100']].map(([v,c,l,u])=>`<div class="gauge">${gaugeSVG(v,c,u,100,'wk|'+l+'|'+w.to)}<b>${l}</b><span>moyenne</span></div>`).join('')}</div>
+ <div class="rc-d">${w.ds.map((d,i)=>`<div title="${esc(dLong(d))}"><span>${wdl(d)}</span>${barsSVG([[w.E[i],'var(--eff)'],[w.R[i],'var(--rec)'],[w.Sl[i],'var(--slp)']])}</div>`).join('')}</div>
+ <div class="row"><button type="button" class="btn pri" data-act="share">Partager ma semaine</button>${w.best?`<span class="mute small">Meilleure forme : ${esc(dLong(w.best))}</span>`:''}</div>`}
+/* Image de la semaine (1080 × 1350, format des réseaux sociaux), dessinée sur place : rien n'est envoyé ailleurs. */
+async function shareWeek(){const w=weekRecap();if(!w)return;
+ try{await Promise.all(['600 100px "Fraunces Variable"','600 30px "Inter Variable"'].map(f=>document.fonts.load(f)))}catch(e){}
+ const W=1080,HH=1350,cv=document.createElement('canvas');cv.width=W;cv.height=HH;const g=cv.getContext('2d'),SANS='-apple-system,"Inter Variable",system-ui,sans-serif',SER='"Fraunces Variable",Georgia,serif',ROUND='ui-rounded,-apple-system,"Inter Variable",system-ui,sans-serif';
+ const ink='#1b1813',mute='#6c645a',cols=['#f2553d','#0aa898','#3651d4'],rgba=(h,a)=>`rgba(${parseInt(h.slice(1,3),16)},${parseInt(h.slice(3,5),16)},${parseInt(h.slice(5,7),16)},${a})`;
+ const rr=(x,y,w2,h2,r)=>{g.beginPath();g.roundRect?g.roundRect(x,y,w2,h2,r):g.rect(x,y,w2,h2);g.fill()};
+ g.fillStyle='#f4f1eb';g.fillRect(0,0,W,HH);
+ for(const [x,y,r,c] of [[140,-40,900,'rgba(255,180,140,.55)'],[980,60,760,'rgba(191,231,223,.7)']]){const gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,c);gr.addColorStop(1,'rgba(244,241,235,0)');g.fillStyle=gr;g.fillRect(0,0,W,HH)}
+ /* logo : la tuile graphite et l'arc tricolore, comme l'icône */
+ g.save();g.translate(80,72);g.scale(3,3);g.fillStyle='#16161a';rr(0,0,32,32,7.2);g.lineWidth=3.78;g.lineCap='round';
+ [['M8.463 24.6A10.64 10.64 0 0 1 6.52 12.26','#ff6e57'],['M9.034 9.048A10.64 10.64 0 0 1 22.966 9.048','#2fd3c1'],['M25.48 12.26A10.64 10.64 0 0 1 23.537 24.6','#6b84ff']].forEach(([p,c])=>{g.strokeStyle=c;g.stroke(new Path2D(p))});g.restore();
+ g.textBaseline='middle';g.fillStyle=ink;g.font=`600 46px ${SER}`;g.fillText('Arden',200,120);
+ g.textBaseline='alphabetic';g.fillStyle=mute;g.font=`500 30px ${SANS}`;g.fillText(`Ma semaine · du ${dShort(w.from)} au ${dShort(w.to)}`,80,290);
+ let fs=104;g.font=`600 ${fs}px ${SER}`;while(g.measureText(w.title).width>920&&fs>60){fs-=4;g.font=`600 ${fs}px ${SER}`}g.fillStyle=ink;g.fillText(w.title,76,400);
+ g.font=`400 34px ${SANS}`;g.fillStyle='#3d372f';{const words=w.line.split(' ');let line='',y=470;for(const t of words){const tt=line?line+' '+t:t;if(g.measureText(tt).width>920){g.fillText(line,80,y);line=t;y+=48}else line=tt}g.fillText(line,80,y)}
+ [[w.e,'Dépense'],[w.r,'Énergie'],[w.s,'Sommeil']].forEach(([v,l],i)=>{const cx=220+i*320,cy=780,r=118,a0=Math.PI*.75,p=v==null?0:clamp(v/100,0,1);
+  g.lineCap='round';g.lineWidth=26;g.strokeStyle=rgba(cols[i],.16);g.beginPath();g.arc(cx,cy,r,a0,a0+Math.PI*1.5);g.stroke();
+  if(p>0){g.strokeStyle=cols[i];g.beginPath();g.arc(cx,cy,r,a0,a0+Math.PI*1.5*p);g.stroke();const a=a0+Math.PI*1.5*p;g.fillStyle='#fff';g.beginPath();g.arc(cx+r*Math.cos(a),cy+r*Math.sin(a),5.5,0,7);g.fill()}
+  g.textAlign='center';g.fillStyle=ink;g.font=`600 80px ${ROUND}`;g.fillText(v==null?'–':r0(v),cx,cy+28);g.fillStyle=mute;g.font=`500 30px ${SANS}`;g.fillText(l,cx,cy+r+56);g.textAlign='left'});
+ const y0=1030,bh=160;w.ds.forEach((d,i)=>{const x=118+i*126;[w.E[i],w.R[i],w.Sl[i]].forEach((v,j)=>{const bx=x+j*26,bw=18;g.fillStyle=rgba(cols[j],.16);rr(bx,y0,bw,bh,9);const h2=v==null?0:Math.max(bw,v/100*bh);if(h2){g.fillStyle=cols[j];rr(bx,y0+bh-h2,bw,h2,9)}});
+  g.textAlign='center';g.fillStyle=mute;g.font=`500 26px ${SANS}`;g.fillText(wdl(d),x+35,y0+bh+42);g.textAlign='left'});
+ g.fillStyle='#8a8278';g.font=`500 24px ${SANS}`;g.fillText('Arden · tes données restent sur ton téléphone',80,1300);
+ const blob=await new Promise(r=>cv.toBlob(r,'image/png'));if(!blob)return toast('Image impossible à créer sur cet appareil.');
+ const file=new File([blob],`arden-semaine-${w.to}.png`,{type:'image/png'});
+ if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'Ma semaine avec Arden'});return}catch(e){if(e&&e.name==='AbortError')return}}
+ const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=file.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);toast('Image enregistrée : '+file.name)}
+/* Briefing du matin : un écran, une fois par jour, à la première ouverture avant midi. */
+function maybeBrief(){const d=today(),hr=new Date().getHours();if(hr<4||hr>=12||S.set.brief===d||!$('#onb').hidden||msKind||!$('#brief').hidden)return;if(!(H(d).sl||recovery(d)))return;showBrief()}
+function showBrief(){const d=today(),st=dayStory(d),rc=recovery(d),sl=sleepScore(d),ef=effortOf(d),tg=effTarget(rc&&rc.s),hr=new Date().getHours();
+ $('#brhi').textContent=`${hr<5?'Bonne nuit':hr<18?'Bonjour':'Bonsoir'} · ${dLong(d)}`;$('#brt').textContent=st.t;$('#brlede').textContent=st.l;
+ const k=Date.now();$('#brg').innerHTML=[[tg&&ef==null?0:ef,'var(--eff)','Dépense','/100',tg],[rc&&rc.s,'var(--rec)','Énergie','%'],[sl&&sl.s,'var(--slp)','Sommeil','/100']].map(([v,c,l,u,z])=>`<div class="gauge">${gaugeSVG(v,c,u,100,'brief|'+l+'|'+k,z)}<b>${l}</b></div>`).join('');
+ $('#brplan').innerHTML=planHTML(planItems(d));paintSky($('#brief'),skyFor('aujourdhui',st.tone));
+ const b=$('#brief');b.hidden=false;b.scrollTop=0;document.documentElement.classList.add('br-open');buzz('light')}
+function hideBrief(){if(S.set.brief!==today()){S.set.brief=today();put.set()}const b=$('#brief');b.classList.add('out');setTimeout(()=>{b.hidden=true;b.classList.remove('out');document.documentElement.classList.remove('br-open');if(cur()==='aujourdhui')renderView('aujourdhui')},320)}
+
+/* ---------- moments : records, zone atteinte, régularité ---------- */
+let celT=0;
+function celebrate(t,sub){const c=$('#cele');$('#cet').textContent=t;$('#ces').textContent=sub||'';c.hidden=false;c.classList.remove('on');void c.offsetWidth;c.classList.add('on');buzz('ok');clearTimeout(celT);celT=setTimeout(hideCele,2900)}
+function hideCele(){const c=$('#cele');c.classList.remove('on');setTimeout(()=>{if(!c.classList.contains('on'))c.hidden=true},380)}
+function ciStreak(){let n=0;for(let i=0;i<400;i++){const j=J(addD(today(),-i));if(j.mood||j.energy||j.stress||j.sore)n++;else if(i>0)break}return n}
+
+/* ---------- analyse détaillée : les cartes avancées, repliées par défaut ---------- */
+const DEEP={sommeil:'Durée, phases, VFC, FC et horaires sur 6 mois',recuperation:'FC nocturne, stress estimé, signes vitaux',effort:'Charge d\'entraînement, zones cardiaques, volume par muscle',tendances:'Bien-être, masse grasse, VO2 max, activité quotidienne'};
+function applyDeep(){const D=S.set.deep||{};$$('.deep').forEach(b=>{const v=b.dataset.v,on=!!D[v];$('#v-'+v).classList.toggle('deep-on',on);b.setAttribute('aria-expanded',on);
+ b.innerHTML=`<span><b>Analyse détaillée</b><small>${DEEP[v]}</small></span><em>${on?'Masquer':'Afficher'}</em>`})}
+
 /* ---------- retours haptiques (appli iOS uniquement) ---------- */
 function buzz(k='sel'){if(!Capacitor.isNativePlatform())return;try{
  if(k==='ok')Haptics.notification({type:NotificationType.Success});
@@ -898,7 +1063,7 @@ function buzz(k='sel'){if(!Capacitor.isNativePlatform())return;try{
  else Haptics.selectionChanged()}catch(e){}}
 
 /* ---------- barre de titre compacte : le grand titre se replie en défilant (comme iOS) ---------- */
-function navTitle(){const v=cur();return['aujourdhui','sommeil','recuperation','effort'].includes(v)?$('#dtitle').textContent:v==='nutrition'?'Nutrition':v==='tendances'?'Tendances':psub?(SUBT[psub]||'Plus'):'Plus'}
+function navTitle(){const v=cur();return v==='aujourdhui'?(S.day===today()?"Aujourd'hui":dLong(S.day)):['sommeil','recuperation','effort'].includes(v)?$('#dtitle').textContent:v==='nutrition'?'Nutrition':v==='tendances'?'Tendances':psub?(SUBT[psub]||'Plus'):'Plus'}
 function syncNav(){const t=navTitle();if($('#navct').textContent!==t)$('#navct').textContent=t}
 addEventListener('scroll',()=>{document.documentElement.classList.toggle('scrolled',scrollY>64)},{passive:true});
 
@@ -906,6 +1071,7 @@ addEventListener('scroll',()=>{document.documentElement.classList.toggle('scroll
 const needOnb=()=>!S.set.onb&&!hKeys().length&&!S.sessions.length&&!Object.keys(S.days).length&&!S.med.length;
 function showOnb(step=0){const o=$('#onb');o.hidden=false;document.documentElement.style.overflow='hidden';
  $$('#onb .ob').forEach(x=>x.hidden=+x.dataset.step!==step);$$('#onb .ob-dots i').forEach((x,i)=>x.classList.toggle('on',i===step));
+ if(step===0){const k=Date.now();$('#obg').innerHTML=[[68,'var(--eff)','Dépense','/100',[60,85]],[84,'var(--rec)','Énergie','%'],[91,'var(--slp)','Sommeil','/100']].map(([v,c,l,u,z])=>`<div class="gauge">${gaugeSVG(v,c,u,100,'obg|'+l+k,z)}<b>${l}</b></div>`).join('')}
  if(step===1){$('#ob-birth').value=S.set.birth||'';$('#ob-sex').value=S.set.sex||'';$('#ob-height').value=S.set.height||'';$('#ob-sleep').value=String(S.set.sleep||450)}
  o.scrollTop=0}
 function hideOnb(){$('#onb').hidden=true;document.documentElement.style.overflow=''}
@@ -943,11 +1109,12 @@ async function init(){
  HKN=hasHealthKit();if(HKN)setupHK();
  route();renderEditor();status('load');
  mode='local';lsLoad();bump();pend.splice(0).forEach(f=>f());status('local');resumeOnce();renderSoft();
- if(needOnb())showOnb(0);
+ if(needOnb())showOnb(0);else setTimeout(maybeBrief,350);
+ addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')maybeBrief()});
  if(HKN&&S.health.src==='hk'&&!S.set.demo)hkSync({quiet:true});
  $('#appver').textContent='version '+__APP_VERSION__;
  /* Accès pour le simulateur iPhone (simulateur.html). */
- window.carnet={loadDemo,resetAll,hasRealData};
+ window.carnet={loadDemo,resetAll,hasRealData,showBrief,celebrate,shareWeek};
  /* Autre onglet ouvert sur la même appli : on recharge les données qu'il vient d'écrire. */
  addEventListener('storage',e=>{if(e.key!==LS)return;if(e.newValue==null)return location.reload();S.sessions=[];S.days={};lsLoad();bump();renderSoft()});
  /* Hors connexion sur le web ; inutile dans l'appli iOS, qui embarque déjà ses fichiers. */

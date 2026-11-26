@@ -13,7 +13,8 @@
     "lint": "eslint src",
     "ios": "npm run build && cap open ios",
     "ios:sync": "npm run build",
-    "captures": "node scripts/captures-app-store.mjs"
+    "captures": "node scripts/captures-app-store.mjs",
+    "parcours": "node scripts/parcours.mjs"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.6.2",
@@ -26,6 +27,7 @@
     "@capacitor/core": "^8.6.2",
     "@capacitor/haptics": "^8.0.2",
     "@capacitor/ios": "^8.6.2",
+    "@fontsource-variable/fraunces": "^5.3.0",
     "@fontsource-variable/inter": "^5.3.0",
     "jszip": "^3.10.1"
   }
