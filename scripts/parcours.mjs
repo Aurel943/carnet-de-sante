@@ -135,6 +135,17 @@ try {
       expect(await page.isHidden('#hub'), 'un raccourci vers une sous-page de Plus doit l\'ouvrir directement');
     });
 
+    await step('Noter → Poids : une petite fenêtre, la pesée gardée', async () => {
+      await tab(page, 'aujourdhui');
+      await page.click('.tplus'); await page.click('#sheet [data-q="bw"]');
+      await page.waitForSelector('#dlgw');
+      expect(await page.isVisible('#v-aujourdhui'), 'la pesée ne doit pas changer de page');
+      await page.fill('#dlgw', '74,8'); await page.press('#dlgw', 'Enter');
+      await page.waitForSelector('#dlg', { state: 'hidden' });
+      const bw = await page.evaluate(() => { const d = JSON.parse(localStorage.getItem('carnet-muscu-v1')).days; const t = new Date(); const k = new Date(t - t.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); return d[k] && d[k].bw; });
+      expect(bw === 74.8, 'pesée non enregistrée : ' + bw);
+    });
+
     await step('Noter : quatre gestes du quotidien, le reste en liste, sans doublon', async () => {
       await tab(page, 'aujourdhui');
       await page.click('.tplus');

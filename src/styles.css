@@ -1646,3 +1646,7 @@ ul#favs{display:block;margin:0 0 6px;padding:0;overflow:hidden;flex-wrap:nowrap}
 .seg.ovf button.on{background:var(--tint);color:var(--on-tint);box-shadow:none}
 /* dans une carte, la rangée va jusqu'au bord de la carte : les pastilles glissent sous son bord au lieu de s'arrêter dans le vide */
 @media(max-width:800px){.panel .seg.ovf{margin-left:-16px!important;margin-right:-16px;padding:0 16px;max-width:none;width:calc(100% + 32px)}}
+/* Poids du matin : le champ dans la fenêtre d'alerte */
+.dlgin{display:flex;align-items:center;justify-content:center;gap:8px;margin:-4px 0 16px}
+.dlgin input{width:7.5rem;text-align:center;font:600 1.75rem var(--round);font-variant-numeric:tabular-nums;padding:8px 10px;border-radius:14px;background:var(--field);border:0;color:var(--ink)}
+.dlgin span{font:500 1.0625rem var(--round);color:var(--mute)}

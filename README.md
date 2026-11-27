@@ -94,7 +94,8 @@ npm run aliments  # (ré)importe la table Ciqual de l'ANSES dans src/data/ciqual
 ```
 
 La feuille **Repas** est faite pour noter vite, sans jamais devoir peser : en haut, le repas
-(petit-déj, déjeuner, collation, dîner) ; dessous, « Comme hier » et tes **récents** et **favoris**,
+(petit-déj, déjeuner, collation, dîner) ; dessous, « Comme hier » et tes **récents** (ceux de ce repas : au
+petit-déjeuner, « Au petit-déjeuner, d'habitude ») et **favoris**,
 chacun avec un bouton **+** qui l'ajoute en un toucher (la feuille reste ouverte pour enchaîner, puis
 « Terminé »). La recherche trouve d'abord une centaine d'**aliments courants** embarqués
 (`src/basics.js`, valeurs moyennes pour 100 g) avec une **portion naturelle** (« 1 pomme », « 1 pot »,

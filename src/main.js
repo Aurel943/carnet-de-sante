@@ -778,7 +778,8 @@ const itemName=x=>String(x.n||'Aliment').replace(/ \(\d+([,.]\d+)? g\)$/,'');
 /* aliments notés ces 30 derniers jours, du plus récent au plus ancien, sans doublon ; ceux du même repas d'abord */
 function recentItems(meal,n=12){const seen=new Set(),A=[],B=[];for(let i=0;i<30;i++){const its=dayIt(addD(today(),-i)).slice().reverse();
   for(const x of its){const k=plain(itemName(x))+'|'+num(x.q);if(seen.has(k))continue;seen.add(k);(x.m===meal?A:B).push(x)}}
- return[...A,...B].slice(0,n)}
+ /* au petit-déjeuner, pas de haricots verts : dès qu'il y a 3 récents de ce repas, on ne montre qu'eux */
+ return(A.length>=3?A:[...A,...B]).slice(0,n)}
 const cleanItem=x=>{const o={n:itemName(x),p:num(x.p),k:Math.round(kcalOf(x))};for(const f of ['g','l','q','sv'])if(num(x[f]))o[f]=num(x[f]);if(x.u)o.u=String(x.u);if(Array.isArray(x.c))o.c=x.c.map(num);if(x.b)o.b=String(x.b);return o};
 function pushItem(x,m){const d=S.day,o={...cleanItem(x),m:m||foodMeal||mealNow()};if(d===today())o.t=Date.now();getDay(d).items.push(o);put.day(d);return o}
 function quickAdd(x,m){const o=pushItem(x,m),d=S.day,D=getDay(d),k=D.items.length-1;buzz('ok');renderNutri();if(msKind==='food')renderFoodSearch();
@@ -900,7 +901,7 @@ function quick(q){$('#sheet').hidden=true;setTimeout(()=>document.documentElemen
  if(q==='mu'){if(!S.cur){if(!trackMu())startMode='sp';renderStart()}openSheet('seance')}
  else if(q==='food'){S.day=today();openFood(mealNow())}
  else if(q==='meas')go('tendances',()=>{openForm('#mf',null,'#m-taille',true);$('#mf').scrollIntoView({behavior:calm()?'auto':'smooth',block:'center'})})
- else if(q==='bw'){S.day=today();go('nutrition',()=>{const b=$('#bw');if(b){b.scrollIntoView({behavior:'smooth',block:'center'});b.focus({preventScroll:true})}})}
+ else if(q==='bw')askWeight()
  else if(q==='ci'){S.day=today();renderCheckin();openSheet('checkin')}
  else if(q==='med'){psub='dossier';go('plus',()=>{renderPlus();openForm('#medf',null,'#mti',true)})}
 }
@@ -1271,7 +1272,7 @@ function renderFoodSearch(){const q=$('#fq').value.trim();$('#fhome').hidden=!!q
  frec=recentItems(foodMeal,12);
  const y=dayIt(addD(S.day,-1)).filter(x=>x.m===foodMeal),already=dayIt(S.day).some(x=>x.m===foodMeal);
  $('#fyest').innerHTML=y.length&&!already?`<button type="button" class="fyest" data-act="likey" data-m="${esc(foodMeal)}"><i><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4"/></svg></i><span><b>Comme hier</b><small>${esc(y.slice(0,3).map(itemName).join(', '))}${y.length>3?'…':''} · ${r0(y.reduce((a,x)=>a+kcalOf(x),0))} kcal</small></span><em>+</em></button>`:'';
- $('#frech').hidden=!frec.length;
+ $('#frech').hidden=!frec.length;$('#frech').textContent=frec.length&&frec.every(x=>x.m===foodMeal)?(foodMeal==='Petit-déjeuner'?'Au petit-déjeuner':foodMeal==='Collation'?'En collation':'Au '+foodMeal.toLowerCase())+', d\'habitude':'Récents';
  $('#frec').innerHTML=frec.map((x,i)=>frow(x,`data-act="ropen" data-i="${i}"`,`data-act="rplus" data-i="${i}"`,subOf(x))).join('');
  $('#favw').hidden=!S.set.foods.length;
  $('#favs').innerHTML=S.set.foods.map((f,k)=>frow(f,`data-act="favopen" data-k="${k}"`,`data-act="fav" data-k="${k}"`,subOf(f))).join('');
@@ -1342,6 +1343,16 @@ function ask(title,msg,btns){const d=$('#dlg');if(dlgDone)dlgDone(null);
  d.hidden=false;document.documentElement.classList.add('dlg-open');buzz('warn');setTimeout(()=>$('#dlgb .btn')?.focus({preventScroll:true}),60);
  return new Promise(res=>{dlgDone=k=>{dlgDone=null;d.hidden=true;document.documentElement.classList.remove('dlg-open');res(k)}})}
 const closeDlg=k=>{if(dlgDone)dlgDone(k)};
+/* Noter → Poids : la pesée du matin dans une petite fenêtre, avec la dernière pesée pour repère */
+async function askWeight(){const d=today(),D=getDay(d),W=weights(),wk=Object.keys(W).filter(k=>k<d).sort(),lk=wk[wk.length-1],last=lk?W[lk]:null;
+ $$('#dlg .dlgin').forEach(x=>x.remove());
+ const p=ask('Poids du matin',last?`Dernière pesée : ${fx(last)} kg, le ${dShort(lk)}.`:'Le matin, à jeun : c\'est le plus comparable d\'un jour à l\'autre.',[['cancel','Annuler'],['ok','Enregistrer','pri']]);
+ const w=document.createElement('label');w.className='dlgin';w.innerHTML=`<input id="dlgw" inputmode="decimal" enterkeyhint="done" autocomplete="off" placeholder="${last?fx(last):'ex. 72,5'}" value="${has(D.bw)?fx(num(D.bw)):''}" aria-label="Poids en kilos"><span>kg</span>`;
+ $('#dlgm').after(w);const inp=$('#dlgw');inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();closeDlg('ok')}});setTimeout(()=>inp.focus(),90);
+ const k=await p,v=num(inp.value);w.remove();
+ if(k!=='ok')return;if(!(v>=25&&v<=350)){if(inp.value.trim())toast('Poids non reconnu : entre-le en kilos, par exemple 72,5');return}
+ D.bw=Math.round(v*10)/10;put.day(d);renderView(cur());buzz('ok');
+ toast(last?`${fx(D.bw)} kg · ${D.bw===last?'stable':sg(Math.round((D.bw-last)*10)/10)+' kg'} depuis le ${dShort(lk)}`:`${fx(D.bw)} kg enregistrés`)}
 async function askNutriCalc(){const r=nutriCalc();
  if(r.miss)return ask('Il manque des infos',`Pour calculer tes besoins, renseigne ${r.miss.join(', ')}${r.miss.includes('ton poids')?' (une pesée dans Noter → Poids)':' dans « Ton profil »'}.`,[['ok','OK','pri']]);
  const k=await ask(`${r0(r.kcal)} kcal${r.prot?` · ${r.prot} g de protéines`:''}`,`Calculé à partir de ${r.how}${r.dir<0?`, moins 450 kcal pour aller vers ${fx(r.gw)} kg (environ 0,4 kg par semaine)${r.floor?', sans descendre sous ton métabolisme de base':''}`:r.dir>0?`, plus 300 kcal pour aller vers ${fx(r.gw)} kg`:', pour garder ton poids'}.${r.prot?` Protéines : ${fx(r.pf)} g par kg pour ${fx(r.wt)} kg.`:''}`,[['cancel','Annuler'],['ok','Appliquer','pri']]);
