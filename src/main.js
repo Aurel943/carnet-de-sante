@@ -575,7 +575,7 @@ function renderToday(){const d=S.day,h=H(d),D=S.days[d]||{},it=D.items||[],T=day
  $('#acts').innerHTML=actsHTML(d,T)||`<div class="emptyst"><p>Aucune activité ce jour</p><button type="button" class="btn small" data-act="msopen" data-m="mu">Noter une séance</button></div>`;
  const mo=monitor(d),bad=mo.filter(x=>x.warn);
  $('#monmini').innerHTML=mo.length?`<div class="mm" data-go="recuperation"><div><div class="eyebrow">Moniteur de santé</div><b style="font-size:1.0625rem">${bad.length?`${bad.length} ${bad.length>1?'signaux':'signal'} inhabituel${bad.length>1?'s':''} : ${bad.map(x=>x.l).join(', ')}`:'Tous tes signes vitaux sont dans ta normale'}</b></div><div class="dots" style="margin-left:auto">${mo.map(x=>`<i style="--c:${x.col}" data-tip="${esc(x.l+' : '+monFmt(x,x.v)+'\n'+x.lab)}"></i>`).join('')}</div></div>`:'<div class="eyebrow">Moniteur de santé</div><p class="mute small" style="margin:4px 0 0">Il faut au moins 7 nuits importées pour établir ta normale.</p>';
- $('#upn').innerHTML=upNextHTML();$('#wkask').innerHTML=wkAskHTML(d);
+ $('#upn').innerHTML=upNextHTML();$('#wkask').innerHTML=d===today()&&S.cur?wendHTML():wkAskHTML(d);
  $('#bal').innerHTML=balHTML(d);$('#nightc').innerHTML=S.set.goal==='sommeil'?nightHTML(d):'';$('#wtc').innerHTML=S.set.goal==='poids'?weightHTML(d):'';$('#wkc').innerHTML=$('#ritual .wkr')?'':weekCardHTML(d);$('#sh-bal').hidden=!$('#bal').innerHTML;$('#vitals').innerHTML=vitalsHTML(d);$('#sh-vit').hidden=!$('#vitals').innerHTML;
  $('#chrono').innerHTML=chronoHTML(d);
  renderCheckin()}
@@ -772,8 +772,26 @@ function liveStart(){if(live||!S.cur)return;const t0=S.cur.t||Date.now();
 function liveStop(){if(!live)return;clearInterval(live.tick);if(live.stop)live.stop();live=null}
 function onLive(m){if(!live)return;for(const x of m.samples||[]){
   if(m.k==='hr'){live.hr.push([x.t,x.v]);if(x.t>=live.last){live.last=x.t;live.cur=Math.round(x.v)}}
-  else if(m.k==='kcal'&&x.t>=live.since)live.kc.set(x.t+':'+x.e,num(x.v))}
+  else if(m.k==='kcal'&&x.t>=live.since)live.kc.set(x.t+':'+x.e,num(x.v))
+  else if(m.k==='wk')watchEnded(x)}
  liveTick()}
+/* Un entraînement de la montre vient de se terminer : s'il recouvre la séance en cours, on le garde sur la séance
+   et on propose de la terminer aussi (sans jamais le faire d'office : il reste peut-être des séries à noter). */
+const wkOverlap=(c,t,e)=>{const s=(c.t||Date.now())/1000;return e>s+60&&t>=s-20*60&&e<=Date.now()/1000+60};
+function watchEnded(x){const c=S.cur;if(!c||!wkOverlap(c,x.t,x.e))return;const k=Math.round(x.t);
+ if(c.wend&&c.wend.k===k)return;c.wend={k,t:x.t,e:x.e,ty:x.ty||''};saveCur();renderSoft();
+ if(msKind==='seance'&&!c.wseen)askWatchEnd()}
+/* aussi après une synchro, si l'appli était fermée quand la montre a terminé */
+function curWatchEnd(){const c=S.cur;if(!c)return null;if(c.wend)return c.wend;
+ const d=c.date||today();for(const w of H(d).wk||[]){if(!has(w.st))continue;const b=new Date(d+'T00:00').getTime()/1000,t=b+w.st*60,e=t+num(w.min)*60;
+  if(wkOverlap(c,t,e))return{k:Math.round(t),t,e,ty:w.ty}}return null}
+const wendTxt=w=>`${esc(WT[w.ty]||'Entraînement')} · ${Math.round((w.e-w.t)/60)} min, terminé à ${new Date(w.e*1000).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}`;
+async function askWatchEnd(){const w=curWatchEnd();if(!w||!S.cur)return;
+ const k=await ask('Ta montre a terminé ton entraînement',`${WT[w.ty]||'Entraînement'} · ${Math.round((w.e-w.t)/60)} min, terminé à ${new Date(w.e*1000).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}. Terminer aussi ta séance dans Arden ?`,[['fin','Terminer la séance','pri'],['cont','Continuer à noter']]);
+ if(!S.cur)return;if(k==='fin')return finishWithWatch();S.cur.wseen=1;saveCur();renderSoft()}
+function finishWithWatch(){const w=curWatchEnd();if(S.cur&&w)S.cur.dur=Math.round((w.e-w.t)/60);finish()}
+function wendHTML(){const c=S.cur,w=curWatchEnd();if(!c||!w)return'';
+ return `<div class="panel wkask"><span class="eyebrow">Apple Watch</span><b class="rt">Ta montre a terminé l'entraînement</b><p>${wendTxt(w)}. Termine aussi ta séance dans Arden pour l'enregistrer.</p><div class="row"><button type="button" class="btn pri small" data-act="wkfin">Terminer la séance</button><button type="button" class="btn small" data-act="msopen">Continuer à noter</button></div></div>`}
 const setTxt2=(id,t)=>{const e=document.getElementById(id);if(e&&e.textContent!==t)e.textContent=t};
 function liveTick(){const c=S.cur;if(!c){liveStop();return}if(!$('#live'))return;const s=Math.max(0,Math.floor((Date.now()-(c.t||Date.now()))/1000));
  setTxt2('lvT',s>=3600?`${Math.floor(s/3600)}:${String(Math.floor(s/60)%60).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`:`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`);
@@ -794,14 +812,14 @@ function startSession(tid){const name=($('#nn')?.value||'').trim(),date=$('#nd')
  S.cur={id:nid(),name:nm||'Séance',date,ex,open:true,t:Date.now()};
  if(wkFor){const w=wkFor;wkFor=null;S.cur.date=w.d;if(w.st!==''){const t=new Date(w.d+'T00:00');t.setMinutes(+w.st);S.cur.t=t.getTime()}S.cur.dur=w.min}
  saveCur();renderEditor();if(!tid)$('.exn')?.focus()}
-function finish(){const c=S.cur;clearTimeout(sv);
+function finish(){const c=S.cur;clearTimeout(sv);const watchOn=!!(live&&live.last&&Date.now()/1000-live.last<180&&!curWatchEnd());
  const ex=c.ex.map(e=>({n:e.n.trim(),sets:e.sets.filter(s=>num(s.r)>0).map(s=>({w:num(s.w),r:num(s.r)}))})).filter(e=>e.n&&e.sets.length);
  if(!ex.length){toast('Rien à enregistrer : note au moins une série avec ses reps.');return}
  const el=Math.round((Date.now()-(c.t||Date.now()))/6e4),dur=c.dur||(c.date===today()&&el>=10&&el<=240?el:'');
  const o={id:c.id,name:(c.name||'').trim()||'Séance',date:c.date||today(),ex,t:c.t||Date.now(),dur,rpe:num(c.rpe)||''};
  upsert(o);put.sess(o);S.cur=null;stopTimer();renderEditor();closeSheet();renderSoft();buzz('ok');
  const prs=ex.filter(e=>{const b=bestE1(e.n,o.id);return b&&Math.max(...e.sets.map(x=>e1(x.w,x.r)))>b}).map(e=>e.n);
- if(prs.length)celebrate(prs.length>1?'Nouveaux records':'Nouveau record',prs.join(', '));else toast('Séance enregistrée'+(dur?` (${dur} min)`:'')+'. Bien joué.')}
+ if(prs.length)celebrate(prs.length>1?'Nouveaux records':'Nouveau record',prs.join(', '));else toast('Séance enregistrée'+(dur?` (${dur} min)`:'')+'. Bien joué.'+(watchOn?' Pense à arrêter l\'entraînement sur ta montre : Arden s\'y rattachera tout seul.':''))}
 function discard(){const c=S.cur;clearTimeout(sv);S.cur=null;stopTimer();S.sessions=S.sessions.filter(s=>s.id!==c.id);put.delSess(c.id);renderEditor();closeSheet();renderSoft();
  toast('Séance abandonnée',()=>{if(S.cur)return toast("Termine d'abord la séance en cours");S.cur=c;saveCur();renderEditor();renderSoft()})}
 function editSess(id){if(S.cur)return toast("Termine d'abord la séance en cours");const s=S.sessions.find(s=>s.id===id);if(!s||s.kind==='sport')return;
@@ -1096,6 +1114,7 @@ document.addEventListener('click',ev=>{unlockAudio();
  switch(act){
  case'sheet':{const sh=$('#sheet');sh.hidden=!sh.hidden;setTimeout(()=>{document.documentElement.style.setProperty('--hh',$('.top').offsetHeight+'px')},0);return}
  case'qa':return quick(b.dataset.q);
+ case'wkfin':return finishWithWatch();
  case'wknote':{buzz();wkFor={d:b.dataset.d,st:b.dataset.st,min:num(b.dataset.min)};startMode='mu';renderStart();return openSheet('seance')}
  case'wkskip':{buzz();S.set.wkSkip={...(S.set.wkSkip||{}),[b.dataset.d+'@'+b.dataset.st]:1};put.set();renderView(cur());return toast('D\'accord, elle reste telle que la montre l\'a enregistrée.')}
  case'rpe':{const w=b.closest('.rpe'),inp=$('#'+w.dataset.for),v=+b.dataset.v,nv=num(inp.value)===v?'':v;buzz();
@@ -1389,7 +1408,7 @@ function msBar(){const t=$('#mstitle'),l=$('#msl'),r=$('#msr');
  else if(msKind==='checkin'){t.textContent=S.day===today()?"Check-in du jour":'Check-in du '+dShort(S.day);l.textContent='';r.innerHTML='<button type="button" class="ms-btn ms-done" data-act="msclose">OK</button>'}
  else if(msKind==='metric'){t.textContent=(MET[metK]||{}).t||'';l.textContent='';r.innerHTML='<button type="button" class="ms-btn ms-done" data-act="msclose">OK</button>'}
  l.style.visibility=l.textContent?'':'hidden'}
-function openSheet(k){msKind=k;if(k==='seance'&&S.cur)setTimeout(()=>{liveStart();liveTick()},0);document.documentElement.style.setProperty('--sy',scrollY+'px');const m=$('#msheet');$$('#msheet .ms-body').forEach(b=>b.hidden=b.dataset.k!==k);msBar();m.hidden=false;document.documentElement.classList.add('ms-open');m.querySelector('.ms-body:not([hidden])').scrollTop=0}
+function openSheet(k){msKind=k;if(k==='seance'&&S.cur)setTimeout(()=>{liveStart();liveTick();if(S.cur&&!S.cur.wseen&&curWatchEnd())askWatchEnd()},0);document.documentElement.style.setProperty('--sy',scrollY+'px');const m=$('#msheet');$$('#msheet .ms-body').forEach(b=>b.hidden=b.dataset.k!==k);msBar();m.hidden=false;document.documentElement.classList.add('ms-open');m.querySelector('.ms-body:not([hidden])').scrollTop=0}
 function closeSheet(){wkFor=null;liveStop();if(!msKind)return;msKind='';pick=null;const a=document.activeElement;if(a&&$('#msheet').contains(a))a.blur();$('#msheet').hidden=true;document.documentElement.classList.remove('ms-open');setTimeout(renderSoft,0)}
 function openFood(m){foodMeal=MEALS.includes(m)?m:mealNow();fAdded=[];$('#fq').value='';pick=null;renderPick();renderFoodSearch();openSheet('food');
  loadCiqual().then(()=>{if(msKind==='food')renderFoodSearch()});if(matchMedia('(pointer:fine)').matches)$('#fq').focus()}
@@ -1706,7 +1725,7 @@ function resetAll(){mode='wiped';try{localStorage.removeItem(LS)}catch(e){}histo
  bar.addEventListener('pointerup',end);bar.addEventListener('pointercancel',end)}
 
 async function init(){
- if(new URLSearchParams(location.search).has('ios')){const m=await import('./healthkit-mock.js');useHealthProvider(m.healthKitMock)}
+ if(new URLSearchParams(location.search).has('ios')){const m=await import('./healthkit-mock.js');useHealthProvider(m.healthKitMock);window.__hkMock=m.healthKitMock}
  HKN=hasHealthKit();if(HKN)setupHK();
  route();renderEditor();status('load');
  mode='local';lsLoad();bump();pend.splice(0).forEach(f=>f());status('local');resumeOnce();renderSoft();

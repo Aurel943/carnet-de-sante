@@ -20,7 +20,8 @@ import HealthKit
 /// Pendant une séance : `HealthSync.startLive({ since })` ouvre une requête qu'Apple Santé alimente toute seule
 /// dès qu'une mesure arrive sur l'iPhone (fréquence cardiaque, calories actives) : pas de relecture en boucle.
 /// Chaque arrivée est envoyée à l'appli par l'événement `live` : `{ k: "hr" | "kcal", samples: [{ t, e, v }] }`
-/// (début et fin en secondes depuis 1970, valeur en bpm ou en kcal). `HealthSync.stopLive()` la referme.
+/// (début et fin en secondes depuis 1970, valeur en bpm ou en kcal), et `{ k: "wk", samples: [{ t, e, ty }] }` quand
+/// un entraînement se termine sur la montre (il n'arrive dans Apple Santé qu'une fois fini). `HealthSync.stopLive()` la referme.
 ///
 /// L'appli ne fait que lire : rien n'est écrit dans Apple Santé.
 @objc(HealthSyncPlugin)
@@ -290,6 +291,19 @@ public class HealthSyncPlugin: CAPPlugin, CAPBridgedPlugin {
             store.execute(query)
             liveQueries.append(query)
         }
+        // Entraînements terminés sur la montre pendant la séance
+        let workoutHandler: (HKAnchoredObjectQuery, [HKSample]?, [HKDeletedObject]?, HKQueryAnchor?, Error?) -> Void = { [weak self] _, samples, _, _, _ in
+            guard let self = self, let workouts = samples as? [HKWorkout], !workouts.isEmpty else { return }
+            let list: [[String: Any]] = workouts.map { (w: HKWorkout) -> [String: Any] in
+                ["t": w.startDate.timeIntervalSince1970, "e": w.endDate.timeIntervalSince1970, "ty": self.activityName(w.workoutActivityType)]
+            }
+            self.notifyListeners("live", data: ["k": "wk", "samples": list])
+        }
+        let workoutQuery = HKAnchoredObjectQuery(type: HKObjectType.workoutType(), predicate: predicate, anchor: nil,
+                                                 limit: HKObjectQueryNoLimit, resultsHandler: workoutHandler)
+        workoutQuery.updateHandler = workoutHandler
+        store.execute(workoutQuery)
+        liveQueries.append(workoutQuery)
         call.resolve()
     }
 

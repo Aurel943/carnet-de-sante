@@ -719,6 +719,21 @@ try {
       await page.click('#msl');
       await page.waitForSelector('#msheet', { state: 'hidden' });
     });
+
+    await step('la montre termine l\'entraînement : Arden propose de terminer la séance', async () => {
+      await page.click('#heroact .btn.pri');
+      await page.waitForSelector('#live');
+      await page.evaluate(() => window.__hkMock._endWorkout(30));
+      await page.waitForSelector('#dlg:not([hidden])', { timeout: 4000 }).catch(() => { throw new Error('pas de proposition quand la montre termine'); });
+      expect(/terminé/.test(await text(page, '#dlgt')), 'alerte inattendue : ' + await text(page, '#dlgt'));
+      await page.click('[data-dlg="cont"]');
+      await page.click('#msl');
+      await page.waitForSelector('#msheet', { state: 'hidden' });
+      expect(await visible(page, '#wkask [data-act="wkfin"]'), 'la carte « Ta montre a terminé » manque sur le Résumé');
+      await page.click('#wkask [data-act="wkfin"]');
+      await page.waitForFunction(() => !/Séance en cours/.test(document.querySelector('#heroact').textContent), null, { timeout: 5000 });
+      expect(/30 min/.test(await text(page, '#toast')), 'la séance doit prendre la durée de la montre');
+    });
     await ctx.close();
   }
 
