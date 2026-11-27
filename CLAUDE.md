@@ -43,6 +43,9 @@ https://aurel943.github.io/carnet-de-sante/ : rien ne doit rester seulement en l
 - Noter (bouton +) : quatre gestes du quotidien en tuiles (Repas, Séance, Check-in, Poids), puis « Plus rarement »
   en liste (Mensurations, Rendez-vous médical). N'y ajouter que ce qui n'existe nulle part ailleurs : pas de doublon
   avec les pages (scan dans Repas, eau dans Hydratation, synchro dans la capsule Santé, respiration sur Énergie).
+- Ne pas supposer que tout le monde fait de la muscu ou vise des protéines : `trackMu()` / `trackProt()` (objectif
+  choisi à l'accueil ou dans Réglages, interrupteurs) décident ; classes `mu-only` / `prot-only` pour masquer, et tout
+  nouveau contenu sur la muscu ou les protéines doit en tenir compte.
 - Navigation (comme sur iPhone) : un onglet rouvert depuis une autre partie de l'appli repart de son
   point de départ (aujourd'hui pour les onglets de jour, menu pour Plus) ; toucher l'onglet où l'on est
   déjà y ramène aussi. Entre onglets de jour (Résumé, Sommeil, Énergie, Dépense), le jour choisi est

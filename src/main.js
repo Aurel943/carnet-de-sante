@@ -77,6 +77,14 @@ for(const k in put){const f=put[k];put[k]=(...a)=>{bump();return f(...a)}}
 function upsert(o){const i=S.sessions.findIndex(s=>s.id===o.id);if(i<0)S.sessions.push(o);else S.sessions[i]=o}
 let DV=0,_dv=-1,_done=[],_idx=new Map();const bump=()=>{DV++};
 const memo=fn=>{let v=-1;const m=new Map();return k=>{if(v!==DV){v=DV;m.clear()}if(m.has(k))return m.get(k);const r=fn(k);m.set(k,r);return r}};
+/* Ce que la personne suit. La muscu et les protéines ne sont pas l'objectif de tout le monde : l'objectif choisi
+   (accueil ou Réglages) les allume ou non, deux interrupteurs ajustent. Sans objectif choisi (installations d'avant), tout reste affiché.
+   La muscu s'allume aussi d'elle-même dès qu'une séance de muscu est notée. */
+const GOALS=[['forme','Être en forme'],['poids','Perdre du poids'],['muscle','Prendre du muscle'],['endurance','Endurance'],['sommeil','Mieux dormir']];
+const isB=v=>typeof v==='boolean';
+const trackMu=()=>isB(S.set.trackMu)?S.set.trackMu:!S.set.goal||S.set.goal==='muscle'||done().some(s=>s.kind!=='sport');
+const trackProt=()=>isB(S.set.trackProt)?S.set.trackProt:!S.set.goal||['muscle','poids'].includes(S.set.goal);
+function applyTrack(){const r=document.documentElement;r.classList.toggle('no-mu',!trackMu());r.classList.toggle('no-prot',!trackProt())}
 const done=()=>{if(_dv!==DV){_dv=DV;_done=S.sessions.filter(s=>!s.open).sort(sortDesc);_idx=new Map();for(const x of _done){const a=_idx.get(x.date);a?a.push(x):_idx.set(x.date,[x])}}return _done};
 const sessOn=d=>{done();return _idx.get(d)||[]};
 const H=d=>S.health.d[d]||{};
@@ -170,7 +178,7 @@ function markers(){const L=hLast()||today(),out=[],age=num(S.set.birth)>1900?new
   /* plages selon l'âge et le sexe : [bas, haut de la plage saine, début de l'obésité] */
   r=sex==='f'?(a<40?[21,32,39]:a<60?[23,33,40]:[24,35,42]):(a<40?[8,19,25]:a<60?[11,21,28]:[13,24,30]);
   M('Masse grasse',fx(v)+' %',v<r[0]?['Basse','var(--str)']:v<=r[1]?GD:v<r[2]?['Élevée','var(--str)']:BAD,`Plage habituellement considérée comme saine pour ${sex==='f'?'une femme':'un homme'} de ${age==null?'20 à 39':a<40?'20 à 39':a<60?'40 à 59':'60 ans et plus'}${age==null?' ans (renseigne ton année de naissance pour affiner)':a<60?' ans':''} : ${r[0]} à ${r[1]} %. Les balances à impédance ont une marge d'erreur de 3 à 5 points : suis surtout la tendance.`)}
- const pr=[];for(let i=0;i<14;i++){const d=addD(today(),-i);if(dayIt(d).length)pr.push(sum(dayIt(d),'p'))}if(pr.length>=5&&wt){const gk=avg(pr)/wt;M('Protéines par kg',fx(gk)+' g/kg',gk>=1.6?OK:gk>=1.2?MID:gk>=0.8?['Minimum','var(--str)']:BAD,`${r0(avg(pr))} g par jour en moyenne pour ${fx(wt)} kg. Avec de la musculation, environ 1,6 g/kg par jour suffit à la plupart des gens pour garder ou développer du muscle (jusqu'à 2,2 g/kg en déficit calorique) ; au-delà, le bénéfice est faible. Le minimum pour la santé générale est de 0,8 g/kg.`)}
+ const pr=[];for(let i=0;i<14;i++){const d=addD(today(),-i);if(dayIt(d).length)pr.push(sum(dayIt(d),'p'))}if(pr.length>=5&&wt&&trackProt()){const gk=avg(pr)/wt;M('Protéines par kg',fx(gk)+' g/kg',gk>=1.6?OK:gk>=1.2?MID:gk>=0.8?['Minimum','var(--str)']:BAD,`${r0(avg(pr))} g par jour en moyenne pour ${fx(wt)} kg. Avec de la musculation, environ 1,6 g/kg par jour suffit à la plupart des gens pour garder ou développer du muscle (jusqu'à 2,2 g/kg en déficit calorique) ; au-delà, le bénéfice est faible. Le minimum pour la santé générale est de 0,8 g/kg.`)}
  const o2=winAvg('o2',L,30);if(o2)M('Saturation nocturne',fx(o2)+' %',o2>=95?OK:o2>=92?MID:BAD,'Au repos, 95 à 100 % est normal, et de brèves baisses la nuit sont fréquentes. Une moyenne nocturne habituellement sous 92-93 %, surtout avec des ronflements ou de la fatigue au réveil, mérite d\'en parler à un médecin (apnées du sommeil). La mesure au poignet est moins précise qu\'un oxymètre au doigt.');
  const rr=winAvg('rr',L,30);if(rr)M('Respiration nocturne',fx(rr)+' /min',rr>=12&&rr<=20?OK:MID,'Chez l\'adulte au repos, 12 à 20 respirations par minute est la norme. Ce qui compte surtout, ce sont les hausses brusques par rapport à ta propre moyenne : elles accompagnent souvent une infection.');
  const dp=winAvg('dip',L,14);if(dp)M('Baisse de FC la nuit',r0(dp)+' %',dp>=10?OK:dp>=5?MID:BAD,'Chez la plupart des gens, la FC baisse d\'environ 10 à 20 % pendant le sommeil par rapport à la journée. Une baisse faible et durable est associée à un moins bon profil cardiovasculaire ; ponctuellement, un repas copieux, l\'alcool, un entraînement tardif ou le stress la réduisent.');
@@ -189,7 +197,7 @@ function nutriCalc(){const W=weights(),wk=Object.keys(W).sort(),wt=wk.length?wAv
  const [m,how]=td&&(!pa||Math.abs(td.t-pa[0])/pa[0]<=.2)?[td.t,`ta dépense réelle, mesurée sur 3 semaines à partir de tes repas et de ton poids (${r0(td.t)} kcal par jour)`]:pa||[null,''];
  if(!m)return{miss:b.miss&&b.miss.length?b.miss:['ton poids']};
  const dir=gw&&wt?(gw<wt-0.5?-1:gw>wt+0.5?1:0):0,raw=m+(dir<0?-450:dir>0?300:0),floor=b.v||(S.set.sex==='f'?1200:1500);
- return{kcal:Math.round(Math.max(raw,floor)/50)*50,floor:raw<floor,prot:wt?Math.round(wt*1.6/5)*5:null,how,dir,wt,gw}}
+ return{kcal:Math.round(Math.max(raw,floor)/50)*50,floor:raw<floor,pf:trackMu()||S.set.goal==='muscle'?1.6:1.2,prot:wt&&trackProt()?Math.round(wt*(trackMu()||S.set.goal==='muscle'?1.6:1.2)/5)*5:null,how,dir,wt,gw}}
 function zones28(){const Z=[0,0,0,0,0];for(let i=0;i<28;i++)for(const w of H(addD(today(),-i)).wk||[])(w.z||[]).forEach((m,j)=>Z[j]+=m);return Z}
 function monotony(d){const L=[];for(let i=0;i<7;i++)L.push(loadOf(addD(d,-i)));const m=avg(L);if(m<5)return null;const s=Math.max(sdv(L),m*0.1);return{mono:m/s,strain:L.reduce((a,b)=>a+b,0)*m/s}}
 function dailyPts(f,from,to){const o=[];for(let k=from;k<=to;k=addD(k,1)){const v=f(k);if(v!=null&&isFinite(v))o.push({x:k,y:Math.round(v*100)/100})}return o}
@@ -318,7 +326,7 @@ function dayStory(d){const h=H(d),rc=recovery(d),sl=sleepScore(d),ef=effortOf(d)
  if(ef!=null&&tg&&ef>tg[1]+5)return S1('Grosse journée',`Dépense de ${ef}, au-delà de ce que ton énergie conseillait : mise sur un vrai repas et une nuit plus longue.`,'mid');
  if(isT&&ef!=null&&tg&&ef>=tg[0])return S1('Mission accomplie',`Ta dépense (${ef}) est dans ta zone : la suite de la journée, c'est de la récupération.`,'go');
  if(rc){const s=rc.s;
-  if(s>=67)return sl&&sl.s>=75?S1('Journée de force','Énergie haute et nuit réparatrice : c\'est le jour pour une séance exigeante.','go'):S1('Pleine énergie','Ton corps a bien récupéré malgré une nuit moyenne : fonce, puis couche-toi tôt.','go');
+  if(s>=67)return sl&&sl.s>=75?S1(trackMu()?'Journée de force':'Grosse forme','Énergie haute et nuit réparatrice : c\'est le jour pour une séance exigeante.','go'):S1('Pleine énergie','Ton corps a bien récupéré malgré une nuit moyenne : fonce, puis couche-toi tôt.','go');
   if(s>=34)return sl&&sl.s<60?S1('Journée en douceur','Nuit un peu courte : garde une intensité modérée et offre-toi une meilleure nuit ce soir.','mid'):S1('Rythme de croisière','Tes indicateurs sont proches de ta normale : entraîne-toi normalement, sans viser ton maximum.','mid');
   return S1('Journée de récupération','Tes indicateurs sont sous ta normale : marche, mobilité ou repos, et une nuit plus longue ce soir.','low')}
  return sl.s>=80?S1('Belle nuit',`${fmtSl(h.sl)} de sommeil réparateur : ta journée part sur de bonnes bases.`,'go'):sl.s>=60?S1('Nuit correcte',`${fmtSl(h.sl)} de sommeil : une journée normale t'attend.`,'mid'):S1('Nuit courte',`${fmtSl(h.sl)} de sommeil seulement : vas-y doucement et vise une meilleure nuit.`,'low')}
@@ -334,13 +342,13 @@ function planItems(d){const out=[],P=(c,html)=>out.push([c,html]),h=H(d),D=S.day
  if(isT||d===hLast()){const b=bedOf(d);if(b)P('var(--slp)',`Ce soir : <b>${fmtSl(b.need)}</b> de sommeil, au lit vers <b>${hhmm(b.bed)}</b>.`)}
  if(has(h.tp)){const tb=base('tp',d);if(tb!=null&&h.tp-tb>=0.5)P('var(--hrt)','<b>Température au poignet en hausse</b> : peut précéder une infection, ou venir de l\'alcool ou d\'une chambre chaude.')}
  if(num(h.stz)>=30)P('var(--str)','<b>Journée stressante</b> : quelques minutes de respiration lente aident ta FC à redescendre. <button type="button" class="pbtn" data-act="breath">Respirer 1 min</button>');
- if(isT&&hr>=13&&hr<21&&out.length<4){const pr=sum(D.items||[],'p'),T=num(S.set.prot);if(T&&(D.items||[]).length&&pr<T*.5)P('var(--nut)',`Protéines : <b>${r0(pr)} g</b> sur ${r0(T)}, pense à en mettre au prochain repas.`)}
+ if(isT&&hr>=13&&hr<21&&out.length<4&&trackProt()){const pr=sum(D.items||[],'p'),T=num(S.set.prot);if(T&&(D.items||[]).length&&pr<T*.5)P('var(--nut)',`Protéines : <b>${r0(pr)} g</b> sur ${r0(T)}, pense à en mettre au prochain repas.`)}
  if(!out.length){P('var(--mind)','Fais ton <b>check-in</b> : 20 secondes pour dire comment tu te sens.');P('var(--trn)','Note ta prochaine <b>séance</b> ou ton prochain <b>repas</b>.')}
  return out.slice(0,4)}
 const planHTML=items=>items.map(([c,h])=>`<li style="--c:${c}">${ARC}<span>${h}</span></li>`).join('');
 /* Action principale du moment, puis les autres en capsules grises. */
 function heroActs(d){if(d!==today())return'';const j=J(d),ci=!!(j.mood||j.energy||j.stress||j.sore),T=dayTrain(d),act=T.mu.length+T.sp.length+T.ap.length>0||!!S.cur,hr=new Date().getHours();
- const A={ci:['ciopen','','Faire mon check-in','Check-in'],mu:['msopen','data-m="mu"',S.cur?'Reprendre ma séance':'Noter une séance','Séance'],food:['foodadd',`data-m="${mealNow()}"`,'Ajouter un repas','Repas']};
+ const A={ci:['ciopen','','Faire mon check-in','Check-in'],mu:['msopen',`data-m="${trackMu()?'mu':'sp'}"`,S.cur?'Reprendre ma séance':'Noter une séance','Séance'],food:['foodadd',`data-m="${mealNow()}"`,'Ajouter un repas','Repas']};
  const first=!ci?'ci':!act&&hr<21?'mu':'food',rest=['ci','mu','food'].filter(k=>k!==first&&!(k==='ci'&&ci)).slice(0,1);
  const b=(k,pri)=>{const [a,x,l,s]=A[k];return `<button type="button" class="btn${pri?' pri':' small'}" data-act="${a}" ${x}>${pri?l:s}</button>`};
  return b(first,true)+rest.map(k=>b(k,false)).join('')}
@@ -442,7 +450,7 @@ function balHTML(d){const x=burnOf(d),it=dayIt(d),ate=it.reduce((a,y)=>a+kcalOf(
  const big=!goal?r0(ate):ate&&left<0?'+'+r0(-left):r0(Math.max(0,left)),lab=!goal?'mangées':left<0?'au-dessus de ton objectif':isT?'à manger aujourd\'hui':'sous l\'objectif';
  const nx=isT?(()=>{const m0=MEALS.indexOf(mealNow());for(let k=m0;k<MEALS.length;k++){const m=MEALS[k];if(!it.some(y=>y.m===m))return m}return null})():null,ym=nx?dayIt(addD(d,-1)).filter(y=>y.m===nx):[];
  return `<div class="panel balc nutc"><button type="button" class="nuth" data-go="nutrition"><span class="nuk">${kcalArc(ate,goal)}</span><span class="balh"><b>${big}<small> kcal</small></b><span>${lab}</span></span></button>
- ${T?`<button type="button" class="nupr" data-go="nutrition"><span>Protéines</span><i><b style="width:${clamp(Pr/T*100,0,100).toFixed(1)}%"></b></i><em><b>${r0(Pr)}</b> / ${r0(T)} g</em></button>`:''}
+ ${T&&trackProt()?`<button type="button" class="nupr" data-go="nutrition"><span>Protéines</span><i><b style="width:${clamp(Pr/T*100,0,100).toFixed(1)}%"></b></i><em><b>${r0(Pr)}</b> / ${r0(T)} g</em></button>`:''}
  <button type="button" class="balr" data-go="nutrition" style="--c:var(--nut)"><span class="bl"><i><svg viewBox="0 0 24 24"><path d="M4 11h16a8 8 0 0 1-16 0zM9 7c0-2 1.5-3 3-3s3 1 3 3"/></svg></i>Mangé</span><span class="bt"><i class="b1" style="width:${W(ate)}"></i>${goal?`<u style="left:${W(goal)}"></u>`:''}</span><em>${r0(ate)}</em></button>
  <button type="button" class="balr" data-act="metric" data-k="burn" style="--c:var(--eff)"><span class="bl"><i><svg viewBox="0 0 24 24"><path d="M12 2.5c.8 3.8 5.5 5.6 5.5 11a5.5 5.5 0 0 1-11 0c0-2.8 1.6-4.2 2.4-6 .9 1.3 1.8 1.9 2.9 2.2-.3-2.5-.6-4.6.2-7.2z"/></svg></i>Dépensé</span><span class="bt"><i class="b0" style="width:${W(x?x.basal:0)}"></i><i class="b1" style="width:${W(x?x.active:0)}"></i></span><em>${x?r0(burn):'–'}</em></button>
  <p class="balf">${x?`Bilan ${dl>0?'+':dl<0?'−':''}${r0(Math.abs(dl))} kcal${isT?' pour l\'instant':''} · ${r0(x.basal)} de base, ${r0(x.active)} actives`:'Renseigne ton profil pour voir ta dépense'}</p>
@@ -506,7 +514,7 @@ function renderToday(){const d=S.day,h=H(d),D=S.days[d]||{},it=D.items||[],T=day
   tile('var(--hrt)','FC au repos',h.rhr?`${h.rhr}<small> bpm</small>`:'–',h.nmin?`min. nocturne ${h.nmin} bpm`:'','','rhr'),
   tile('var(--mind)','VFC nocturne',nhrv(d)?`${r0(nhrv(d))}<small> ms</small>`:'–',nhrv(d)&&vb?`normale ${r0(vb.m)} ms`:'pendant ton sommeil','','hrv'),
   tile('var(--str)','Stress estimé',has(h.stz)?`${st}<small> / 100</small>`:'–',has(h.stz)?stressLab(st):hKeys().length?(d===today()?'calculé au fil de la journée':'pas de mesure ce jour'):IMP('après import Apple','après synchro Apple Santé'),'','stz'),
-  tile('var(--nut)','Nutrition',`${r0(it.reduce((a,x)=>a+kcalOf(x),0))}<small> kcal</small>`,`${r0(sum(it,'p'))} g de protéines sur ${r0(set.prot)}`,'','nut'),
+  tile('var(--nut)','Nutrition',`${r0(it.reduce((a,x)=>a+kcalOf(x),0))}<small> kcal</small>`,trackProt()?`${r0(sum(it,'p'))} g de protéines sur ${r0(set.prot)}`:`${r0(sum(it,'p'))} g de protéines`,'','nut'),
   tile('var(--wat)','Hydratation',`${fx(wat/1000)}<small> / ${fx(num(set.water)/1000)} L</small>`,'',`<i class="wave" aria-hidden="true" style="--lv:${waterLv[d]??Math.min(100,wat/num(set.water)*100)}%"><svg viewBox="0 0 120 10" preserveAspectRatio="none"><path d="M0 5Q15 0 30 5T60 5T90 5T120 5V10H0z"/></svg></i><div class="row"><button class="btn small" data-act="water" data-v="250">+25 cl</button><button class="btn small" data-act="water" data-v="500">+50 cl</button></div>`,'wat')
  ].join('');
  {const lv=Math.min(100,wat/num(set.water)*100),w=$('#tiles .wave');if(w&&waterLv[d]!==lv){requestAnimationFrame(()=>requestAnimationFrame(()=>{w.style.setProperty('--lv',lv+'%')}))}waterLv[d]=lv}
@@ -788,12 +796,12 @@ function renderNutri(){const d=S.day,D=S.days[d]||{},it=D.items||[],Pr=sum(it,'p
  const mbar=(lab,v,ref,c,txt)=>`<div class="mac" style="--c:${c}"><span>${lab}</span><i><b style="width:${ref?clamp(v/ref*100,0,100).toFixed(1):0}%"></b></i><em>${txt}</em></div>`;
  $('#nhero').innerHTML=`<div class="kwrap">${kcalArc(K,KT)}<div class="kmid"><b class="kv">${K&&left<0?'+'+r0(-left):r0(Math.max(0,left))}</b><span>${!KT?'kcal':left<0?'kcal au-dessus':isT?'kcal restantes':'kcal sous l\'objectif'}</span>${bn?`<small class="kburn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5c.8 3.8 5.5 5.6 5.5 11a5.5 5.5 0 0 1-11 0c0-2.8 1.6-4.2 2.4-6 .9 1.3 1.8 1.9 2.9 2.2-.3-2.5-.6-4.6.2-7.2z"/></svg>${r0(bn.total)} dépensées</small>`:''}</div></div>
   <div class="kst"><div><b>${r0(K)}</b><span>mangé</span></div><div><b>${r0(KT)}</b><span>objectif</span></div><div><b>${bn?(K-bn.total>0?'+':K-bn.total<0?'−':'')+r0(Math.abs(K-bn.total)):'–'}</b><span>bilan</span></div></div>
-  <div class="macs">${mbar('Protéines',Pr,T,'var(--nut)',`<b>${r0(Pr)}</b> / ${r0(T)} g`)}${mbar('Glucides',G,cRef,'var(--wat)',`<b>${r0(G)}</b> g`)}${mbar('Lipides',Li,lRef,'var(--str)',`<b>${r0(Li)}</b> g`)}</div>`;
+  <div class="macs">${trackProt()?mbar('Protéines',Pr,T,'var(--nut)',`<b>${r0(Pr)}</b> / ${r0(T)} g`):mbar('Protéines',Pr,KT*.15/4,'var(--nut)',`<b>${r0(Pr)}</b> g`)}${mbar('Glucides',G,cRef,'var(--wat)',`<b>${r0(G)}</b> g`)}${mbar('Lipides',Li,lRef,'var(--str)',`<b>${r0(Li)}</b> g`)}</div>`;
  const byM={};it.forEach((x,k)=>{const m=MEALS.includes(x.m)?x.m:'Collation';(byM[m]||(byM[m]=[])).push([x,k])});
  const y=dayIt(addD(d,-1));
  $('#meals').innerHTML=MEALDEF.map(m=>{const L=byM[m]||[],mk=L.reduce((a,[x])=>a+kcalOf(x),0),mp=L.reduce((a,[x])=>a+num(x.p),0),ym=y.filter(x=>x.m===m);
   const empty=!L.length?`<div class="mempty">${ym.length?`<button type="button" class="mchip" data-act="likey" data-m="${esc(m)}"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4"/></svg>Comme hier · ${r0(ym.reduce((a,x)=>a+kcalOf(x),0))} kcal</button>`:''}${recentItems(m,6).filter(x=>x.m===m).slice(0,ym.length?2:3).map(x=>`<button type="button" class="mchip" data-act="radd" data-m="${esc(m)}" data-r="${esc(JSON.stringify(cleanItem(x)))}">+ ${esc(itemName(x))}</button>`).join('')}</div>`:'';
-  return `<div class="panel meal" style="--c:${MEALC[m]}"><div class="mh2"><i class="mi"><svg viewBox="0 0 24 24">${MEALIC[m]}</svg></i><span><b>${m}</b><small>${L.length?`${r0(mk)} kcal · ${r0(mp)} g de protéines`:'rien de noté'}</small></span><button type="button" class="madd" data-act="foodadd" data-m="${esc(m)}" aria-label="Ajouter au ${esc(m.toLowerCase())}"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div>
+  return `<div class="panel meal" style="--c:${MEALC[m]}"><div class="mh2"><i class="mi"><svg viewBox="0 0 24 24">${MEALIC[m]}</svg></i><span><b>${m}</b><small>${L.length?`${r0(mk)} kcal${trackProt()?` · ${r0(mp)} g de protéines`:''}`:'rien de noté'}</small></span><button type="button" class="madd" data-act="foodadd" data-m="${esc(m)}" aria-label="Ajouter au ${esc(m.toLowerCase())}"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div>
    ${L.length?`<ul class="mitems">${L.map(([x,k])=>`<li><button type="button" class="mit" data-act="fedit" data-k="${k}"><span><b>${esc(itemName(x))}</b><small>${esc([qtyTxt(x),num(x.p)?fx(num(x.p))+' g de protéines':''].filter(Boolean).join(' · '))}</small></span><em>${r0(kcalOf(x))}</em></button></li>`).join('')}</ul>`:empty}</div>`}).join('');
  // eau, compléments, poids
  const wat=num(D.w)||num(H(d).wa),wt=num(S.set.water),tk=D.sup||[];
@@ -830,7 +838,7 @@ function renderTrends(){renderMarkers();renderRecap();const e=today(),s0=addD(e,
  const nut=(ds,f)=>avg(ds.filter(d=>dayIt(d).length).map(f));
  const tr=ds=>{let n=0,m=0,t=0;for(const d of ds){const x=dayTrain(d);n+=x.mu.length+x.sp.length+x.ap.length;m+=x.min;for(const s of x.mu)t+=(s.ex||[]).reduce((a,y)=>a+y.sets.reduce((b,z)=>b+num(z.w)*num(z.r),0),0)}return{n,m,t}};
  const W=weights(),jm=(ds,k)=>avg(ds.map(d=>J(d)[k]).filter(Boolean)),ta=tr(A),tb=tr(B);
- const rows=[['Énergie',sc(A,d=>recovery(d)?.s),sc(B,d=>recovery(d)?.s),v=>r0(v)+' %',1,3],['Dépense moyenne',sc(A,effortOf),sc(B,effortOf),r0,0,3],['Score de sommeil',sc(A,d=>sleepScore(d)?.s),sc(B,d=>sleepScore(d)?.s),r0,1,3],['Sommeil moyen',hv(A,'sl'),hv(B,'sl'),fmtSl,1,15],['VFC nocturne',avg(A.map(nhrv).filter(Boolean)),avg(B.map(nhrv).filter(Boolean)),v=>r0(v)+' ms',1,2],['FC au repos',hv(A,'rhr'),hv(B,'rhr'),v=>r0(v)+' bpm',-1,1],['Stress estimé',hv(A,'stz'),hv(B,'stz'),r0,-1,5],['Pas par jour',hv(A,'st'),hv(B,'st'),r0,1,500],['Séances',ta.n,tb.n,r0,1,1],['Temps d\'entraînement',ta.m,tb.m,v=>r0(v)+' min',1,20],['Tonnage muscu',ta.t,tb.t,v=>fx(v/1000)+' t',1,500],['Protéines / jour',nut(A,d=>sum(dayIt(d),'p')),nut(B,d=>sum(dayIt(d),'p')),v=>r0(v)+' g',1,5],['Calories / jour',nut(A,d=>dayIt(d).reduce((a,x)=>a+kcalOf(x),0)),nut(B,d=>dayIt(d).reduce((a,x)=>a+kcalOf(x),0)),r0,0,100],['Poids (moy. 7 j)',wAvg(W,e),wAvg(W,p1),v=>fx(v)+' kg',0,.2],['Humeur',jm(A,'mood'),jm(B,'mood'),v=>fx(v)+' / 5',1,.3],['Énergie',jm(A,'energy'),jm(B,'energy'),v=>fx(v)+' / 5',1,.3],['Stress ressenti',jm(A,'stress'),jm(B,'stress'),v=>fx(v)+' / 5',-1,.3]];
+ const rows=[['Énergie',sc(A,d=>recovery(d)?.s),sc(B,d=>recovery(d)?.s),v=>r0(v)+' %',1,3],['Dépense moyenne',sc(A,effortOf),sc(B,effortOf),r0,0,3],['Score de sommeil',sc(A,d=>sleepScore(d)?.s),sc(B,d=>sleepScore(d)?.s),r0,1,3],['Sommeil moyen',hv(A,'sl'),hv(B,'sl'),fmtSl,1,15],['VFC nocturne',avg(A.map(nhrv).filter(Boolean)),avg(B.map(nhrv).filter(Boolean)),v=>r0(v)+' ms',1,2],['FC au repos',hv(A,'rhr'),hv(B,'rhr'),v=>r0(v)+' bpm',-1,1],['Stress estimé',hv(A,'stz'),hv(B,'stz'),r0,-1,5],['Pas par jour',hv(A,'st'),hv(B,'st'),r0,1,500],['Séances',ta.n,tb.n,r0,1,1],['Temps d\'entraînement',ta.m,tb.m,v=>r0(v)+' min',1,20],['Tonnage muscu',trackMu()?ta.t:null,trackMu()?tb.t:null,v=>fx(v/1000)+' t',1,500],['Protéines / jour',trackProt()?nut(A,d=>sum(dayIt(d),'p')):null,trackProt()?nut(B,d=>sum(dayIt(d),'p')):null,v=>r0(v)+' g',1,5],['Calories / jour',nut(A,d=>dayIt(d).reduce((a,x)=>a+kcalOf(x),0)),nut(B,d=>dayIt(d).reduce((a,x)=>a+kcalOf(x),0)),r0,0,100],['Poids (moy. 7 j)',wAvg(W,e),wAvg(W,p1),v=>fx(v)+' kg',0,.2],['Humeur',jm(A,'mood'),jm(B,'mood'),v=>fx(v)+' / 5',1,.3],['Énergie',jm(A,'energy'),jm(B,'energy'),v=>fx(v)+' / 5',1,.3],['Stress ressenti',jm(A,'stress'),jm(B,'stress'),v=>fx(v)+' / 5',-1,.3]];
  $('#week').innerHTML=`<table><thead><tr><th>Mesure</th><th class="num">Cette semaine</th><th class="num">Semaine d'avant</th><th class="num">Évolution</th></tr></thead><tbody>${rows.map((r,i)=>[...r,[0,1,2,3,7,8,9,13].includes(i)]).filter(r=>r[1]!=null||r[2]!=null).map(([l,a,b,f,dir,th,ess])=>{let ev='–';if(a!=null&&b!=null){const df=a-b;ev=Math.abs(df)<th?'stable':`<span class="${dir===0?'':(df*dir>0?'gd':'dn')}">${df>0?'▲':'▼'} ${f(Math.abs(df))}</span>`}return `<tr${ess?'':' class="adv-s"'}><td>${l}</td><td class="num" data-l="Cette semaine">${a!=null?f(a):'–'}</td><td class="num" data-l="Semaine d'avant">${b!=null?f(b):'–'}</td><td class="num" data-l="Évolution">${ev}</td></tr>`}).join('')}</tbody></table>`;
  {const R=rows.filter(r=>r[1]!=null&&r[2]!=null&&r[4]!==0&&Math.abs(r[1]-r[2])>=r[5]),up=R.filter(r=>(r[1]-r[2])*r[4]>0).map(r=>r[0].toLowerCase()),dn=R.filter(r=>(r[1]-r[2])*r[4]<0).map(r=>r[0].toLowerCase()),uq=a=>[...new Set(a)];
   $('#vd-wk').innerHTML=R.length?`Par rapport à la semaine d'avant : <b>${up.length} en progrès</b>${up.length?` (${esc(uq(up).slice(0,3).join(', '))})`:''}${dn.length?`, ${dn.length} en recul (${esc(uq(dn).slice(0,3).join(', '))})`:''}.`:'Pas encore deux semaines à comparer.'}
@@ -860,7 +868,7 @@ function insights(){const e=hLast()||today(),from=addD(e,-120),out=[],T=num(S.se
  const te=cmp(good,bad,d=>J(d).energy||null),ea=te&&te.a,eb=te&&te.b;
  if(ea&&eb&&Math.abs(ea-eb)>=0.3)out.push({c:'var(--nut)',t:`Ton énergie ressentie est de ${fx(ea)} / 5 après une bonne nuit, contre ${fx(eb)} après une nuit courte.`,s:'D\'après ton check-in.'});
  const n30=[];for(let i=0;i<30;i++){const d=addD(today(),-i);if(dayIt(d).length)n30.push(sum(dayIt(d),'p'))}
- if(n30.length>=5){const ok=n30.filter(x=>x>=num(S.set.prot)).length;out.push({c:'var(--nut)',t:ok?`Objectif protéines atteint ${ok} jour${ok>1?'s':''} sur ${n30.length} notés ce mois-ci.`:`Protéines : ${r0(avg(n30))} g par jour en moyenne ce mois-ci, pour ${r0(S.set.prot)} g visés.`,s:ok?`Moyenne : ${r0(avg(n30))} g par jour pour ${r0(S.set.prot)} g visés.`:`Une source de protéines à chaque repas (skyr, œufs, poulet, légumineuses) rapproche vite de l'objectif.`})}
+ if(n30.length>=5&&trackProt()){const ok=n30.filter(x=>x>=num(S.set.prot)).length;out.push({c:'var(--nut)',t:ok?`Objectif protéines atteint ${ok} jour${ok>1?'s':''} sur ${n30.length} notés ce mois-ci.`:`Protéines : ${r0(avg(n30))} g par jour en moyenne ce mois-ci, pour ${r0(S.set.prot)} g visés.`,s:ok?`Moyenne : ${r0(avg(n30))} g par jour pour ${r0(S.set.prot)} g visés.`:`Une source de protéines à chaque repas (skyr, œufs, poulet, légumineuses) rapproche vite de l'objectif.`})}
  const s7=vals('sl',e,7,0);if(s7.length>=5){const debt=s7.reduce((a,x)=>a+Math.max(0,T-x),0);if(debt>=60)out.push({c:'var(--slp)',t:`Dette de sommeil sur 7 nuits : ${fmtSl(debt)}.`,s:`Une ou deux nuits plus longues aident à la résorber.`})}
  const vb=nhrvBase(e),v3=avg([0,1,2].map(i=>nhrv(addD(e,-i))).filter(Boolean));if(vb&&v3&&v3<vb.m-vb.s)out.push({c:'var(--mind)',t:'Ta VFC nocturne est sous ta normale depuis plusieurs nuits.',s:`${r0(v3)} ms contre ${r0(vb.m)} ms habituellement. Signe de fatigue accumulée : allège l'entraînement et soigne ton sommeil.`});
  const ac=acwr(today());if(ac.r!=null&&(ac.r>1.5||ac.r<0.7))out.push({c:'var(--eff)',t:ac.r>1.5?`Ta charge d'entraînement a bondi : ratio ${f2(ac.r)}.`:`Ta charge d'entraînement est en baisse : ratio ${f2(ac.r)}.`,s:ac.r>1.5?'Une hausse brutale augmente le risque de blessure.':'Normal après une semaine de repos ; sinon, reprends progressivement.'});
@@ -889,7 +897,7 @@ function renderBody(){const W=weights(),wk=Object.keys(W).sort(),L=hLast()||toda
 /* ---------- plus ---------- */
 const SUBT={dossier:'Dossier médical',reglages:'Réglages',apple:'Apple Santé',donnees:'Sauvegarde et confidentialité'};
 function quick(q){$('#sheet').hidden=true;setTimeout(()=>document.documentElement.style.setProperty('--hh',$('.top').offsetHeight+'px'),0);if(q==='close')return;const go=(h,fn)=>{if(location.hash!=='#'+h)location.hash=h;else route();setTimeout(fn||(()=>{}),150)};
- if(q==='mu'){if(!S.cur)renderStart();openSheet('seance')}
+ if(q==='mu'){if(!S.cur){if(!trackMu())startMode='sp';renderStart()}openSheet('seance')}
  else if(q==='food'){S.day=today();openFood(mealNow())}
  else if(q==='meas')go('tendances',()=>{openForm('#mf',null,'#m-taille',true);$('#mf').scrollIntoView({behavior:calm()?'auto':'smooth',block:'center'})})
  else if(q==='bw'){S.day=today();go('nutrition',()=>{const b=$('#bw');if(b){b.scrollIntoView({behavior:'smooth',block:'center'});b.focus({preventScroll:true})}})}
@@ -914,7 +922,7 @@ function renderMed(){const t=today(),L=S.med.slice().sort((a,b)=>b.date.localeCo
 const SK={'s-birth':'birth','s-height':'height','s-prot':'prot','s-kcal':'kcal','s-steps':'steps','s-sleep':'sleep','s-exmin':'exmin','s-water':'water','s-goalw':'goalw','s-rest':'rest','s-rmin':'rmin','s-rmax':'rmax','s-inc':'inc'};
 function renderSettings(){const a=document.activeElement;
  for(const id in SK){const e=$('#'+id);if(a!==e){const raw=S.set[SK[id]];if(!has(raw)){e.value='';continue}const v=SK[id]==='sleep'?num(raw)/60:num(raw);e.value=id==='s-birth'?String(v):f2(v)}}
- $('#s-auto').checked=S.set.auto!==false;$('#s-hvm').value=hvm();$('#s-sex').value=S.set.sex||'';
+ $('#s-auto').checked=S.set.auto!==false;$('#s-goal').value=S.set.goal||'';$('#s-tmu').checked=trackMu();$('#s-tprot').checked=trackProt();applyTrack();$('#s-hvm').value=hvm();$('#s-sex').value=S.set.sex||'';
  const lst=(arr,act)=>arr.length?arr.map((t,k)=>`<span class="schip">${esc(t)}<button type="button" data-act="${act}" data-k="${k}" aria-label="Retirer ${esc(t)}">×</button></span>`).join(''):'<span class="mute small">Aucun pour l\'instant.</span>';
  $('#suplist').innerHTML=lst(S.set.sups,'delSup');$('#taglist').innerHTML=lst(S.set.tags,'delTag');
  $('#favlist').innerHTML=S.set.foods.length?S.set.foods.map((f,k)=>`<li><span><b>${esc(f.n)}</b><small>${r0(kcalOf(f))} kcal · ${fx(num(f.p))} g de protéines</small></span><button class="x" data-act="delFav" data-k="${k}" aria-label="Retirer ${esc(f.n)} des favoris">×</button></li>`).join(''):'<li class="mute small empty">Aucun favori pour l\'instant.</li>';
@@ -943,7 +951,7 @@ function resumeOnce(){if(resumed)return;resumed=true;const o=S.sessions.filter(s
 const views=['aujourdhui','sommeil','recuperation','effort','nutrition','tendances','plus'];
 const cur=()=>{const h=location.hash.slice(1);return views.includes(h)?h:'aujourdhui'};
 function markMore(){if(!matchMedia('(max-width:800px)').matches)return;requestAnimationFrame(()=>$$('.view:not([hidden]) :is(.panel>p.mute.small,.mkr p):not(.open)').forEach(p=>p.classList.toggle('more',p.scrollHeight>p.clientHeight+2)))}
-function renderView(v){const sec=$('#v-'+v);if(sec){sec.classList.toggle('nohd',!hKeys().length);sec.classList.toggle('nosess',!done().length)}if(v==='tendances')$('#tnote').innerHTML=hKeys().length?'':emptyHTML('tendances');setTimeout(markMore,0);setTimeout(syncNav,0);renderDayNav();applyDeep();$('#demobar').hidden=!S.set.demo;try{({aujourdhui:renderToday,sommeil:renderSleep,recuperation:renderRec,effort:renderEffort,nutrition:renderNutri,tendances:renderTrends,plus:renderPlus})[v]()}catch(e){console.error(e)}}
+function renderView(v){applyTrack();const sec=$('#v-'+v);if(sec){sec.classList.toggle('nohd',!hKeys().length);sec.classList.toggle('nosess',!done().length)}if(v==='tendances')$('#tnote').innerHTML=hKeys().length?'':emptyHTML('tendances');setTimeout(markMore,0);setTimeout(syncNav,0);renderDayNav();applyDeep();$('#demobar').hidden=!S.set.demo;try{({aujourdhui:renderToday,sommeil:renderSleep,recuperation:renderRec,effort:renderEffort,nutrition:renderNutri,tendances:renderTrends,plus:renderPlus})[v]()}catch(e){console.error(e)}}
 function renderSoft(){updateDatalist();
  if(!S.cur&&!$('#editor').contains(document.activeElement))renderStart();
  if(S.cur)S.cur.ex.forEach((e,i)=>updateHint(i));
@@ -997,6 +1005,7 @@ document.addEventListener('click',ev=>{unlockAudio();
  switch(act){
  case'sheet':{const sh=$('#sheet');sh.hidden=!sh.hidden;setTimeout(()=>{document.documentElement.style.setProperty('--hh',$('.top').offsetHeight+'px')},0);return}
  case'qa':return quick(b.dataset.q);
+ case'obgoal':buzz();$$('#onb [data-act="obgoal"]').forEach(x=>{const on=x===b;x.classList.toggle('on',on);x.setAttribute('aria-checked',String(on))});return;
  case'kcalc':return askNutriCalc();
  case'medopen':return openForm('#medf',b,'#mti');
  case'mfopen':return openForm('#mf',b,'#m-taille');
@@ -1101,6 +1110,10 @@ $('#bkfile').addEventListener('change',async ev=>{const f=ev.target.files[0];ev.
  m.innerHTML=`Sauvegarde trouvée : ${d.sessions.length} séances, ${Object.keys(d.days||{}).length} jours, ${(d.med||[]).length} entrées de dossier. Elle remplacera tes données actuelles. <button type="button" class="btn small danger armed" data-act="bkok">Restaurer</button>`});
 $('#pex').addEventListener('change',renderForce);$('#am').addEventListener('change',renderBody);$('#vtm').addEventListener('change',renderRec);
 $('#s-auto').addEventListener('change',ev=>{S.set.auto=ev.target.checked;put.set()});
+/* l'objectif remet les interrupteurs à ses valeurs ; chaque interrupteur peut ensuite être changé à la main */
+$('#s-goal').addEventListener('change',ev=>{S.set.goal=ev.target.value;delete S.set.trackMu;delete S.set.trackProt;put.set();renderSettings();toast(ev.target.value?'Objectif : '+GOALS.find(g=>g[0]===ev.target.value)[1]:'Objectif retiré')});
+$('#s-tmu').addEventListener('change',ev=>{S.set.trackMu=ev.target.checked;put.set();renderSettings()});
+$('#s-tprot').addEventListener('change',ev=>{S.set.trackProt=ev.target.checked;put.set();renderSettings()});
 $('#s-sex').addEventListener('change',ev=>{S.set.sex=ev.target.value;put.set()});
 $('#s-hvm').addEventListener('change',ev=>{S.set.hvm=ev.target.value;S.set.hvmSet=true;put.set();toast(ev.target.value==='rmssd'?'VFC : RMSSD pendant le sommeil':ev.target.value==='sdnn'?'VFC : SDNN Apple pendant le sommeil':'VFC : SDNN Apple, moyenne de la journée')});
 for(const id in SK)$('#'+id).addEventListener('change',ev=>{const key=SK[id];if(['goalw','birth','height'].includes(key)&&ev.target.value.trim()===''){S.set[key]='';put.set();return renderSettings()}let v=num(ev.target.value);if(v>0){if(key==='sleep')v=Math.round(v*60);S.set[key]=v;if(S.set.rmin>S.set.rmax)S.set.rmax=S.set.rmin;put.set()}renderSettings()});
@@ -1177,13 +1190,13 @@ function applyHealth(R,inc=false){
  S.detail={d:dkeep};put.detail()}
 
 /* ---------- données de démo ---------- */
-const PROFILE_KEYS=['birth','sex','height','goalw','sups'];
+const PROFILE_KEYS=['birth','sex','height','goalw','sups','goal','trackMu','trackProt'];
 const hasRealData=()=>!S.set.demo&&!!(hKeys().length||S.sessions.length||Object.keys(S.days).length||S.med.length);
 async function loadDemo(){
  if(S.set.demo)clearDemo();
  toast('Préparation des données de démo…');await new Promise(r=>setTimeout(r,30));
  const prev={};for(const k of PROFILE_KEYS)prev[k]=clone(S.set[k]??'');
- for(const k of PROFILE_KEYS)if(k==='sups'||!has(S.set[k]))S.set[k]=clone(DEMO_PROFILE[k]);
+ for(const k of PROFILE_KEYS)if(['sups','goal','trackMu','trackProt'].includes(k)||!has(S.set[k]))S.set[k]=clone(DEMO_PROFILE[k]);
  const R=await readHealth(new File([demoHealthXML()],'export.xml',{type:'text/xml'}),()=>{},S.set.sex,ageOf());
  S.health={upd:'',d:{}};S.detail={d:{}};applyHealth(R);
  const M=demoManual();S.cur=null;S.sessions=M.sessions;S.days=M.days;S.med=M.med;
@@ -1323,7 +1336,7 @@ function ask(title,msg,btns){const d=$('#dlg');if(dlgDone)dlgDone(null);
 const closeDlg=k=>{if(dlgDone)dlgDone(k)};
 async function askNutriCalc(){const r=nutriCalc();
  if(r.miss)return ask('Il manque des infos',`Pour calculer tes besoins, renseigne ${r.miss.join(', ')}${r.miss.includes('ton poids')?' (une pesée dans Noter → Poids)':' dans « Ton profil »'}.`,[['ok','OK','pri']]);
- const k=await ask(`${r0(r.kcal)} kcal${r.prot?` · ${r.prot} g de protéines`:''}`,`Calculé à partir de ${r.how}${r.dir<0?`, moins 450 kcal pour aller vers ${fx(r.gw)} kg (environ 0,4 kg par semaine)${r.floor?', sans descendre sous ton métabolisme de base':''}`:r.dir>0?`, plus 300 kcal pour aller vers ${fx(r.gw)} kg`:', pour garder ton poids'}.${r.prot?` Protéines : 1,6 g par kg pour ${fx(r.wt)} kg.`:''}`,[['cancel','Annuler'],['ok','Appliquer','pri']]);
+ const k=await ask(`${r0(r.kcal)} kcal${r.prot?` · ${r.prot} g de protéines`:''}`,`Calculé à partir de ${r.how}${r.dir<0?`, moins 450 kcal pour aller vers ${fx(r.gw)} kg (environ 0,4 kg par semaine)${r.floor?', sans descendre sous ton métabolisme de base':''}`:r.dir>0?`, plus 300 kcal pour aller vers ${fx(r.gw)} kg`:', pour garder ton poids'}.${r.prot?` Protéines : ${fx(r.pf)} g par kg pour ${fx(r.wt)} kg.`:''}`,[['cancel','Annuler'],['ok','Appliquer','pri']]);
  if(k!=='ok')return;S.set.kcal=r.kcal;if(r.prot)S.set.prot=r.prot;put.set();renderSettings();buzz('ok');toast('Objectifs nutrition mis à jour')}
 /* Code lu : produit déjà connu, trouvé sur Open Food Facts, ou alerte (inconnu, incomplet, hors connexion) */
 async function handleCode(code){const known=prods().find(x=>x.id===code);if(known)return openPick(known);
@@ -1343,7 +1356,7 @@ function renderSessCard(){const c=S.cur,el=$('#sesscard');if(!el)return;
  const row=(m,col,ic,t,s2)=>`<button type="button" class="hr" data-act="msopen" data-m="${m}" style="--c:${col}"><i><svg viewBox="0 0 24 24">${ic}</svg></i><span><b>${t}</b><small>${s2}</small></span><em>›</em></button>`;
  if(c){const n=c.ex.filter(e=>norm(e.n)).length,h0=new Date(c.t||Date.now()).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
   el.innerHTML=`<div class="panel sessnow"><button type="button" class="hr" data-act="msopen" style="--c:var(--trn)"><i><svg viewBox="0 0 24 24">${IC.lift}</svg></i><span><b>Séance en cours</b><small>${esc(c.name||'Séance')} · ${n} exercice${n>1?'s':''} · commencée à ${h0}</small></span><em class="go">Reprendre</em></button></div>`;return}
- el.innerHTML=`<div class="panel sessnew"><h2>Noter une séance</h2>${row('mu','var(--trn)',IC.lift,'Séance de muscu','Séries, charges et progression suggérée')}${row('sp','var(--eff)',IC.bolt,'Autre sport','Course, vélo, natation, yoga…')}</div>`}
+ {const rm=row('mu','var(--trn)',IC.lift,'Séance de muscu','Séries, charges et progression suggérée'),rs=row('sp','var(--eff)',IC.bolt,trackMu()?'Autre sport':'Sport','Course, vélo, natation, yoga…');el.innerHTML=`<div class="panel sessnew"><h2>Noter une séance</h2>${trackMu()?rm+rs:rs+rm}</div>`}}
 
 /* ---------- pages de détail des tuiles (comme dans Santé) ---------- */
 let metK='',metP=30;
@@ -1508,8 +1521,8 @@ function showOnb(step=0){const o=$('#onb');o.hidden=false;document.documentEleme
  o.scrollTop=0}
 function hideOnb(){$('#onb').hidden=true;document.documentElement.style.overflow=''}
 function saveProfile(){const y=new Date().getFullYear(),b=Math.round(num($('#ob-birth').value)),h=Math.round(num($('#ob-height').value)),sl=num($('#ob-sleep').value);
- if(b>=y-110&&b<=y-10)S.set.birth=b;if(h>=100&&h<=250)S.set.height=h;S.set.sex=$('#ob-sex').value;if(sl>=300)S.set.sleep=sl;put.set()}
-function onbGo(to){S.set.onb=1;put.set();
+ if(b>=y-110&&b<=y-10)S.set.birth=b;if(h>=100&&h<=250)S.set.height=h;S.set.sex=$('#ob-sex').value;if(sl>=300)S.set.sleep=sl;const g=$('#onb [data-act="obgoal"].on');if(g){S.set.goal=g.dataset.g;delete S.set.trackMu;delete S.set.trackProt}put.set()}
+function onbGo(to){if(!S.set.goal&&!S.set.onb)S.set.goal='forme';S.set.onb=1;put.set();
  if(to==='demo')return loadDemo();
  hideOnb();
  if(to==='hk'){if(location.hash!=='#aujourdhui')location.hash='aujourdhui';else renderSoft();return hkConnect()}

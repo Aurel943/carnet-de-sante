@@ -13,8 +13,8 @@
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon-180.png">
 <link rel="manifest" href="./manifest.webmanifest">
-  <script type="module" crossorigin src="./assets/main-D9KiPO7R.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/main-DssoNy-B.css">
+  <script type="module" crossorigin src="./assets/main-Y9piMYZX.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/main-BpMlzc_A.css">
 </head>
 <body>
 <header class="top">
@@ -94,13 +94,13 @@
  <div class="panel g12"><div class="two" style="align-items:center"><div class="gauge big" id="gef"></div><div><div class="eyebrow">Zones cardiaques de la journée</div><div id="dz"></div><div class="stats" id="efs"></div></div></div><div class="coach" id="efcoach"></div></div>
  <div class="g12" id="sesscard"></div>
  <div class="panel g5"><h2>16 dernières semaines</h2><p class="vd" id="vd-heat"></p><div id="heat"></div><div class="lg"><span><i style="--c:var(--trn)"></i>Muscu</span><span><i style="--c:var(--eff)"></i>Autre sport</span></div></div>
- <div class="panel g7"><h2>Force</h2><p class="vd" id="vd-f1"></p><label>Exercice<select id="pex"></select></label><div class="kpis" id="pk" style="margin-top:14px"></div><div class="fig" id="f1"><svg></svg></div><p class="mute small">1RM estimé (formule d'Epley) de ta meilleure série à chaque séance. L'estimation est fiable surtout pour les séries de 10 répétitions ou moins.</p><div id="ptab" class="scroll adv-s"></div></div>
- <div class="panel g5"><h2>Records</h2><p class="vd" id="vd-rec"></p><div id="recs" class="scroll"></div></div>
+ <div class="panel g7 mu-only"><h2>Force</h2><p class="vd" id="vd-f1"></p><label>Exercice<select id="pex"></select></label><div class="kpis" id="pk" style="margin-top:14px"></div><div class="fig" id="f1"><svg></svg></div><p class="mute small">1RM estimé (formule d'Epley) de ta meilleure série à chaque séance. L'estimation est fiable surtout pour les séries de 10 répétitions ou moins.</p><div id="ptab" class="scroll adv-s"></div></div>
+ <div class="panel g5 mu-only"><h2>Records</h2><p class="vd" id="vd-rec"></p><div id="recs" class="scroll"></div></div>
  <div class="panel g7"><h2>Journal d'entraînement</h2><div id="hist"></div></div>
  <button type="button" class="deep g12" data-act="deep" data-v="effort"></button>
  <div class="panel g12 adv"><h2>Dépense et énergie, 30 jours</h2><p class="vd" id="vd-fer"></p><div class="fig sm" id="fer"><svg></svg></div><div class="lg"><span><i style="--c:var(--eff)"></i>Dépense</span><span><i style="--c:var(--rec)"></i>Énergie</span></div></div>
  <div class="panel g6 adv"><div class="ph"><h2>Zones cardiaques, 28 jours</h2><span class="mute small">entraînements enregistrés par la montre</span></div><p class="vd" id="vd-z28"></p><div id="z28"></div></div>
- <div class="panel g6 adv"><h2>Volume muscu, 7 jours</h2><p class="vd" id="vd-mg"></p><p class="mute small">Séries par groupe musculaire. Zone grisée : 10 à 20 séries par semaine.</p><div id="mg"></div></div>
+ <div class="panel g6 adv mu-only"><h2>Volume muscu, 7 jours</h2><p class="vd" id="vd-mg"></p><p class="mute small">Séries par groupe musculaire. Zone grisée : 10 à 20 séries par semaine.</p><div id="mg"></div></div>
  <div class="panel g12 adv"><div class="ph"><h2>Charge d'entraînement</h2><span class="mute small">7 jours comparés aux 28 derniers</span></div><p class="vd" id="vd-ld"></p><div class="kpis" id="lk"></div><div class="fig sm" id="fl"><svg></svg></div><p class="mute small">Charge = effort cardiaque (TRIMP) des séances avec la montre, ou minutes × intensité ressentie sans montre. Repère couramment utilisé : entre 0,8 et 1,3, ta charge progresse sans à-coup ; au-delà de 1,5, la hausse est brutale. Cet indicateur est discuté dans la recherche : retiens surtout qu'il vaut mieux augmenter la charge progressivement que viser un chiffre précis.</p></div>
 </section>
 
@@ -111,7 +111,7 @@
  <div class="panel g7 nweek" id="nweek"></div>
  <button type="button" class="deep g12" data-act="deep" data-v="nutrition"></button>
  <div class="panel g12 adv"><h2>Besoins caloriques réels</h2><div id="tdee"></div></div>
- <div class="panel g12 adv"><h2>Protéines, 14 jours</h2><div class="kpis" id="nk"></div><div id="prot14"></div><p class="mute small">Protéines par jour. Le trait vertical marque ton objectif.</p></div>
+ <div class="panel g12 adv prot-only"><h2>Protéines, 14 jours</h2><div class="kpis" id="nk"></div><div id="prot14"></div><p class="mute small">Protéines par jour. Le trait vertical marque ton objectif.</p></div>
 </section>
 
 <section id="v-tendances" class="view" hidden>
@@ -156,6 +156,11 @@
   <p class="sgh">Tes données</p>
   <div class="sgl"><button class="hr" data-act="psub" data-s="apple" style="--c:var(--rec)"><i><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></i><span><b>Apple Santé</b><small id="hubapple">Importer et mettre à jour tes données</small></span><em>›</em></button><button class="hr" data-act="psub" data-s="donnees" style="--c:var(--slp)"><i><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></i><span><b>Sauvegarde et confidentialité</b><small>Sauvegarder, restaurer, effacer</small></span><em>›</em></button></div>
 
+  <p class="sgh">Ton objectif</p>
+  <div class="panel sg"><label class="srow"><span>Objectif</span><span class="sv"><select id="s-goal"><option value="">Non précisé</option><option value="forme">Être en forme</option><option value="poids">Perdre du poids</option><option value="muscle">Prendre du muscle</option><option value="endurance">Endurance</option><option value="sommeil">Mieux dormir</option></select></span></label>
+   <label class="chk srow"><input type="checkbox" id="s-tmu"><span>Musculation</span></label><label class="chk srow"><input type="checkbox" id="s-tprot"><span>Objectif de protéines</span></label></div>
+  <p class="sgf">Arden ne te montre que ce qui compte pour toi. Sans musculation : pas de charges, de records ni de volume par muscle. Sans objectif de protéines : elles restent visibles dans tes repas, sans chiffre à atteindre.</p>
+
   <p class="sgh">Ton profil</p>
   <div class="panel sg"><label class="srow"><span>Année de naissance</span><span class="sv"><input id="s-birth" inputmode="numeric" placeholder="ex. 1990"></span></label><label class="srow"><span>Taille</span><span class="sv"><input id="s-height" inputmode="numeric" placeholder="–"><u>cm</u></span></label><label class="srow"><span>Sexe</span><span class="sv"><select id="s-sex"><option value="">Non précisé</option><option value="h">Homme</option><option value="f">Femme</option></select></span></label></div>
   <p class="sgf">Sert à calculer ta dépense au repos et tes repères selon l'âge (VO2 max, FC max). Ton poids vient de tes pesées.</p>
@@ -165,15 +170,17 @@
   <p class="sgf">Ton besoin de sommeil part de ce chiffre, puis s'ajuste chaque soir à ta dette des 7 dernières nuits et à ta dépense de la journée.</p>
 
   <p class="sgh">Nutrition</p>
-  <div class="panel sg"><label class="srow"><span>Calories</span><span class="sv"><input id="s-kcal" inputmode="numeric"><u>kcal</u></span></label><label class="srow"><span>Protéines</span><span class="sv"><input id="s-prot" inputmode="numeric"><u>g</u></span></label><label class="srow"><span>Eau</span><span class="sv"><input id="s-water" inputmode="numeric"><u>ml</u></span></label><label class="srow"><span>Poids visé</span><span class="sv"><input id="s-goalw" inputmode="decimal" placeholder="facultatif"><u>kg</u></span></label><button type="button" class="srow scalc" data-act="kcalc"><span><b>Calculer pour moi</b><small>Calories et protéines d'après ton profil, ta dépense et ton poids visé</small></span><em>›</em></button>
+  <div class="panel sg"><label class="srow"><span>Calories</span><span class="sv"><input id="s-kcal" inputmode="numeric"><u>kcal</u></span></label><label class="srow prot-only"><span>Protéines</span><span class="sv"><input id="s-prot" inputmode="numeric"><u>g</u></span></label><label class="srow"><span>Eau</span><span class="sv"><input id="s-water" inputmode="numeric"><u>ml</u></span></label><label class="srow"><span>Poids visé</span><span class="sv"><input id="s-goalw" inputmode="decimal" placeholder="facultatif"><u>kg</u></span></label><button type="button" class="srow scalc" data-act="kcalc"><span><b>Calculer pour moi</b><small>D'après ton profil, ta dépense et ton poids visé</small></span><em>›</em></button>
    <div class="srow scol"><span>Compléments suivis</span><div class="schips" id="suplist"></div><form id="supf" class="sadd"><input id="supn" placeholder="ex. Créatine 5 g" aria-label="Ajouter un complément"><button class="btn small">Ajouter</button></form></div>
    <div class="srow scol"><span>Aliments favoris</span><ul class="flist sfav" id="favlist"></ul></div></div>
   <p class="sgf">Les compléments se cochent d'un toucher dans Nutrition. Pour ajouter un favori, touche l'étoile d'un aliment en le notant.</p>
 
+  <div class="mu-only">
   <p class="sgh">Musculation</p>
   <div class="panel sg"><label class="srow"><span>Repos entre séries</span><span class="sv"><input id="s-rest" inputmode="numeric"><u>s</u></span></label><label class="chk srow"><input type="checkbox" id="s-auto"><span>Minuteur après chaque série</span></label>
    <div class="srow"><span>Répétitions visées</span><span class="sv"><input id="s-rmin" inputmode="numeric" aria-label="Répétitions minimum"><u>à</u><input id="s-rmax" inputmode="numeric" aria-label="Répétitions maximum"></span></div><label class="srow"><span>Charge à ajouter</span><span class="sv"><input id="s-inc" inputmode="decimal"><u>kg</u></span></label></div>
   <p class="sgf">Quand toutes tes séries atteignent le haut de la fourchette, Arden te propose d'ajouter cette charge à la séance suivante.</p>
+  </div>
 
   <p class="sgh">Check-in</p>
   <div class="panel sg"><div class="srow scol"><span>Étiquettes</span><div class="schips" id="taglist"></div><form id="tagf" class="sadd"><input id="tagn" placeholder="ex. Sieste" aria-label="Ajouter une étiquette"><button class="btn small">Ajouter</button></form></div></div>
@@ -253,14 +260,16 @@
    <div class="ob-demo" aria-hidden="true"><span class="ob-demo-e">Exemple de matin</span><b class="ob-demo-h">Journée de force</b><div class="gauges" id="obg"></div></div>
    <ul class="ob-list">
     <li style="--c:var(--eff)"><i><svg viewBox="0 0 24 24"><path style="fill:none" d="M6.3 17.7A8 8 0 1 1 17.7 17.7"/><path style="fill:none" d="M9.2 14.8A4 4 0 1 1 14.8 14.8"/></svg></i><span><b>Dépense, énergie, sommeil</b>Trois scores, un titre pour ta journée et le plan qui va avec.</span></li>
-    <li style="--c:var(--trn)"><i><svg viewBox="0 0 24 24"><path d="M3 10v4M6 8v8M18 8v8M21 10v4M6 12h12"/></svg></i><span><b>Entraînement et nutrition</b>Séances de muscu, charge, records, repas et protéines.</span></li>
+    <li style="--c:var(--trn)"><i><svg viewBox="0 0 24 24"><path d="M3 10v4M6 8v8M18 8v8M21 10v4M6 12h12"/></svg></i><span><b>Entraînement et nutrition</b>Séances, charge d'entraînement, repas : seulement ce qui compte pour toi.</span></li>
     <li style="--c:var(--rec)"><i><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></i><span><b>Privé par conception</b>Pas de compte ni de serveur : tes données restent sur ton téléphone.</span></li>
    </ul>
    <button type="button" class="btn pri ob-cta" data-act="onb" data-to="1">Commencer</button>
   </section>
   <section class="ob" data-step="1" hidden>
-   <h2>Ton profil</h2>
-   <p class="ob-lead">Pour comparer tes chiffres aux normes de ton âge et calculer tes zones cardiaques. Tout est facultatif et modifiable dans les réglages.</p>
+   <h2>Ton objectif</h2>
+   <p class="ob-lead">Arden te montre seulement ce qui compte pour toi. Tout est facultatif et modifiable dans les réglages.</p>
+   <div class="ob-goals" role="radiogroup" aria-label="Ton objectif"><button type="button" class="chip" role="radio" aria-checked="false" data-act="obgoal" data-g="forme">Être en forme</button><button type="button" class="chip" role="radio" aria-checked="false" data-act="obgoal" data-g="poids">Perdre du poids</button><button type="button" class="chip" role="radio" aria-checked="false" data-act="obgoal" data-g="muscle">Prendre du muscle</button><button type="button" class="chip" role="radio" aria-checked="false" data-act="obgoal" data-g="endurance">Endurance</button><button type="button" class="chip" role="radio" aria-checked="false" data-act="obgoal" data-g="sommeil">Mieux dormir</button></div>
+   <h3 class="ob-sub">Ton profil</h3>
    <div class="ob-form">
     <label>Année de naissance<input id="ob-birth" inputmode="numeric" placeholder="ex. 1990" maxlength="4"></label>
     <label>Sexe<select id="ob-sex"><option value="">Non précisé</option><option value="h">Homme</option><option value="f">Femme</option></select></label>

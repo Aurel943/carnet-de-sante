@@ -11,6 +11,8 @@ L'appli fonctionne dans un navigateur, s'installe sur l'écran d'accueil (PWA) e
 
 ## Fonctionnalités
 
+**Ton objectif** (choisi à l'accueil, modifiable dans Réglages) : être en forme, perdre du poids, prendre du muscle, endurance ou mieux dormir. Arden n'impose ni la musculation ni les protéines : « Prendre du muscle » allume les deux, « Perdre du poids » les protéines, les autres objectifs aucun des deux. Deux interrupteurs ajustent. Sans musculation, ni Force, ni Records, ni volume par muscle, ni réglages de séries, et « Séance » propose le sport ; la muscu s'allume d'elle-même dès qu'une séance de muscu est notée. Sans objectif de protéines, elles restent visibles dans les repas, sans chiffre à atteindre (ni plan, ni bilan, ni carte de suivi). Les installations faites avant ce choix gardent tout affiché.
+
 Le bouton **+** (Noter) va droit à l'essentiel : **Repas, Séance, Check-in, Poids** en grand, puis « Plus rarement » : **Mensurations** et **Rendez-vous médical**. Rien n'y est en double : le scan est dans la recherche du repas, l'eau dans la tuile Hydratation, le choix muscu / autre sport dans la feuille Séance, la synchro Apple Santé dans la capsule en haut, la respiration guidée sur la page Énergie.
 
 Sur iPhone, la barre d'onglets suit l'ordre des jauges : **Résumé · Dépense · Énergie · Sommeil · Plus**, avec le bouton **+** (Noter) à côté. **Nutrition** s'ouvre depuis sa carte du Résumé ou depuis Plus, **Tendances** depuis la carte « Ta semaine » du Résumé ou depuis Plus ; le bouton « ‹ » ramène à l'onglet d'où l'on vient, qui reste allumé. Sur ordinateur, tous les onglets sont dans la barre latérale.

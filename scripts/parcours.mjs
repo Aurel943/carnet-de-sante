@@ -166,7 +166,7 @@ try {
       await page.click('#hub [data-s="reglages"]');
       await page.waitForSelector('[data-sub="reglages"]:not([hidden])');
       const groups = await page.$$eval('[data-sub="reglages"] .sgh', (a) => a.map((x) => x.textContent.trim()));
-      expect(groups.join('|') === 'Tes données|Ton profil|Objectifs du jour|Nutrition|Musculation|Check-in|Avancé', 'groupes : ' + groups.join(', '));
+      expect(groups.join('|') === 'Tes données|Ton objectif|Ton profil|Objectifs du jour|Nutrition|Musculation|Check-in|Avancé', 'groupes : ' + groups.join(', '));
       await page.fill('#s-prot', '150'); await page.press('#s-prot', 'Tab');
       await page.waitForFunction(() => JSON.parse(localStorage.getItem('carnet-muscu-v1') || '{}').set?.prot === 150, null, { timeout: 2000 }).catch(() => { throw new Error('objectif de protéines non gardé'); });
       const n = await page.$$eval('#taglist .schip', (a) => a.length);
@@ -578,6 +578,52 @@ try {
       expect(saved.includes('12345670'), 'produit inconnu non mémorisé');
     });
     await cb.close();
+  }
+
+  /* L'objectif choisi à l'accueil : sans muscu ni protéines, l'appli ne les impose pas */
+  if (part('objectif')) {
+    console.log('\nParcours objectif : « Être en forme », sans muscu ni protéines');
+    const { ctx, page } = await phone('light', 14);
+    const hidden = (sel) => page.$$eval(sel, (a) => a.length > 0 && a.every((x) => getComputedStyle(x).display === 'none' || !x.offsetParent));
+
+    await step('accueil : l\'objectif se choisit en un toucher', async () => {
+      await page.waitForSelector('#onb:not([hidden])');
+      await page.click('#onb [data-act="onb"][data-to="1"]');
+      await page.click('#onb [data-act="obgoal"][data-g="forme"]');
+      expect(await page.$eval('#onb [data-g="forme"]', (b) => b.getAttribute('aria-checked') === 'true'), 'objectif non sélectionné');
+      await page.click('#onb [data-act="onb"][data-to="2"]:not([data-skip])');
+      await page.click('#onb [data-go2="empty"]');
+      await page.waitForSelector('#onb', { state: 'hidden' });
+    });
+
+    await step('sans muscu ni protéines : Réglages, Dépense et Noter s\'adaptent', async () => {
+      await tab(page, 'plus');
+      await page.click('#hub [data-s="reglages"]');
+      await page.waitForSelector('[data-sub="reglages"]:not([hidden])');
+      expect(await page.inputValue('#s-goal') === 'forme', 'objectif non gardé');
+      expect(!(await page.isChecked('#s-tmu')) && !(await page.isChecked('#s-tprot')), 'muscu et protéines devraient être éteintes');
+      expect(await hidden('[data-sub="reglages"] .mu-only'), 'le groupe Musculation reste affiché');
+      expect(await hidden('#s-prot'), 'l\'objectif de protéines reste affiché');
+      await tab(page, 'effort');
+      expect(await page.evaluate(() => document.documentElement.classList.contains('no-mu')), 'la muscu devrait être masquée');
+      expect(await hidden('#v-effort .mu-only'), 'Force et Records restent affichés');
+      await page.click('.tplus'); await page.click('#sheet [data-q="mu"]');
+      await page.waitForSelector('#msheet:not([hidden])');
+      expect(await page.$eval('[data-act="smode"][data-m="sp"]', (b) => b.classList.contains('on')), 'Noter → Séance doit proposer le sport');
+      await page.click('#msl');
+      await page.waitForSelector('#msheet', { state: 'hidden' });
+    });
+
+    await step('l\'objectif « Prendre du muscle » rallume muscu et protéines', async () => {
+      await tab(page, 'plus');
+      await page.click('#hub [data-s="reglages"]');
+      await page.selectOption('#s-goal', 'muscle');
+      await page.waitForFunction(() => document.querySelector('#s-tmu').checked && document.querySelector('#s-tprot').checked);
+      expect(!(await hidden('[data-sub="reglages"] .mu-only')), 'le groupe Musculation devrait revenir');
+      await page.click('#s-tprot + span');
+      await page.waitForFunction(() => !document.querySelector('#s-tprot').checked && document.documentElement.classList.contains('no-prot'));
+    });
+    await ctx.close();
   }
 } finally {
   await browser.close();

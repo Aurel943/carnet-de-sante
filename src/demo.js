@@ -249,4 +249,4 @@ export function demoManual(now = Date.now()) {
 }
 
 /** Profil du compte de démo (complète seulement ce que l'utilisateur n'a pas déjà rempli). */
-export const DEMO_PROFILE = { birth: 1991, sex: 'h', height: 178, goalw: 75, sups: ['Whey', 'Créatine'] };
+export const DEMO_PROFILE = { birth: 1991, sex: 'h', height: 178, goalw: 75, sups: ['Whey', 'Créatine'], goal: 'muscle', trackMu: true, trackProt: true };
