@@ -397,7 +397,8 @@ function renderDayNav(){const d=S.day,v0=cur(),rel=d===today()?"Aujourd'hui":d==
  paintSky($('#sky'),skyFor(v0,story.tone));
  const L=hLast();
  $('#dn').hidden=!dayv;$('#wk').hidden=$('#dn').hidden;if(!$('#wk').hidden)renderWeek(v0);
- $('#dnote').innerHTML=!dayv?'':(!L?emptyHTML(v0):d>L?`<div class="notice">Données Apple jusqu'au ${dShort(L)}. ${IMP('Réimporte ton export','Synchronise Apple Santé')} pour mettre à jour, ou <button class="btn small" data-act="dlast">voir le ${dShort(L)}</button></div>`:'')
+ /* Nutrition se suffit à elle-même : ni écran « pas encore de données Apple », ni rappel de synchro */
+ $('#dnote').innerHTML=!dayv||v0==='nutrition'?'':(!L?emptyHTML(v0):d>L?`<div class="notice">Données Apple jusqu'au ${dShort(L)}. ${IMP('Réimporte ton export','Synchronise Apple Santé')} pour mettre à jour, ou <button class="btn small" data-act="dlast">voir le ${dShort(L)}</button></div>`:'')
 }
 
 /* ---------- frise de la semaine : mini-barres par jour (trois sur le résumé, une sur chaque thème) ---------- */
@@ -432,7 +433,7 @@ const EMPTY={
  tendances:['var(--trn)','<path d="M4 4v16h16M8 15l4-4 3 3 5-6"/>','Pas encore de tendances','Ton bilan santé, ta semaine et ce que révèlent tes données apparaissent après quelques semaines de mesures. Tu peux déjà noter ton poids et tes mensurations.'],
  effort:['var(--eff)','<path d="M12 2.5c.8 3.8 5.5 5.6 5.5 11a5.5 5.5 0 0 1-11 0c0-2.8 1.6-4.2 2.4-6 .9 1.3 1.8 1.9 2.9 2.2-.3-2.5-.6-4.6.2-7.2z"/>','Pas encore de fréquence cardiaque','La dépense du jour, les zones cardiaques et la charge d\'entraînement viennent de ta FC. Tu peux déjà noter tes séances à la main.'],
 };
-function emptyHTML(v){const [c,ic,t,p]=EMPTY[v];
+function emptyHTML(v){if(!EMPTY[v])return'';const [c,ic,t,p]=EMPTY[v];
  return `<div class="emptyv" style="--c:${c}"><i><svg viewBox="0 0 24 24">${ic}</svg></i><h3>${t}</h3><p>${p}</p><div class="row">${HKN?'<button type="button" class="btn pri" data-act="hkauth">Connecter Apple Santé</button>':'<button type="button" class="btn pri" data-act="psub" data-s="apple">Importer Apple Santé</button>'}<button type="button" class="btn" data-act="demoTry">Essayer avec la démo</button></div></div>`}
 
 /* ---------- calories brûlées : métabolisme de base + calories actives ---------- */
@@ -906,7 +907,7 @@ function insights(){const e=hLast()||today(),from=addD(e,-120),out=[],T=num(S.se
  const tb=base('tp',e,30),t3=[0,1,2].map(i=>H(addD(e,-i)).tp).filter(has);if(tb!=null&&t3.length>=2){const dv=avg(t3.map(num))-tb;if(dv>=0.4)out.push({c:'var(--hrt)',t:`Température au poignet en hausse : ${sg(Math.round(dv*100)/100)} °C.`,s:'Peut signaler un début d\'infection, une fatigue ou un repas tardif.'})}
  return out}
 function renderBody(){const W=weights(),wk=Object.keys(W).sort(),L=hLast()||today(),gw=num(S.set.goalw);
- setFig('#fw',{unit:'kg',series:[{name:'Pesée',pts:wk.map(x=>({x,y:W[x]})),col:'var(--bod)',dots:true,line:false,r:2.5,op:.4},{name:'Moyenne 7 j',pts:wk.map(x=>({x,y:Math.round(wAvg(W,x)*10)/10})),col:'var(--bod)',last:true}],hline:gw||null,fmt:v=>fx(v),empty:''+IMP('Note ton poids (Nutrition) ou importe Apple Santé','Note ton poids (Nutrition) ou connecte Apple Santé')+''});
+ setFig('#fw',{unit:'kg',series:[{name:'Pesée',pts:wk.map(x=>({x,y:W[x]})),col:'var(--bod)',dots:true,line:false,r:2.5,op:.4},{name:'Moyenne 7 j',pts:wk.map(x=>({x,y:Math.round(wAvg(W,x)*10)/10})),col:'var(--bod)',last:true}],hline:gw||null,fmt:v=>fx(v),empty:''+IMP('Note ton poids avec le bouton +, ou importe Apple Santé','Note ton poids avec le bouton +, ou connecte Apple Santé')+''});
  $('#vd-bw').innerHTML='';
  if(wk.length){const ld=wk[wk.length-1],a=wAvg(W,ld),b=wAvg(W,addD(ld,-28)),c=wAvg(W,addD(ld,-84)),rate=b?(a-b)/4:null;let proj='';
   if(b)$('#vd-bw').innerHTML=Math.abs(a-b)<0.3?`<b>Poids stable</b> sur 4 semaines, autour de ${fx(a)} kg.`:`${a<b?'En baisse':'En hausse'} de <b>${fx(Math.abs(a-b))} kg</b> en 4 semaines (moyenne sur 7 jours : ${fx(a)} kg).`;

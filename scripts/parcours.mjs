@@ -674,6 +674,15 @@ try {
       await page.waitForSelector('#msheet', { state: 'hidden' });
     });
 
+    await step('sans Apple Santé, Nutrition s\'ouvre et se remplit normalement', async () => {
+      await tab(page, 'plus');
+      await page.click('#hub [data-go="nutrition"]');
+      await page.waitForSelector('#v-nutrition:not([hidden])');
+      expect(await page.$$eval('#meals .meal', (a) => a.length) === 4, 'les quatre repas manquent');
+      expect((await text(page, '#dnote')) === '', 'pas d\'écran « pas encore de données » sur Nutrition');
+      expect(await page.$eval('#tabs a[href="#plus"]', (a) => a.classList.contains('sub-on')), 'Plus doit rester allumé');
+    });
+
     await step('l\'objectif « Prendre du muscle » rallume muscu et protéines', async () => {
       await tab(page, 'plus');
       await page.click('#hub [data-s="reglages"]');
