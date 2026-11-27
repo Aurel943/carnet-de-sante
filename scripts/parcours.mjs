@@ -111,6 +111,18 @@ try {
       expect(await page.isHidden('#hub'), 'un raccourci vers une sous-page de Plus doit l\'ouvrir directement');
     });
 
+    await step('dossier médical : ce qui est prévu d\'abord, formulaire ouvert par « Ajouter » ou par Noter', async () => {
+      await page.waitForSelector('#medf', { state: 'visible', timeout: 3000 }).catch(() => { throw new Error('Noter → Rendez-vous doit ouvrir le formulaire'); });
+      await page.fill('#mti', 'Ophtalmo');
+      await page.click('#medf .btn.pri');
+      await page.waitForSelector('#medf', { state: 'hidden' });
+      expect(/Ophtalmo/.test(await text(page, '#medup')), 'le rendez-vous ajouté n\'apparaît pas dans « À venir »');
+      await page.click('[data-act="medopen"]');
+      expect(await page.isVisible('#medf'), '« Ajouter » n\'ouvre pas le formulaire');
+      await page.click('[data-act="medopen"]');
+      expect(await page.isHidden('#medf'), '« Fermer » ne replie pas le formulaire');
+    });
+
     await step('onglets de jour : aujourd\'hui au retour, jour gardé entre eux, toucher = revenir', async () => {
       await tab(page, 'sommeil');
       await page.$eval('[data-act="dprev"]', (b) => b.click()); // flèches cachées sur téléphone (glisser ou frise)

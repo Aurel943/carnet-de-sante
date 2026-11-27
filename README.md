@@ -18,8 +18,8 @@ L'appli fonctionne dans un navigateur, s'installe sur l'écran d'accueil (PWA) e
 | **Énergie** | Score, moniteur de santé (plage normale personnelle), VFC nocturne, FC nocturne, stress estimé, signes vitaux (SpO₂, respiration, température au poignet…) |
 | **Dépense** | Zones cardiaques, journal de séances de muscu (séries, minuteur de repos, progression suggérée), autres sports, charge d'entraînement (ratio 7 j / 28 j), volume par groupe musculaire, 1RM estimé, records |
 | **Nutrition** | Ce qu'il reste à manger aujourd'hui (arc des calories, protéines, glucides, lipides), les quatre repas avec ajout en un toucher (« Comme hier », récents), eau, compléments, poids du matin, la semaine ; en analyse détaillée : besoins caloriques réels, protéines sur 14 jours |
-| **Tendances** | Ta semaine en un coup d'œil (image à partager), bilan santé sur 30 jours, rigueur du suivi, semaine, corrélations observées, bien-être, poids, mensurations, masse grasse, VO2 max, activité quotidienne |
-| **Plus** | Énergie et signes vitaux (aussi par un toucher sur la jauge Énergie), Nutrition, dossier médical (rendez-vous, vaccins, analyses, blessures + rappels), import Apple Santé, réglages et objectifs, données et confidentialité (sauvegarde en fichier, restauration, suppression) |
+| **Tendances** | Ta semaine en un coup d'œil (image à partager), bilan santé sur 30 jours, corrélations observées, mensurations (« Noter » ouvre le formulaire), poids ; en analyse détaillée : la semaine mesure par mesure, rigueur du suivi, bien-être, masse grasse, VO2 max, activité quotidienne |
+| **Plus** | Énergie et signes vitaux (aussi par un toucher sur la jauge Énergie), Nutrition, dossier médical (ce qui est prévu d'abord, rappels à leur date ; « Ajouter » ouvre le formulaire), import Apple Santé, réglages et objectifs, données et confidentialité (sauvegarde en fichier, restauration, suppression) |
 
 La tuile **Calories brûlées** donne la dépense depuis minuit, à l'instant présent : métabolisme de
 base (formule de Mifflin-St Jeor à partir du poids, de la taille, de l'âge et du sexe, réparti sur

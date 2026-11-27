@@ -1552,3 +1552,9 @@ ul#favs{display:block;margin:0 0 6px;padding:0;overflow:hidden;flex-wrap:nowrap}
  :root.ms-open #sc{transform:translateY(calc(var(--sat) * .5)) scale(.93);opacity:.75}
 }
 @media(prefers-reduced-motion:reduce){#sc{transition:none}}
+/* « Noter » : cinq tuiles par rangée, moins quand le texte est très grand (Dynamic Type) pour qu'aucun libellé ne déborde */
+#sheet .sh{grid-template-columns:repeat(auto-fill,minmax(3.8rem,1fr))}
+#sheet .qa{min-width:0}
+/* en-tête de carte avec un bouton (Ajouter, Noter) : le bouton reste aligné sur le titre */
+.ph:has(> .btn){align-items:center}.ph:has(> .btn) h2{margin-bottom:0}.ph:has(> .btn){margin-bottom:8px}
+#medf,#mf{margin-top:6px}

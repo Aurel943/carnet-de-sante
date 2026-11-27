@@ -29,7 +29,7 @@ function vt(update,dir='tab'){const r=document.documentElement;
  r.dataset.vt=dir;const src=zoomFrom;zoomFrom=null;if(src)src.style.viewTransitionName='gz';
  const t=document.startViewTransition(()=>{if(src)src.style.viewTransitionName='';update();
   if(src){const big=$('.view:not([hidden]) .gauge.big svg');if(big)big.style.viewTransitionName='gz'}});
- vtNow=t;t.finished.finally(()=>{if(vtNow===t)vtNow=null;if(r.dataset.vt===dir)r.dataset.vt='';$$('[style*="view-transition-name"]').forEach(e=>{if(e.id!=='tabs')e.style.viewTransitionName=''})})}
+ vtNow=t;t.ready.catch(()=>{/* transition sautée : pas une erreur */});t.finished.catch(()=>{}).finally(()=>{if(vtNow===t)vtNow=null;if(r.dataset.vt===dir)r.dataset.vt='';$$('[style*="view-transition-name"]').forEach(e=>{if(e.id!=='tabs')e.style.viewTransitionName=''})})}
 function goDay(n){if(n>0&&S.day>=today())return;pageTo(addD(S.day,n))}
 /* Changer de jour comme on tourne une page : la page part du côté où l'on glisse (en gardant l'élan du doigt),
    le nouveau jour arrive de l'autre côté avec un ressort. Seulement transform et opacité : fluide sur iPhone. */
@@ -70,6 +70,8 @@ let saveT=0;
 const P=fn=>{if(mode==='load')pend.push(fn);else fn()};
 /* Toutes les écritures passent par localStorage, regroupées sur une frame. */
 const save=()=>P(()=>{if(saveT)return;saveT=requestAnimationFrame(()=>{saveT=0;lsSave()})});
+/* l'appli fermée ou rechargée juste après un toucher : l'écriture en attente part tout de suite */
+const flushSave=()=>{if(saveT){cancelAnimationFrame(saveT);saveT=0;lsSave()}};addEventListener('pagehide',flushSave);addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flushSave()});
 const put={set:save,sess:save,delSess:save,med:save,delMed:save,health:save,detail:save,day:save};
 for(const k in put){const f=put[k];put[k]=(...a)=>{bump();return f(...a)}}
 function upsert(o){const i=S.sessions.findIndex(s=>s.id===o.id);if(i<0)S.sessions.push(o);else S.sessions[i]=o}
@@ -436,7 +438,7 @@ function vitalsHTML(d){const h=H(d),mo=monitor(d),by=Object.fromEntries(mo.map(x
  const cell=(k,lab,ic,val,unit,st,arc,tap)=>`<button type="button" class="vit" ${tap}><span class="vk"><svg viewBox="0 0 24 24">${ic}</svg>${lab}</span><span class="vv">${val}<small>${unit}</small></span>${st?`<span class="vs ${st[1]}"><svg viewBox="0 0 24 24">${VIC[st[1]]}</svg>${st[0]}</span>`:'<span class="vs na">pas de normale</span>'}${arc}</button>`;
  for(const k of ['rhr','hrv','rr','o2','tp','nmin']){if(out.length>=5)break;const x=by[k],[lab,ic,how]=VIT[k];
   const raw=x?x.v:k==='hrv'?nhrv(d):k==='tp'?null:num(h[k])||null;if(raw==null)continue;
-  const val=k==='tp'?sg(Math.round((raw-x.m)*10)/10).replace('.',','):k==='rr'||k==='o2'?fx(raw):r0(raw),unit=k==='tp'?' °C':k==='rr'?' /min':k==='o2'?' %':' '+(x?x.u:k==='hrv'?'ms':'bpm');
+  const val=k==='tp'?sg(Math.round((raw-x.m)*10)/10).replace('.',','):k==='rr'||k==='o2'?fx(raw):r0(raw),unit=k==='tp'?' °C vs normale':k==='rr'?' /min':k==='o2'?' %':' '+(x?x.u:k==='hrv'?'ms':'bpm');
   const arc=x?miniArc((x.v-(x.m-3*x.sd))/(6*x.sd),.25,.75,x.col):'';
   out.push(cell(k,lab,ic,val,unit,x&&VST(x),arc,how?`data-act="metric" data-k="${k}"`:'data-go="recuperation"'))}
  if(has(h.stz)){const st=num(h.stz),sv=st<20?['Faible','ok']:st<35?['Élevé','up']:['Très élevé','warn'];
@@ -836,7 +838,7 @@ function insights(){const e=hLast()||today(),from=addD(e,-120),out=[],T=num(S.se
  const te=cmp(good,bad,d=>J(d).energy||null),ea=te&&te.a,eb=te&&te.b;
  if(ea&&eb&&Math.abs(ea-eb)>=0.3)out.push({c:'var(--nut)',t:`Ton énergie ressentie est de ${fx(ea)} / 5 après une bonne nuit, contre ${fx(eb)} après une nuit courte.`,s:'D\'après ton check-in.'});
  const n30=[];for(let i=0;i<30;i++){const d=addD(today(),-i);if(dayIt(d).length)n30.push(sum(dayIt(d),'p'))}
- if(n30.length>=5){const ok=n30.filter(x=>x>=num(S.set.prot)).length;out.push({c:'var(--nut)',t:`Objectif protéines atteint ${ok} jours sur ${n30.length} notés ce mois-ci.`,s:`Moyenne : ${r0(avg(n30))} g par jour pour ${r0(S.set.prot)} g visés.`})}
+ if(n30.length>=5){const ok=n30.filter(x=>x>=num(S.set.prot)).length;out.push({c:'var(--nut)',t:ok?`Objectif protéines atteint ${ok} jour${ok>1?'s':''} sur ${n30.length} notés ce mois-ci.`:`Protéines : ${r0(avg(n30))} g par jour en moyenne ce mois-ci, pour ${r0(S.set.prot)} g visés.`,s:ok?`Moyenne : ${r0(avg(n30))} g par jour pour ${r0(S.set.prot)} g visés.`:`Une source de protéines à chaque repas (skyr, œufs, poulet, légumineuses) rapproche vite de l'objectif.`})}
  const s7=vals('sl',e,7,0);if(s7.length>=5){const debt=s7.reduce((a,x)=>a+Math.max(0,T-x),0);if(debt>=60)out.push({c:'var(--slp)',t:`Dette de sommeil sur 7 nuits : ${fmtSl(debt)}.`,s:`Une ou deux nuits plus longues aident à la résorber.`})}
  const vb=nhrvBase(e),v3=avg([0,1,2].map(i=>nhrv(addD(e,-i))).filter(Boolean));if(vb&&v3&&v3<vb.m-vb.s)out.push({c:'var(--mind)',t:'Ta VFC nocturne est sous ta normale depuis plusieurs nuits.',s:`${r0(v3)} ms contre ${r0(vb.m)} ms habituellement. Signe de fatigue accumulée : allège l'entraînement et soigne ton sommeil.`});
  const ac=acwr(today());if(ac.r!=null&&(ac.r>1.5||ac.r<0.7))out.push({c:'var(--eff)',t:ac.r>1.5?`Ta charge d'entraînement a bondi : ratio ${f2(ac.r)}.`:`Ta charge d'entraînement est en baisse : ratio ${f2(ac.r)}.`,s:ac.r>1.5?'Une hausse brutale augmente le risque de blessure.':'Normal après une semaine de repos ; sinon, reprends progressivement.'});
@@ -872,19 +874,21 @@ function quick(q){$('#sheet').hidden=true;setTimeout(()=>document.documentElemen
  else if(q==='bw'){S.day=today();go('nutrition',()=>{const b=$('#bw');if(b){b.scrollIntoView({behavior:'smooth',block:'center'});b.focus({preventScroll:true})}})}
  else if(q==='water'){const o=getDay(today());o.w=num(o.w)+250;put.day(today());renderView(cur());toast(`Eau : ${fx(o.w/1000)} L aujourd'hui`)}
  else if(q==='ci'){S.day=today();renderCheckin();openSheet('checkin')}
- else if(q==='med'){psub='dossier';go('plus',()=>{renderPlus();$('#mti').focus({preventScroll:true})})}
+ else if(q==='med'){psub='dossier';go('plus',()=>{renderPlus();openForm('#medf',null,'#mti',true)})}
  else if(q==='apple'){if(HKN&&S.health.src==='hk'){hkSync();return}psub='apple';go('plus',renderPlus)}}
 
+/* ouvre (ou referme) un formulaire replié derrière son bouton, et place le curseur dans son premier champ */
+function openForm(f,b,focus,open){const F=$(f);open=open??F.hidden;F.hidden=!open;b=b||F.parentElement.querySelector('[aria-expanded]');if(b){b.setAttribute('aria-expanded',open);b.textContent=open?'Fermer':b.dataset.act==='medopen'?'Ajouter':'Noter';b.classList.toggle('pri',!open&&b.dataset.act==='medopen')}if(open&&focus)$(focus).focus({preventScroll:true})}
 function renderPlus(){setTimeout(syncNav,0);$('#hub').hidden=!!psub;$('#subbar').hidden=!psub;$('#subt').textContent=SUBT[psub]||'';$$('[data-sub]').forEach(x=>x.hidden=x.dataset.sub!==psub);
  const L=hLast();$('#hubapple').textContent=S.set.demo?"Données de démo pour l'instant":HKN?(S.health.src==='hk'?'Connecté · '+syncWhen():'Connecter Apple Santé'):L?`Données jusqu'au ${dShort(L)}${today()>addD(L,3)?' : pense à réimporter':''}`:'Importer tes données (pas encore fait)';
  if(psub==='dossier')renderMed();else if(psub)renderSettings()}
 function renderMed(){const t=today(),L=S.med.slice().sort((a,b)=>b.date.localeCompare(a.date)),types=['Tout','Rendez-vous','Vaccin','Analyse','Blessure','Note'];
  if(!$('#md').value)$('#md').value=t;
- const li=m=>`<li><span class="num" style="text-align:left">${dShort(m.date)}<br><span class="mute small">${m.date.slice(0,4)}</span></span><span><span class="tag">${esc(m.type)}</span><b>${esc(m.title)}</b>${m.who?` · <span class="mute">${esc(m.who)}</span>`:''}${m.note?`<span class="ml">${esc(m.note)}</span>`:''}${m.next?`<span class="ml">Rappel : ${dShort(m.next)}/${m.next.slice(0,4)}</span>`:''}</span><button class="x" data-act="delMed" data-id="${esc(m.id)}" aria-label="Supprimer">×</button></li>`;
+ const li=(m,u)=>{const rp=u&&m.date<t,dd=rp?m.next:m.date;return `<li><span class="num" style="text-align:left">${dShort(dd)}<br><span class="mute small">${dd.slice(0,4)}</span></span><span><span class="tag">${rp?'Rappel · ':''}${esc(m.type)}</span><b>${esc(m.title)}</b>${m.who?` · <span class="mute">${esc(m.who)}</span>`:''}${m.note?`<span class="ml">${esc(m.note)}</span>`:''}${rp?`<span class="ml">Dernière fois : ${dShort(m.date)}/${m.date.slice(0,4)}</span>`:m.next?`<span class="ml">Rappel : ${dShort(m.next)}/${m.next.slice(0,4)}</span>`:''}</span><button class="x" data-act="delMed" data-id="${esc(m.id)}" aria-label="Supprimer">×</button></li>`};
  const up=L.filter(m=>m.date>=t||(m.next&&m.next>=t)).sort((a,b)=>(a.date>=t?a.date:a.next).localeCompare(b.date>=t?b.date:b.next));
- $('#medup').innerHTML=up.length?up.map(li).join(''):'<li class="mute empty" style="display:block">Rien de prévu.</li>';
+ $('#medup').innerHTML=up.length?up.map(m=>li(m,1)).join(''):'<li class="mute empty" style="display:block">Rien de prévu.</li>';
  $('#medflt').innerHTML=types.map(x=>`<button data-act="medflt" data-t="${x}" class="${medFlt===x?'on':''}">${x}</button>`).join('');
- const hs=L.filter(m=>m.date<t&&(medFlt==='Tout'||m.type===medFlt));$('#medhist').innerHTML=hs.length?hs.map(li).join(''):'<li class="mute empty" style="display:block">Aucune entrée.</li>'}
+ const hs=L.filter(m=>m.date<t&&(medFlt==='Tout'||m.type===medFlt));$('#medhist').innerHTML=hs.length?hs.map(m=>li(m)).join(''):'<li class="mute empty" style="display:block">Aucune entrée.</li>'}
 const SK={'s-birth':'birth','s-height':'height','s-prot':'prot','s-kcal':'kcal','s-steps':'steps','s-sleep':'sleep','s-exmin':'exmin','s-water':'water','s-goalw':'goalw','s-rest':'rest','s-rmin':'rmin','s-rmax':'rmax','s-inc':'inc'};
 function renderSettings(){const a=document.activeElement;
  for(const id in SK){const e=$('#'+id);if(a!==e){const raw=S.set[SK[id]];if(!has(raw)){e.value='';continue}const v=SK[id]==='sleep'?num(raw)/60:num(raw);e.value=String(Math.round(v*100)/100).replace('.',',')}}
@@ -971,6 +975,8 @@ document.addEventListener('click',ev=>{unlockAudio();
  switch(act){
  case'sheet':{const sh=$('#sheet');sh.hidden=!sh.hidden;setTimeout(()=>{document.documentElement.style.setProperty('--hh',$('.top').offsetHeight+'px')},0);return}
  case'qa':return quick(b.dataset.q);
+ case'medopen':return openForm('#medf',b,'#mti');
+ case'mfopen':return openForm('#mf',b,'#m-taille');
  case'deep':{buzz();const v=b.dataset.v;S.set.deep={...(S.set.deep||{}),[v]:!(S.set.deep||{})[v]};put.set();applyDeep();return}
  case'share':return shareWeek();
  case'briefok':return hideBrief();
@@ -1061,8 +1067,8 @@ document.addEventListener('input',ev=>{const t=ev.target;if(t.id==='fq')return r
  if(!pick)return;if(t.id==='pq'){pick.q=num(t.value);return pickTotal()}
  const k={'pk-n':'n','pk-k':'k','pk-p':'p','pk-g':'g','pk-l':'l'}[t.id];if(k){pick.f[k]=k==='n'?t.value:(t.value.trim()===''?(k==='k'?null:0):num(t.value));pickTotal()}});
 $('#scf').addEventListener('submit',ev=>{ev.preventDefault();const c=$('#sccode').value.replace(/\D/g,'');if(!validCode(c)){$('#scmsg').textContent='Un code-barres compte 8 ou 13 chiffres.';return}closeScan();handleCode(c)});
-$('#mf').addEventListener('submit',ev=>{ev.preventDefault();const d=$('#mdate').value||today(),m={};for(const [k] of MEAS){const v=num($('#m-'+k).value);if(v>0)m[k]=v}if(!Object.keys(m).length)return $('#m-taille').focus();getDay(d).m=m;put.day(d);$('#mf').reset();$('#mdate').value=today();renderBody();toast('Mensurations enregistrées')});
-$('#medf').addEventListener('submit',ev=>{ev.preventDefault();const o={id:nid(),type:$('#mt').value,date:$('#md').value||today(),title:$('#mti').value.trim(),who:$('#mw').value.trim(),next:$('#mn').value,note:$('#mno').value.trim()};if(!o.title)return $('#mti').focus();S.med.push(o);put.med(o);$('#medf').reset();$('#md').value=today();renderMed();toast('Ajouté au dossier')});
+$('#mf').addEventListener('submit',ev=>{ev.preventDefault();const d=$('#mdate').value||today(),m={};for(const [k] of MEAS){const v=num($('#m-'+k).value);if(v>0)m[k]=v}if(!Object.keys(m).length)return $('#m-taille').focus();getDay(d).m=m;put.day(d);$('#mf').reset();$('#mdate').value=today();openForm('#mf',null,null,false);renderBody();toast('Mensurations enregistrées')});
+$('#medf').addEventListener('submit',ev=>{ev.preventDefault();const o={id:nid(),type:$('#mt').value,date:$('#md').value||today(),title:$('#mti').value.trim(),who:$('#mw').value.trim(),next:$('#mn').value,note:$('#mno').value.trim()};if(!o.title)return $('#mti').focus();S.med.push(o);put.med(o);$('#medf').reset();$('#md').value=today();openForm('#medf',null,null,false);renderMed();toast('Ajouté au dossier')});
 $('#supf').addEventListener('submit',ev=>{ev.preventDefault();const v=$('#supn').value.trim();if(v&&!S.set.sups.includes(v)){S.set.sups.push(v);put.set()}$('#supn').value='';renderSettings()});
 $('#tagf').addEventListener('submit',ev=>{ev.preventDefault();const v=$('#tagn').value.trim();if(v&&!S.set.tags.includes(v)){S.set.tags.push(v);put.set()}$('#tagn').value='';renderSettings()});
 document.addEventListener('change',ev=>{if(ev.target.id!=='bw')return;const d=S.day,v=ev.target.value.trim();getDay(d).bw=v===''?'':num(v);put.day(d);renderNutri()});
@@ -1450,7 +1456,7 @@ function hideCele(){const c=$('#cele');c.classList.remove('on');setTimeout(()=>{
 function ciStreak(){let n=0;for(let i=0;i<400;i++){const j=J(addD(today(),-i));if(j.mood||j.energy||j.stress||j.sore)n++;else if(i>0)break}return n}
 
 /* ---------- analyse détaillée : les cartes avancées, repliées par défaut ---------- */
-const DEEP={nutrition:'Besoins caloriques réels, protéines sur 14 jours',sommeil:'Durée, phases, VFC, FC et horaires sur 6 mois',recuperation:'FC nocturne, stress estimé, signes vitaux',effort:'Charge d\'entraînement, zones cardiaques, volume par muscle',tendances:'Bien-être, masse grasse, VO2 max, activité quotidienne'};
+const DEEP={nutrition:'Besoins caloriques réels, protéines sur 14 jours',sommeil:'Durée, phases, VFC, FC et horaires sur 6 mois',recuperation:'FC nocturne, stress estimé, signes vitaux',effort:'Charge d\'entraînement, zones cardiaques, volume par muscle',tendances:'Ta semaine en chiffres, rigueur du suivi, bien-être, masse grasse, VO2 max, activité'};
 function applyDeep(){const D=S.set.deep||{};$$('.deep').forEach(b=>{const v=b.dataset.v,on=!!D[v];$('#v-'+v).classList.toggle('deep-on',on);b.setAttribute('aria-expanded',on);
  b.innerHTML=`<span><b>Analyse détaillée</b><small>${DEEP[v]}</small></span><em>${on?'Masquer':'Afficher'}</em>`})}
 
@@ -1482,7 +1488,7 @@ function onbGo(to){S.set.onb=1;put.set();
  hideOnb();
  if(to==='hk'){if(location.hash!=='#aujourdhui')location.hash='aujourdhui';else renderSoft();return hkConnect()}
  if(to==='apple'){psub='apple';if(location.hash!=='#plus')location.hash='plus';else renderPlus();return}
- if(location.hash!=='#aujourdhui')location.hash='aujourdhui';else renderSoft();toast('Touche « Noter » pour ta première séance, ton repas ou ton check-in.')}
+ if(location.hash!=='#aujourdhui')location.hash='aujourdhui';else renderSoft();toast((matchMedia('(max-width:800px)').matches?'Touche + en bas à droite':'Touche « Noter »')+' pour ta première séance, ton repas ou ton check-in.')}
 
 /* ---------- sauvegarde en fichier, effacement ---------- */
 let pendingBk='';
