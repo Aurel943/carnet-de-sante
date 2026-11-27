@@ -61,6 +61,7 @@ iframe{border:0;width:100%;height:100%;display:block;background:#f4f1eb}
  </div></div>
  <div class="grp"><span>Données</span>
   <button class="btn" id="demo">Charger les données de démo</button>
+  <button class="btn" id="demolive">Démo avec une séance en cours</button>
   <button class="btn" id="brief">Voir le briefing du matin</button>
   <button class="btn" id="share">Image de la semaine</button>
   <button class="btn" id="reload">Recharger l'appli</button>
@@ -160,11 +161,15 @@ $('#go').addEventListener('click', (e) => { const b = e.target.closest('button')
 $('#reload').addEventListener('click', () => frame.contentWindow.location.reload());
 $('#brief').addEventListener('click', () => { const api = frame.contentWindow.carnet; if (api && api.showBrief) api.showBrief(); });
 $('#share').addEventListener('click', () => { const api = frame.contentWindow.carnet; if (api && api.shareWeek) api.shareWeek(); });
-$('#demo').addEventListener('click', () => {
+const demo = (live) => {
   const api = frame.contentWindow.carnet;
   if (!api || !api.loadDemo) return alert("L'appli n'est pas encore chargée.");
   if (api.hasRealData() && !confirm('Remplacer les données de ce navigateur par les données de démo ?')) return;
-  api.loadDemo();
+  api.loadDemo({ live });
+};
+$('#demolive').addEventListener('click', () => demo(true));
+$('#demo').addEventListener('click', () => {
+  demo(false);
 });
 $('#reset').addEventListener('click', () => {
   if (!confirm("Effacer toutes les données de l'appli dans ce navigateur et revenir au premier lancement ?")) return;

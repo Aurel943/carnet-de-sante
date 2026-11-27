@@ -350,7 +350,8 @@ const planHTML=items=>items.map(([c,h])=>`<li style="--c:${c}">${ARC}<span>${h}<
 /* Action principale du moment, puis les autres en capsules grises. */
 function heroActs(d){if(d!==today())return'';const j=J(d),ci=!!(j.mood||j.energy||j.stress||j.sore),T=dayTrain(d),act=T.mu.length+T.sp.length+T.ap.length>0||!!S.cur,hr=new Date().getHours();
  const A={ci:['ciopen','','Faire mon check-in','Check-in'],mu:['msopen',`data-m="${trackMu()?'mu':'sp'}"`,S.cur?'Reprendre ma séance':'Noter une séance','Séance'],food:['foodadd',`data-m="${mealNow()}"`,'Ajouter un repas','Repas']};
- const first=!ci?'ci':!act&&hr<21?'mu':'food',rest=['ci','mu','food'].filter(k=>k!==first&&!(k==='ci'&&ci)).slice(0,1);
+ /* une séance en cours passe avant tout : « Reprendre ma séance » */
+ const first=S.cur?'mu':!ci?'ci':!act&&hr<21?'mu':'food',rest=['ci','mu','food'].filter(k=>k!==first&&!(k==='ci'&&ci)).slice(0,1);
  const b=(k,pri)=>{const [a,x,l,s]=A[k];return `<button type="button" class="btn${pri?' pri':' small'}" data-act="${a}" ${x}>${pri?l:s}</button>`};
  return b(first,true)+rest.map(k=>b(k,false)).join('')}
 /* Ciel vivant : la lumière suit l'heure (aube, jour, crépuscule, nuit) et se teinte selon ton état. */
@@ -722,7 +723,7 @@ function renderStart(){const seen=new Set(),tpl=[];
  if(msKind==='seance')msBar()}
 function exHTML(e,i){return `<article class="ex" data-i="${i}"><div class="exh"><input class="exn" data-f="n" value="${esc(e.n)}" list="exlist" placeholder="Nom de l'exercice" aria-label="Exercice ${i+1}"><button class="x" data-act="delEx" aria-label="Supprimer l'exercice">×</button></div>
  <p class="hint" id="h${i}"></p>
- <div class="sets"><div class="set hd"><span></span><div>Charge (kg)</div><div>Reps</div><span></span></div>${e.sets.map((s,j)=>`<div class="set"><span>${j+1}</span><input data-f="w" data-s="${j}" inputmode="decimal" value="${esc(s.w)}" placeholder="kg" aria-label="Charge série ${j+1}"><input data-f="r" data-s="${j}" inputmode="numeric" value="${esc(s.r)}" placeholder="${esc(s.p||'reps')}" aria-label="Reps série ${j+1}"><button class="x" data-act="delSet" data-s="${j}" aria-label="Supprimer la série">×</button></div>`).join('')}</div>
+ <div class="sets"><div class="set hd"><span></span><div>Charge (kg)</div><div>Reps</div><span></span></div>${e.sets.map((s,j)=>`<div class="set"><span>${j+1}</span><input data-f="w" data-s="${j}" inputmode="decimal" value="${esc(String(s.w??'').replace('.',','))}" placeholder="kg" aria-label="Charge série ${j+1}"><input data-f="r" data-s="${j}" inputmode="numeric" value="${esc(s.r)}" placeholder="${esc(s.p||'reps')}" aria-label="Reps série ${j+1}"><button class="x" data-act="delSet" data-s="${j}" aria-label="Supprimer la série">×</button></div>`).join('')}</div>
  <div class="row"><button class="btn small" data-act="addSet">+ Série</button><button class="btn small ghost" data-act="tstart">Minuteur de repos</button></div></article>`}
 function renderEditor(){const c=S.cur;if(!c)return renderStart();
  $('#editor').innerHTML=`<div class="panel"><div class="edh"><input id="cn" class="tin" value="${esc(c.name)}" aria-label="Nom de la séance">${dateRow('cd',c.date)}${rpeHTML('crpe',c.rpe)}</div>
@@ -1069,6 +1070,7 @@ document.addEventListener('click',ev=>{unlockAudio();
  case'nowatch':{buzz();S.set.nowatch=1;put.set();renderSoft();if(location.hash!=='#aujourdhui')location.hash='aujourdhui';return toast('C\'est noté : Arden suit ce que tu notes. Commence par un repas ou ton poids, avec le bouton +.')}
  case'watchyes':{buzz();S.set.nowatch=0;put.set();if(HKN)return hkConnect();psub='apple';scrollTo(0,0);if(location.hash!=='#plus'){location.hash='plus';return}return renderPlus()}
  case'demoEnd':clearDemo();renderSoft();return showOnb(2);
+ case'demomenu':{ask('Données de démo','Recharger le profil fictif, avec ou sans une séance de muscu en cours.',[['live','Avec une séance en cours','pri'],['plain','Sans séance en cours'],['cancel','Annuler']]).then(k=>{if(k==='live'||k==='plain')loadDemo({live:k==='live'})});return}
  case'bksave':return saveBackup();
  case'hksync':return hkSync();
  case'hkauth':return hkConnect();
@@ -1273,7 +1275,8 @@ function applyHealth(R,inc=false){
 /* ---------- données de démo ---------- */
 const PROFILE_KEYS=['birth','sex','height','goalw','sups','goal','trackMu','trackProt'];
 const hasRealData=()=>!S.set.demo&&!!(hKeys().length||S.sessions.length||Object.keys(S.days).length||S.med.length);
-async function loadDemo(){
+/* Démo ; avec { live: true }, une séance de muscu est en cours (pour voir « Reprendre ma séance », l'éditeur, la progression) */
+async function loadDemo(opts={}){
  if(S.set.demo)clearDemo();
  toast('Préparation des données de démo…');await new Promise(r=>setTimeout(r,30));
  const prev={};for(const k of PROFILE_KEYS)prev[k]=clone(S.set[k]??'');
@@ -1282,8 +1285,15 @@ async function loadDemo(){
  S.health={upd:'',d:{}};S.detail={d:{}};applyHealth(R);
  const M=demoManual();S.cur=null;S.sessions=M.sessions;S.days=M.days;S.med=M.med;
  S.set.demo={prev};S.set.onb=1;S.day=today();put.set();put.day(today());
+ if(opts.live)demoLive();
  hideOnb();renderEditor();if(location.hash!=='#aujourdhui')location.hash='aujourdhui';else renderSoft();
- toast('Données de démo chargées : un profil fictif sur deux mois.')}
+ toast(opts.live?'Démo chargée avec une séance en cours : touche « Reprendre ma séance ».':'Données de démo chargées : un profil fictif sur deux mois.')}
+/* Séance en cours de démo : la dernière séance du profil reprise il y a 26 minutes, charges proposées par la progression ;
+   deux exercices terminés, le troisième à moitié, les deux derniers à faire. */
+function demoLive(){const last=done().find(s=>s.kind!=='sport'&&(s.ex||[]).length);if(!last)return;
+ const ex=last.ex.map(e=>({n:e.n,sets:prefill(e.n,null)}));
+ ex.forEach((e,i)=>e.sets.forEach((x,j)=>{if(i<2||(i===2&&j<2))x.r=String(Math.max(1,num(x.p)||num(S.set.rmin))-(j>=2?1:0))}));
+ S.cur={id:nid(),name:last.name,date:today(),ex,open:true,t:Date.now()-26*6e4,rpe:''};saveCur()}
 function clearDemo(){
  const prev=(S.set.demo&&S.set.demo.prev)||{};for(const k of PROFILE_KEYS)if(k in prev)S.set[k]=prev[k];
  delete S.set.demo;S.health={upd:'',d:{}};S.detail={d:{}};S.sessions=[];S.days={};S.med=[];S.cur=null;
@@ -1645,7 +1655,10 @@ async function init(){
  HKN=hasHealthKit();if(HKN)setupHK();
  route();renderEditor();status('load');
  mode='local';lsLoad();bump();pend.splice(0).forEach(f=>f());status('local');resumeOnce();renderSoft();
- if(needOnb())showOnb(0);else setTimeout(maybeBrief,350);
+ /* ?demo charge la démo, ?demo=seance la démo avec une séance en cours (site, simulateur) ; le paramètre est retiré de l'adresse */
+ const q=new URLSearchParams(location.search),dq=q.has('demo')?q.get('demo'):null;
+ if(dq!==null){q.delete('demo');history.replaceState(null,'',location.pathname+(q.toString()?'?'+q:'')+location.hash);loadDemo({live:dq==='seance'})}
+ else if(needOnb())showOnb(0);else setTimeout(maybeBrief,350);
  addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')maybeBrief()});
  if(HKN&&S.health.src==='hk'&&!S.set.demo)hkSync({quiet:true});
  $('#appver').textContent='version '+__APP_VERSION__;

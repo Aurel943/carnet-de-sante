@@ -54,7 +54,16 @@ d'import propose aussi « Pas de montre ? Commence par tes repas et ton poids »
 sans Apple Santé.
 
 Séances : la date tient en une ligne (« Aujourd'hui › ») et l'effort ressenti se note sur dix crans à toucher
-(« 7/10 · dur »), pour la muscu comme pour les autres sports.
+(« 7/10 · dur »), pour la muscu comme pour les autres sports. Une séance en cours passe avant tout : « Reprendre
+ma séance » devient l'action principale du Résumé.
+
+**Démo avec une séance de muscu en cours** (pour voir l'éditeur, « Reprendre ma séance », la progression) :
+- sur le site : ajouter `?demo=seance` à l'adresse (`?demo` seul charge la démo normale) ;
+- dans l'appli, une fois la démo chargée : toucher « Démo · profil fictif » dans le bandeau, puis « Avec une séance en cours » ;
+- dans le simulateur (`npm run sim`) : bouton « Démo avec une séance en cours ».
+
+La séance reprend la dernière séance du profil, commencée il y a 26 minutes : deux exercices faits, le troisième à
+moitié, les deux derniers à faire, charges proposées par la progression.
 
 Le texte suit la taille choisie dans les Réglages de l'iPhone (Dynamic Type), jusqu'aux tailles
 d'accessibilité ; sur ordinateur, c'est la taille de police du navigateur qui s'applique. Le simulateur

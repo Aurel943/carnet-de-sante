@@ -1700,3 +1700,6 @@ ul#favs{display:block;margin:0 0 6px;padding:0;overflow:hidden;flex-wrap:nowrap}
 /* sans montre : le lien discret vers Apple Santé, et le bouton « Pas de montre ? » sous la grande carte */
 .watchl{margin:0 0 4px}.watchl svg{stroke:var(--rec)}.watchl svg circle{fill:var(--rec)}
 .emptyv .nowl{margin-top:10px;font-size:0.9375rem}
+/* bandeau de démo : le libellé se touche pour recharger la démo (avec ou sans séance en cours) */
+#demobar .dlab{border:0;background:none;padding:6px 0;font:inherit;color:inherit;cursor:pointer;text-align:left}
+#demobar .dlab b{color:var(--trn)}

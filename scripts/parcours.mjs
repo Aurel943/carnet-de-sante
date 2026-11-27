@@ -2,7 +2,7 @@
 // quelqu'un, du premier lancement aux rituels. Toute erreur JavaScript fait échouer le test.
 //
 // Lancer :  npm run parcours      (le serveur de dev est lancé automatiquement)
-//           PARCOURS=gestes npm run parcours   pour une seule partie (jour, texte, gestes, repas)
+//           PARCOURS=gestes npm run parcours   pour une seule partie (jour, texte, gestes, repas, seance, objectif)
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { fileURLToPath } from 'node:url';
@@ -638,6 +638,36 @@ try {
       expect(saved.includes('12345670'), 'produit inconnu non mémorisé');
     });
     await cb.close();
+  }
+
+  /* Démo avec une séance de muscu en cours (?demo=seance, ou le menu du bandeau de démo) */
+  if (part('seance')) {
+    console.log('\nParcours démo avec une séance en cours');
+    const { ctx, page } = await phone('light', 18);
+
+    await step('?demo=seance : la démo s\'ouvre avec une séance en cours', async () => {
+      await page.goto(url + '?demo=seance');
+      await page.waitForFunction(() => document.querySelector('#plan li'), null, { timeout: 30000 });
+      await settle(page);
+      expect(/Reprendre ma séance/.test(await text(page, '#heroact .btn.pri')), 'action principale attendue : Reprendre ma séance');
+      expect(!page.url().includes('demo='), 'le paramètre doit disparaître de l\'adresse');
+      await page.click('#heroact .btn.pri');
+      await page.waitForSelector('#msheet:not([hidden])');
+      const reps = await page.$$eval('[data-f="r"]', (a) => a.filter((x) => x.value).length);
+      expect(reps >= 6, 'séries déjà faites attendues : ' + reps);
+      const w = await page.$$eval('[data-f="w"]', (a) => a.map((x) => x.value).join(' '));
+      expect(!/\d\.\d/.test(w), 'charges écrites avec un point au lieu d\'une virgule : ' + w);
+      await page.click('#msl');
+      await page.waitForSelector('#msheet', { state: 'hidden' });
+    });
+
+    await step('bandeau de démo : recharger sans séance en cours', async () => {
+      await page.click('#demobar .dlab');
+      await page.waitForSelector('#dlg:not([hidden])');
+      await page.click('[data-dlg="plain"]');
+      await page.waitForFunction(() => !/Reprendre/.test(document.querySelector('#heroact').textContent), null, { timeout: 30000 });
+    });
+    await ctx.close();
   }
 
   /* L'objectif choisi à l'accueil : sans muscu ni protéines, l'appli ne les impose pas */
