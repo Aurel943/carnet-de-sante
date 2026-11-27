@@ -369,7 +369,7 @@ const planHTML=items=>items.map(([c,h])=>`<li style="--c:${c}">${ARC}<span>${h}<
 const sinceTxt=t=>{const m=Math.max(0,Math.floor((Date.now()-(t||Date.now()))/6e4));return m<1?'à l\'instant':m<60?m+' min':`${Math.floor(m/60)} h ${String(m%60).padStart(2,'0')}`};
 setInterval(()=>{for(const e of document.querySelectorAll('[data-since]')){const t=sinceTxt(+e.dataset.since);if(e.textContent!==t)e.textContent=t}},15000);
 function heroActs(d){if(d!==today())return'';const j=J(d),ci=!!(j.mood||j.energy||j.stress||j.sore),T=dayTrain(d),act=T.mu.length+T.sp.length+T.ap.length>0||!!S.cur,hr=new Date().getHours();
- const A={ci:['ciopen','','Faire mon check-in','Check-in'],mu:['msopen',`data-m="${trackMu()?'mu':'sp'}"`,S.cur?`<span class="beat" aria-hidden="true"></span>Séance en cours · <span data-since="${S.cur.t||Date.now()}">${sinceTxt(S.cur.t)}</span>`:'Noter une séance','Séance'],food:['foodadd',`data-m="${mealNow()}"`,'Ajouter un repas','Repas']};
+ const A={ci:['ciopen','','Faire mon check-in','Check-in'],mu:['msopen',`data-m="${trackMu()?'mu':'sp'}"`,S.cur?(S.cur.edit?'Finir de compléter ma séance':`<span class="beat" aria-hidden="true"></span>Séance en cours · <span data-since="${S.cur.t||Date.now()}">${sinceTxt(S.cur.t)}</span>`):'Noter une séance','Séance'],food:['foodadd',`data-m="${mealNow()}"`,'Ajouter un repas','Repas']};
  /* une séance en cours passe avant tout : « ● Séance en cours · 26 min » (elle tourne, elle n'est pas en pause) */
  const first=S.cur?'mu':!ci?'ci':!act&&hr<21?'mu':'food',rest=['ci','mu','food'].filter(k=>k!==first&&!(k==='ci'&&ci)).slice(0,1);
  const b=(k,pri)=>{const [a,x,l,s]=A[k];return `<button type="button" class="btn${pri?' pri':' small'}" data-act="${a}" ${x}>${pri?l:s}</button>`};
@@ -575,7 +575,7 @@ function renderToday(){const d=S.day,h=H(d),D=S.days[d]||{},it=D.items||[],T=day
  $('#acts').innerHTML=actsHTML(d,T)||`<div class="emptyst"><p>Aucune activité ce jour</p><button type="button" class="btn small" data-act="msopen" data-m="mu">Noter une séance</button></div>`;
  const mo=monitor(d),bad=mo.filter(x=>x.warn);
  $('#monmini').innerHTML=mo.length?`<div class="mm" data-go="recuperation"><div><div class="eyebrow">Moniteur de santé</div><b style="font-size:1.0625rem">${bad.length?`${bad.length} ${bad.length>1?'signaux':'signal'} inhabituel${bad.length>1?'s':''} : ${bad.map(x=>x.l).join(', ')}`:'Tous tes signes vitaux sont dans ta normale'}</b></div><div class="dots" style="margin-left:auto">${mo.map(x=>`<i style="--c:${x.col}" data-tip="${esc(x.l+' : '+monFmt(x,x.v)+'\n'+x.lab)}"></i>`).join('')}</div></div>`:'<div class="eyebrow">Moniteur de santé</div><p class="mute small" style="margin:4px 0 0">Il faut au moins 7 nuits importées pour établir ta normale.</p>';
- $('#upn').innerHTML=upNextHTML();$('#wkask').innerHTML=d===today()&&S.cur?wendHTML():wkAskHTML(d);
+ $('#upn').innerHTML=upNextHTML();$('#wkask').innerHTML=d===today()&&!S.cur&&todoSess()?todoHTML():wkAskHTML(d);if(S.cur&&!S.cur.edit&&curWatchEnd())setTimeout(()=>{const w=curWatchEnd();if(w)watchFinish(w)},0);
  $('#bal').innerHTML=balHTML(d);$('#nightc').innerHTML=S.set.goal==='sommeil'?nightHTML(d):'';$('#wtc').innerHTML=S.set.goal==='poids'?weightHTML(d):'';$('#wkc').innerHTML=$('#ritual .wkr')?'':weekCardHTML(d);$('#sh-bal').hidden=!$('#bal').innerHTML;$('#vitals').innerHTML=vitalsHTML(d);$('#sh-vit').hidden=!$('#vitals').innerHTML;
  $('#chrono').innerHTML=chronoHTML(d);
  renderCheckin()}
@@ -755,7 +755,7 @@ function exHTML(e,i){return `<article class="ex" data-i="${i}"><div class="exh">
  <div class="sets"><div class="set hd"><span></span><div>Charge (kg)</div><div>Reps</div><span></span></div>${e.sets.map((s,j)=>`<div class="set"><span>${j+1}</span><input data-f="w" data-s="${j}" inputmode="decimal" value="${esc(String(s.w??'').replace('.',','))}" placeholder="kg" aria-label="Charge série ${j+1}"><input data-f="r" data-s="${j}" inputmode="numeric" value="${esc(s.r)}" placeholder="${esc(s.p||'reps')}" aria-label="Reps série ${j+1}"><button class="x" data-act="delSet" data-s="${j}" aria-label="Supprimer la série">×</button></div>`).join('')}</div>
  <div class="row"><button class="btn small" data-act="addSet">+ Série</button><button class="btn small ghost" data-act="tstart">Minuteur de repos</button></div></article>`}
 function renderEditor(){const c=S.cur;if(!c)return renderStart();
- $('#editor').innerHTML=`<div class="panel"><div class="live" id="live" aria-live="off"><div class="lvt"><span>Séance</span><b id="lvT">0:00</b></div><div class="lvh" id="lvH" hidden><div class="lvn"><i class="beat" aria-hidden="true"></i><b id="lvHr">–</b><small>bpm</small></div><div class="lvs"><span class="lvz" id="lvZ"></span><small class="lvage" id="lvAge"></small></div></div><div class="lvk" id="lvK" hidden><b id="lvKc">0</b><small>kcal</small></div><p class="lvw mute small" id="lvW" hidden></p></div><div class="edh"><input id="cn" class="tin" value="${esc(c.name)}" aria-label="Nom de la séance">${dateRow('cd',c.date)}${rpeHTML('crpe',c.rpe)}</div>
+ $('#editor').innerHTML=`<div class="panel">${c.edit?'':`<div class="live" id="live" aria-live="off"><div class="lvt"><span>Séance</span><b id="lvT">0:00</b></div><div class="lvh" id="lvH" hidden><div class="lvn"><i class="beat" aria-hidden="true"></i><b id="lvHr">–</b><small>bpm</small></div><div class="lvs"><span class="lvz" id="lvZ"></span><small class="lvage" id="lvAge"></small></div></div><div class="lvk" id="lvK" hidden><b id="lvKc">0</b><small>kcal</small></div><p class="lvw mute small" id="lvW" hidden></p></div>`}<div class="edh"><input id="cn" class="tin" value="${esc(c.name)}" aria-label="Nom de la séance">${dateRow('cd',c.date)}${rpeHTML('crpe',c.rpe)}</div>
  <p class="mute small" id="svst">Enregistrement automatique</p><div>${c.ex.map(exHTML).join('')}</div>
  <button class="btn wide" data-act="addEx">+ Ajouter un exercice</button>
  <div class="foot"><button class="btn pri" data-act="finish">Terminer la séance</button><button class="btn ghost" data-act="discard">Abandonner</button></div></div>`;
@@ -775,23 +775,23 @@ function onLive(m){if(!live)return;for(const x of m.samples||[]){
   else if(m.k==='kcal'&&x.t>=live.since)live.kc.set(x.t+':'+x.e,num(x.v))
   else if(m.k==='wk')watchEnded(x)}
  liveTick()}
-/* Un entraînement de la montre vient de se terminer : s'il recouvre la séance en cours, on le garde sur la séance
-   et on propose de la terminer aussi (sans jamais le faire d'office : il reste peut-être des séries à noter). */
-const wkOverlap=(c,t,e)=>{const s=(c.t||Date.now())/1000;return e>s+60&&t>=s-20*60&&e<=Date.now()/1000+60};
-function watchEnded(x){const c=S.cur;if(!c||!wkOverlap(c,x.t,x.e))return;const k=Math.round(x.t);
- if(c.wend&&c.wend.k===k)return;c.wend={k,t:x.t,e:x.e,ty:x.ty||''};saveCur();renderSoft();
- if(msKind==='seance'&&!c.wseen)askWatchEnd()}
-/* aussi après une synchro, si l'appli était fermée quand la montre a terminé */
-function curWatchEnd(){const c=S.cur;if(!c)return null;if(c.wend)return c.wend;
+/* Un entraînement de la montre vient de se terminer : s'il recouvre la séance en cours, la montre fait foi.
+   Arden termine la séance tout de suite, même sans série notée, avec l'heure et la durée de la montre ;
+   on la complète ensuite (« Ajouter mes exercices », ou « Modifier » dans le journal). */
+const wkOverlap=(c,t,e)=>{const s=(c.t||Date.now())/1000;return e>=s&&t>=s-20*60&&e<=Date.now()/1000+60};
+function watchEnded(x){const c=S.cur;if(!c||c.edit||!wkOverlap(c,x.t,x.e))return;watchFinish({t:x.t,e:x.e,ty:x.ty||''})}
+/* aussi au retour dans l'appli ou après une synchro, si elle était fermée quand la montre a terminé (pas pour la séance de démo) */
+function curWatchEnd(){const c=S.cur;if(!c||c.edit||c.demo)return null;
  const d=c.date||today();for(const w of H(d).wk||[]){if(!has(w.st))continue;const b=new Date(d+'T00:00').getTime()/1000,t=b+w.st*60,e=t+num(w.min)*60;
-  if(wkOverlap(c,t,e))return{k:Math.round(t),t,e,ty:w.ty}}return null}
-const wendTxt=w=>`${esc(WT[w.ty]||'Entraînement')} · ${Math.round((w.e-w.t)/60)} min, terminé à ${new Date(w.e*1000).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}`;
-async function askWatchEnd(){const w=curWatchEnd();if(!w||!S.cur)return;
- const k=await ask('Ta montre a terminé ton entraînement',`${WT[w.ty]||'Entraînement'} · ${Math.round((w.e-w.t)/60)} min, terminé à ${new Date(w.e*1000).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}. Terminer aussi ta séance dans Arden ?`,[['fin','Terminer la séance','pri'],['cont','Continuer à noter']]);
- if(!S.cur)return;if(k==='fin')return finishWithWatch();S.cur.wseen=1;saveCur();renderSoft()}
-function finishWithWatch(){const w=curWatchEnd();if(S.cur&&w)S.cur.dur=Math.round((w.e-w.t)/60);finish()}
-function wendHTML(){const c=S.cur,w=curWatchEnd();if(!c||!w)return'';
- return `<div class="panel wkask"><span class="eyebrow">Apple Watch</span><b class="rt">Ta montre a terminé l'entraînement</b><p>${wendTxt(w)}. Termine aussi ta séance dans Arden pour l'enregistrer.</p><div class="row"><button type="button" class="btn pri small" data-act="wkfin">Terminer la séance</button><button type="button" class="btn small" data-act="msopen">Continuer à noter</button></div></div>`}
+  if(wkOverlap(c,t,e))return{t,e,ty:w.ty}}return null}
+function watchFinish(w){const c=S.cur;if(!c)return;c.t=Math.round(w.t*1000);c.dur=Math.max(1,Math.round((w.e-w.t)/60));c.date=iso(new Date(c.t));
+ const hm2=new Date(w.e*1000).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+ finish({watch:true,msg:`Ta montre a terminé l'entraînement à ${hm2} : séance enregistrée (${c.dur} min).`})}
+/* une séance enregistrée sans exercice (terminée par la montre) : la proposer à compléter */
+function todoSess(){return done().find(s=>s.kind!=='sport'&&!(s.ex||[]).length&&s.date>=addD(today(),-2)&&!s.tdis)||null}
+function todoHTML(){const s=todoSess();if(!s)return'';const when=s.date===today()?'':s.date===addD(today(),-1)?'hier ':dLong(s.date)+' ';
+ const h0=s.t?new Date(s.t).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'';
+ return `<div class="panel wkask"><span class="eyebrow">Séance enregistrée</span><b class="rt">${esc(s.name||'Séance')} ${when}${h0?'à '+h0:''}</b><p>${s.dur?esc(s.dur)+' min · ':''}terminée par ta montre. Ajoute tes exercices quand tu veux : Arden suivra ta progression.</p><div class="row"><button type="button" class="btn pri small" data-act="edit" data-id="${esc(s.id)}">Ajouter mes exercices</button><button type="button" class="btn small" data-act="tdis" data-id="${esc(s.id)}">Plus tard</button></div></div>`}
 const setTxt2=(id,t)=>{const e=document.getElementById(id);if(e&&e.textContent!==t)e.textContent=t};
 function liveTick(){const c=S.cur;if(!c){liveStop();return}if(!$('#live'))return;const s=Math.max(0,Math.floor((Date.now()-(c.t||Date.now()))/1000));
  setTxt2('lvT',s>=3600?`${Math.floor(s/3600)}:${String(Math.floor(s/60)%60).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`:`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`);
@@ -812,18 +812,18 @@ function startSession(tid){const name=($('#nn')?.value||'').trim(),date=$('#nd')
  S.cur={id:nid(),name:nm||'Séance',date,ex,open:true,t:Date.now()};
  if(wkFor){const w=wkFor;wkFor=null;S.cur.date=w.d;if(w.st!==''){const t=new Date(w.d+'T00:00');t.setMinutes(+w.st);S.cur.t=t.getTime()}S.cur.dur=w.min}
  saveCur();renderEditor();if(!tid)$('.exn')?.focus()}
-function finish(){const c=S.cur;clearTimeout(sv);const watchOn=!!(live&&live.last&&Date.now()/1000-live.last<180&&!curWatchEnd());
+async function finish(opt={}){const c=S.cur;if(!c)return;clearTimeout(sv);const watchOn=!opt.watch&&!c.edit&&!!(live&&live.last&&Date.now()/1000-live.last<180);
  const ex=c.ex.map(e=>({n:e.n.trim(),sets:e.sets.filter(s=>num(s.r)>0).map(s=>({w:num(s.w),r:num(s.r)}))})).filter(e=>e.n&&e.sets.length);
- if(!ex.length){toast('Rien à enregistrer : note au moins une série avec ses reps.');return}
+ if(!ex.length&&!opt.watch&&!c.edit){const k=await ask('Aucune série notée','Enregistrer quand même la séance ? Tu pourras ajouter tes exercices plus tard.',[['ok','Enregistrer','pri'],['cancel','Continuer à noter']]);if(k!=='ok'||S.cur!==c)return}
  const el=Math.round((Date.now()-(c.t||Date.now()))/6e4),dur=c.dur||(c.date===today()&&el>=10&&el<=240?el:'');
  const o={id:c.id,name:(c.name||'').trim()||'Séance',date:c.date||today(),ex,t:c.t||Date.now(),dur,rpe:num(c.rpe)||''};
- upsert(o);put.sess(o);S.cur=null;stopTimer();renderEditor();closeSheet();renderSoft();buzz('ok');
+ if(!ex.length)delete o.tdis;upsert(o);put.sess(o);S.cur=null;stopTimer();renderEditor();closeSheet();renderSoft();buzz('ok');if(opt.msg)return toast(opt.msg+(ex.length?'':' Ajoute tes exercices quand tu veux.'));
  const prs=ex.filter(e=>{const b=bestE1(e.n,o.id);return b&&Math.max(...e.sets.map(x=>e1(x.w,x.r)))>b}).map(e=>e.n);
  if(prs.length)celebrate(prs.length>1?'Nouveaux records':'Nouveau record',prs.join(', '));else toast('Séance enregistrée'+(dur?` (${dur} min)`:'')+'. Bien joué.'+(watchOn?' Pense à arrêter l\'entraînement sur ta montre : Arden s\'y rattachera tout seul.':''))}
 function discard(){const c=S.cur;clearTimeout(sv);S.cur=null;stopTimer();S.sessions=S.sessions.filter(s=>s.id!==c.id);put.delSess(c.id);renderEditor();closeSheet();renderSoft();
  toast('Séance abandonnée',()=>{if(S.cur)return toast("Termine d'abord la séance en cours");S.cur=c;saveCur();renderEditor();renderSoft()})}
 function editSess(id){if(S.cur)return toast("Termine d'abord la séance en cours");const s=S.sessions.find(s=>s.id===id);if(!s||s.kind==='sport')return;
- S.cur=clone(s);S.cur.open=true;S.cur.ex.forEach(e=>{if(!e.sets.length)e.sets.push({w:'',r:''})});saveCur();renderEditor();openSheet('seance')}
+ S.cur=clone(s);S.cur.open=true;S.cur.edit=1;delete S.cur.tdis;if(!S.cur.ex.length)S.cur.ex.push({n:'',sets:[{w:'',r:''}]});S.cur.ex.forEach(e=>{if(!e.sets.length)e.sets.push({w:'',r:''})});saveCur();renderEditor();openSheet('seance')}
 function delSess(id){const s=S.sessions.find(s=>s.id===id);if(!s)return;S.sessions=S.sessions.filter(x=>x.id!==id);put.delSess(id);renderSoft();toast('Supprimé',()=>{upsert(s);put.sess(s);renderSoft()})}
 let tEnd=0,tInt=0,actx=null;
 function beep(){try{if(!actx)return;const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=880;g.gain.value=.15;o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+.35)}catch(e){}}
@@ -1114,7 +1114,7 @@ document.addEventListener('click',ev=>{unlockAudio();
  switch(act){
  case'sheet':{const sh=$('#sheet');sh.hidden=!sh.hidden;setTimeout(()=>{document.documentElement.style.setProperty('--hh',$('.top').offsetHeight+'px')},0);return}
  case'qa':return quick(b.dataset.q);
- case'wkfin':return finishWithWatch();
+ case'tdis':{const s=S.sessions.find(x=>x.id===b.dataset.id);if(s){s.tdis=1;put.sess(s)}return renderSoft()}
  case'wknote':{buzz();wkFor={d:b.dataset.d,st:b.dataset.st,min:num(b.dataset.min)};startMode='mu';renderStart();return openSheet('seance')}
  case'wkskip':{buzz();S.set.wkSkip={...(S.set.wkSkip||{}),[b.dataset.d+'@'+b.dataset.st]:1};put.set();renderView(cur());return toast('D\'accord, elle reste telle que la montre l\'a enregistrée.')}
  case'rpe':{const w=b.closest('.rpe'),inp=$('#'+w.dataset.for),v=+b.dataset.v,nv=num(inp.value)===v?'':v;buzz();
@@ -1367,7 +1367,7 @@ async function loadDemo(opts={}){
 function demoLive(){const last=done().find(s=>s.kind!=='sport'&&(s.ex||[]).length);if(!last)return;
  const ex=last.ex.map(e=>({n:e.n,sets:prefill(e.n,null)}));
  ex.forEach((e,i)=>e.sets.forEach((x,j)=>{if(i<2||(i===2&&j<2))x.r=String(Math.max(1,num(x.p)||num(S.set.rmin))-(j>=2?1:0))}));
- S.cur={id:nid(),name:last.name,date:today(),ex,open:true,t:Date.now()-26*6e4,rpe:''};saveCur()}
+ S.cur={id:nid(),name:last.name,date:today(),ex,open:true,t:Date.now()-26*6e4,rpe:'',demo:1};saveCur()}
 function clearDemo(){
  const prev=(S.set.demo&&S.set.demo.prev)||{};for(const k of PROFILE_KEYS)if(k in prev)S.set[k]=prev[k];
  delete S.set.demo;S.health={upd:'',d:{}};S.detail={d:{}};S.sessions=[];S.days={};S.med=[];S.cur=null;
@@ -1403,13 +1403,16 @@ function setupHK(){
 let msKind='',foodMeal='';
 const mealNow=()=>{const hr=new Date().getHours();return hr<11?'Petit-déjeuner':hr<15?'Déjeuner':hr<18?'Collation':'Dîner'};
 function msBar(){const t=$('#mstitle'),l=$('#msl'),r=$('#msr');
- if(msKind==='seance'){t.textContent=S.cur?'Séance en cours':'Nouvelle séance';l.textContent=S.cur?'Fermer':'Annuler';r.innerHTML=S.cur?'<button type="button" class="ms-btn ms-done" data-act="finish">Terminer</button>':''}
+ if(msKind==='seance'){t.textContent=S.cur?(S.cur.edit?'Modifier la séance':'Séance en cours'):'Nouvelle séance';l.textContent=S.cur?'Fermer':'Annuler';r.innerHTML=S.cur?'<button type="button" class="ms-btn ms-done" data-act="finish">Terminer</button>':''}
  else if(msKind==='food'){t.textContent=pick&&pick.ek!=null?'Modifier':foodMeal;l.textContent='Fermer';r.innerHTML=pick?(pick.ek==null?'<button type="button" class="ms-btn" data-act="pickback">Retour</button>':''):''}
  else if(msKind==='checkin'){t.textContent=S.day===today()?"Check-in du jour":'Check-in du '+dShort(S.day);l.textContent='';r.innerHTML='<button type="button" class="ms-btn ms-done" data-act="msclose">OK</button>'}
  else if(msKind==='metric'){t.textContent=(MET[metK]||{}).t||'';l.textContent='';r.innerHTML='<button type="button" class="ms-btn ms-done" data-act="msclose">OK</button>'}
  l.style.visibility=l.textContent?'':'hidden'}
-function openSheet(k){msKind=k;if(k==='seance'&&S.cur)setTimeout(()=>{liveStart();liveTick();if(S.cur&&!S.cur.wseen&&curWatchEnd())askWatchEnd()},0);document.documentElement.style.setProperty('--sy',scrollY+'px');const m=$('#msheet');$$('#msheet .ms-body').forEach(b=>b.hidden=b.dataset.k!==k);msBar();m.hidden=false;document.documentElement.classList.add('ms-open');m.querySelector('.ms-body:not([hidden])').scrollTop=0}
-function closeSheet(){wkFor=null;liveStop();if(!msKind)return;msKind='';pick=null;const a=document.activeElement;if(a&&$('#msheet').contains(a))a.blur();$('#msheet').hidden=true;document.documentElement.classList.remove('ms-open');setTimeout(renderSoft,0)}
+function openSheet(k){msKind=k;if(k==='seance'&&S.cur&&!S.cur.edit)setTimeout(()=>{liveStart();liveTick()},0);document.documentElement.style.setProperty('--sy',scrollY+'px');const m=$('#msheet');$$('#msheet .ms-body').forEach(b=>b.hidden=b.dataset.k!==k);msBar();m.hidden=false;document.documentElement.classList.add('ms-open');m.querySelector('.ms-body:not([hidden])').scrollTop=0}
+function closeSheet(){wkFor=null;liveStop();if(!msKind)return;
+ /* une séance terminée rouverte pour la compléter : fermer enregistre les modifications */
+ if(msKind==='seance'&&S.cur&&S.cur.edit){finish({msg:'Séance mise à jour.'});return}
+ msKind='';pick=null;const a=document.activeElement;if(a&&$('#msheet').contains(a))a.blur();$('#msheet').hidden=true;document.documentElement.classList.remove('ms-open');setTimeout(renderSoft,0)}
 function openFood(m){foodMeal=MEALS.includes(m)?m:mealNow();fAdded=[];$('#fq').value='';pick=null;renderPick();renderFoodSearch();openSheet('food');
  loadCiqual().then(()=>{if(msKind==='food')renderFoodSearch()});if(matchMedia('(pointer:fine)').matches)$('#fq').focus()}
 
@@ -1530,8 +1533,8 @@ async function handleCode(code){const known=prods().find(x=>x.id===code);if(know
 function renderSessCard(){const c=S.cur,el=$('#sesscard');if(!el)return;
  const row=(m,col,ic,t,s2)=>`<button type="button" class="hr" data-act="msopen" data-m="${m}" style="--c:${col}"><i><svg viewBox="0 0 24 24">${ic}</svg></i><span><b>${t}</b><small>${s2}</small></span><em>›</em></button>`;
  if(c){const n=c.ex.filter(e=>norm(e.n)).length,h0=new Date(c.t||Date.now()).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-  el.innerHTML=`<div class="panel sessnow"><button type="button" class="hr" data-act="msopen" style="--c:var(--trn)"><i><svg viewBox="0 0 24 24">${IC.lift}</svg></i><span><b><span class="beat" aria-hidden="true"></span>Séance en cours · <span data-since="${c.t||Date.now()}">${sinceTxt(c.t)}</span></b><small>${esc(c.name||'Séance')} · ${n} exercice${n>1?'s':''} · commencée à ${h0}</small></span><em class="go">Ouvrir</em></button></div>`;return}
- {const rm=row('mu','var(--trn)',IC.lift,'Séance de muscu','Séries, charges et progression suggérée'),rs=row('sp','var(--eff)',IC.bolt,trackMu()?'Autre sport':'Sport','Course, vélo, natation, yoga…');el.innerHTML=`${wkAskHTML(S.day)}<div class="panel sessnew"><h2>Noter une séance</h2>${trackMu()?rm+rs:rs+rm}</div>`}}
+  el.innerHTML=`<div class="panel sessnow"><button type="button" class="hr" data-act="msopen" style="--c:var(--trn)"><i><svg viewBox="0 0 24 24">${IC.lift}</svg></i><span><b>${c.edit?'Séance à compléter':`<span class="beat" aria-hidden="true"></span>Séance en cours · <span data-since="${c.t||Date.now()}">${sinceTxt(c.t)}</span>`}</b><small>${esc(c.name||'Séance')} · ${n} exercice${n>1?'s':''} · ${c.edit?dShort(c.date)+' à '+h0:'commencée à '+h0}</small></span><em class="go">Ouvrir</em></button></div>`;return}
+ {const rm=row('mu','var(--trn)',IC.lift,'Séance de muscu','Séries, charges et progression suggérée'),rs=row('sp','var(--eff)',IC.bolt,trackMu()?'Autre sport':'Sport','Course, vélo, natation, yoga…');el.innerHTML=`${!S.cur&&todoSess()?todoHTML():wkAskHTML(S.day)}<div class="panel sessnew"><h2>Noter une séance</h2>${trackMu()?rm+rs:rs+rm}</div>`}}
 
 /* ---------- pages de détail des tuiles (comme dans Santé) ---------- */
 let metK='',metP=30;

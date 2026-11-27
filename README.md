@@ -76,13 +76,15 @@ seule dès qu'une mesure de la montre arrive sur l'iPhone (`HealthSync.startLive
 décalage restant vient de la synchronisation montre → iPhone. La requête s'ouvre avec la feuille de la séance et se
 referme avec elle. Dans le simulateur (`?ios=1`), une fréquence cardiaque simulée permet de tester.
 
-**Fin de séance, montre et Arden.** Arden ne peut pas arrêter l'entraînement de la montre (Apple ne le permet qu'à
-l'appli qui l'a lancé), mais les deux se rejoignent :
-- terminer dans Arden enregistre les séries ; si la montre envoie encore sa FC, Arden rappelle de l'arrêter aussi, et
-  la séance se rattache toute seule à l'entraînement (la durée et la FC de la montre l'emportent) ;
-- quand la montre termine son entraînement, il arrive dans Apple Santé : séance ouverte, Arden propose « Terminer la
-  séance » ou « Continuer à noter » ; sinon une carte du Résumé le propose. La séance prend alors la durée de la montre.
-  Jamais de fin d'office : il reste peut-être des séries à noter.
+**Fin de séance, montre et Arden : la montre fait foi.** Arden ne peut pas arrêter l'entraînement de la montre (Apple
+ne le permet qu'à l'appli qui l'a lancé), mais les deux se rejoignent :
+- quand la montre termine un entraînement qui recouvre la séance en cours, Arden termine la séance tout seul, avec
+  l'heure et la durée de la montre, **même sans aucune série notée** (aussi au retour dans l'appli ou après une synchro,
+  si elle était fermée). Une séance sans exercice est proposée à compléter (« Ajouter mes exercices » sur le Résumé et
+  dans Dépense, ou « Modifier » dans le journal) ; la rouvrir n'affiche ni chrono ni FC en direct, et la fermer
+  enregistre les modifications ;
+- terminer dans Arden enregistre les séries (sans série, Arden demande confirmation) ; si la montre envoie encore sa FC,
+  Arden rappelle de l'arrêter aussi, et la séance s'y rattache toute seule.
 Dans le simulateur (`npm run sim`, appli iOS cochée), le bouton « Montre : terminer l'entraînement » le simule.
 
 **Démo avec une séance de muscu en cours** (pour voir l'éditeur, « Séance en cours », la progression) :

@@ -720,19 +720,35 @@ try {
       await page.waitForSelector('#msheet', { state: 'hidden' });
     });
 
-    await step('la montre termine l\'entraînement : Arden propose de terminer la séance', async () => {
+    await step('la montre termine l\'entraînement : Arden termine la séance tout seul', async () => {
       await page.click('#heroact .btn.pri');
       await page.waitForSelector('#live');
       await page.evaluate(() => window.__hkMock._endWorkout(30));
-      await page.waitForSelector('#dlg:not([hidden])', { timeout: 4000 }).catch(() => { throw new Error('pas de proposition quand la montre termine'); });
-      expect(/terminé/.test(await text(page, '#dlgt')), 'alerte inattendue : ' + await text(page, '#dlgt'));
-      await page.click('[data-dlg="cont"]');
+      await page.waitForSelector('#msheet', { state: 'hidden', timeout: 4000 }).catch(() => { throw new Error('la séance doit se terminer quand la montre termine'); });
+      expect(/montre a terminé.*30 min/.test(await text(page, '#toast')), 'message attendu, avec la durée de la montre : ' + await text(page, '#toast'));
+      expect(!/Séance en cours/.test(await text(page, '#heroact')), 'la séance est toujours en cours');
+    });
+
+    await step('séance sans série terminée par la montre : enregistrée, puis complétée', async () => {
+      await page.click('.tplus'); await page.click('#sheet [data-q="mu"]');
+      await page.waitForSelector('#msheet:not([hidden])');
+      await page.click('[data-act="smode"][data-m="mu"]');
+      await page.fill('#nn', 'Pecs'); await page.click('[data-act="start"]');
+      await page.waitForSelector('#live');
+      await page.waitForTimeout(1200);
+      await page.evaluate(() => window.__hkMock._endWorkout(10));
+      await page.waitForSelector('#msheet', { state: 'hidden', timeout: 4000 }).catch(() => { throw new Error('une séance sans série doit aussi se terminer'); });
+      expect(await visible(page, '#wkask [data-act="edit"]'), 'la carte « Ajouter mes exercices » manque');
+      await page.click('#wkask [data-act="edit"]');
+      await page.waitForSelector('#msheet:not([hidden])');
+      expect(!(await page.$('#live')), 'pas de chrono en direct pour une séance terminée');
+      await page.fill('.exn', 'Développé couché');
+      await page.fill('[data-f="w"]', '60'); await page.fill('[data-f="r"]', '10');
+      await page.waitForTimeout(1100);
       await page.click('#msl');
       await page.waitForSelector('#msheet', { state: 'hidden' });
-      expect(await visible(page, '#wkask [data-act="wkfin"]'), 'la carte « Ta montre a terminé » manque sur le Résumé');
-      await page.click('#wkask [data-act="wkfin"]');
-      await page.waitForFunction(() => !/Séance en cours/.test(document.querySelector('#heroact').textContent), null, { timeout: 5000 });
-      expect(/30 min/.test(await text(page, '#toast')), 'la séance doit prendre la durée de la montre');
+      expect(/mise à jour/.test(await text(page, '#toast')), 'fermer doit enregistrer les modifications');
+      expect(!(await visible(page, '#wkask [data-act="edit"]')), 'la séance complétée ne doit plus être proposée');
     });
     await ctx.close();
   }
