@@ -572,7 +572,7 @@ function renderToday(){const d=S.day,h=H(d),D=S.days[d]||{},it=D.items||[],T=day
  $('#acts').innerHTML=actsHTML(d,T)||`<div class="emptyst"><p>Aucune activité ce jour</p><button type="button" class="btn small" data-act="msopen" data-m="mu">Noter une séance</button></div>`;
  const mo=monitor(d),bad=mo.filter(x=>x.warn);
  $('#monmini').innerHTML=mo.length?`<div class="mm" data-go="recuperation"><div><div class="eyebrow">Moniteur de santé</div><b style="font-size:1.0625rem">${bad.length?`${bad.length} ${bad.length>1?'signaux':'signal'} inhabituel${bad.length>1?'s':''} : ${bad.map(x=>x.l).join(', ')}`:'Tous tes signes vitaux sont dans ta normale'}</b></div><div class="dots" style="margin-left:auto">${mo.map(x=>`<i style="--c:${x.col}" data-tip="${esc(x.l+' : '+monFmt(x,x.v)+'\n'+x.lab)}"></i>`).join('')}</div></div>`:'<div class="eyebrow">Moniteur de santé</div><p class="mute small" style="margin:4px 0 0">Il faut au moins 7 nuits importées pour établir ta normale.</p>';
- $('#upn').innerHTML=upNextHTML();
+ $('#upn').innerHTML=upNextHTML();$('#wkask').innerHTML=wkAskHTML(d);
  $('#bal').innerHTML=balHTML(d);$('#nightc').innerHTML=S.set.goal==='sommeil'?nightHTML(d):'';$('#wtc').innerHTML=S.set.goal==='poids'?weightHTML(d):'';$('#wkc').innerHTML=$('#ritual .wkr')?'':weekCardHTML(d);$('#sh-bal').hidden=!$('#bal').innerHTML;$('#vitals').innerHTML=vitalsHTML(d);$('#sh-vit').hidden=!$('#vitals').innerHTML;
  $('#chrono').innerHTML=chronoHTML(d);
  renderCheckin()}
@@ -724,11 +724,20 @@ const dateRow=(id,v=today())=>`<label class="drow"><span>Date</span><span class=
 const rpeLab=v=>v<=3?'facile':v<=6?'modéré':v<=8?'dur':'maximal';
 const rpeHTML=(id,v)=>{v=num(v);return `<div class="rpe" data-for="${id}"><div class="rph"><span>Effort ressenti</span><b>${v?`${v}/10 · ${rpeLab(v)}`:'touche pour noter'}</b></div><div class="rps" role="radiogroup" aria-label="Effort ressenti, de 1 à 10">${[1,2,3,4,5,6,7,8,9,10].map(i=>`<button type="button" role="radio" aria-checked="${i===v}" aria-label="${i} sur 10, ${rpeLab(i)}" class="${i<=v?'on':''}" data-act="rpe" data-v="${i}" style="--k:${i}"></button>`).join('')}</div><input type="hidden" id="${id}" value="${v||''}"></div>`};
 document.addEventListener('change',ev=>{const t=ev.target;if(t.matches&&t.matches('.drow input')){if(!t.value)t.value=today();t.parentElement.querySelector('.dval').textContent=dayWord(t.value)}});
+/* La montre a enregistré une séance de muscu qu'aucune séance notée ne complète : Arden propose d'en noter le détail.
+   La séance ouverte reprend l'heure et la durée de la montre, pour que les deux se rapprochent tout seuls. */
+let wkFor=null;
+const wkKey=(d,w)=>d+'@'+(has(w.st)?w.st:'');
+function wkCand(d){if(S.cur||!trackMu()||d<addD(today(),-3))return null;const skip=S.set.wkSkip||{};
+ return dayTrain(d).ap.find(w=>isStr(w)&&num(w.min)>=10&&!skip[wkKey(d,w)])||null}
+/* sur le jour d'aujourd'hui, on regarde aussi les trois jours d'avant : la séance d'hier soir se note le lendemain matin */
+function wkAskHTML(d0){let d=d0,w=null;for(const k of d0===today()?[0,1,2,3]:[0]){d=addD(d0,-k);w=wkCand(d);if(w)break}if(!w)return'';const when=d===today()?'':d===addD(today(),-1)?'hier ':dLong(d)+' ';
+ return `<div class="panel wkask"><span class="eyebrow">Apple Watch</span><b class="rt">Séance de musculation ${when}${has(w.st)?'à '+hm(w.st):''}</b><p>${esc(w.min)} min${w.hr?` · ${esc(w.hr)} bpm`:''}${w.kcal?` · ${esc(w.kcal)} kcal`:''}. Note tes exercices et tes charges : Arden suivra ta progression.</p><div class="row"><button type="button" class="btn pri small" data-act="wknote" data-d="${d}" data-st="${has(w.st)?w.st:''}" data-min="${num(w.min)}">Noter le détail</button><button type="button" class="btn small" data-act="wkskip" data-d="${d}" data-st="${has(w.st)?w.st:''}">Non merci</button></div></div>`}
 function renderStart(){const seen=new Set(),tpl=[];
  for(const s of done()){if(s.kind==='sport')continue;const k=norm(s.name);if(k&&!seen.has(k)){seen.add(k);tpl.push(s)}if(tpl.length>=8)break}
  const seg=`<div class="seg"><button data-act="smode" data-m="mu" class="${startMode==='mu'?'on':''}">Muscu</button><button data-act="smode" data-m="sp" class="${startMode==='sp'?'on':''}">Autre sport</button></div>`;
  $('#editor').innerHTML=`<div class="panel">${seg}`+(startMode==='mu'?`
- <div class="grid2"><label>Nom de la séance<input id="nn" placeholder="Push, Pull, Jambes…" autocomplete="off"></label>${dateRow('nd')}</div>
+ ${wkFor?`<p class="wkfor">Séance de la montre · ${esc(dayWord(wkFor.d).toLowerCase())}${wkFor.st!==''?' à '+hm(+wkFor.st):''} · ${wkFor.min} min</p>`:''}<div class="grid2"><label>Nom de la séance<input id="nn" placeholder="Push, Pull, Jambes…" autocomplete="off"></label>${wkFor?'':dateRow('nd')}</div>
  <button class="btn pri" data-act="start">Commencer une séance</button>
  ${tpl.length?`<h3>Ou reprendre une séance récente</h3><div class="chips">${tpl.map(s=>`<button class="chip" data-act="tpl" data-id="${esc(s.id)}"><b>${esc(s.name)}</b><span>${dShort(s.date)} · ${(s.ex||[]).length} exos</span></button>`).join('')}</div><p class="mute small">Charges pré-remplies avec la progression suggérée.</p>`:''}`
  :`<form id="spf"><div class="grid3"><label>Sport<select id="spt">${SPORTS.map(x=>`<option>${x}</option>`).join('')}</select></label>${dateRow('spd')}<label>Durée (min)<input id="spm" inputmode="numeric" required></label>
@@ -757,7 +766,9 @@ function dirty(){clearTimeout(sv);const e=$('#svst');if(e)e.textContent='Modific
 function saveCur(){if(!S.cur)return;const o=clone(S.cur);upsert(o);put.sess(o);const e=$('#svst');if(e)e.textContent='Enregistré'}
 function startSession(tid){const name=($('#nn')?.value||'').trim(),date=$('#nd')?.value||today();let ex=[{n:'',sets:[{w:'',r:''}]}],nm=name;
  if(tid){const t=S.sessions.find(s=>s.id===tid);if(t){nm=name||t.name;ex=(t.ex||[]).map(e=>({n:e.n,sets:prefill(e.n,null)}))}}
- S.cur={id:nid(),name:nm||'Séance',date,ex,open:true,t:Date.now()};saveCur();renderEditor();if(!tid)$('.exn')?.focus()}
+ S.cur={id:nid(),name:nm||'Séance',date,ex,open:true,t:Date.now()};
+ if(wkFor){const w=wkFor;wkFor=null;S.cur.date=w.d;if(w.st!==''){const t=new Date(w.d+'T00:00');t.setMinutes(+w.st);S.cur.t=t.getTime()}S.cur.dur=w.min}
+ saveCur();renderEditor();if(!tid)$('.exn')?.focus()}
 function finish(){const c=S.cur;clearTimeout(sv);
  const ex=c.ex.map(e=>({n:e.n.trim(),sets:e.sets.filter(s=>num(s.r)>0).map(s=>({w:num(s.w),r:num(s.r)}))})).filter(e=>e.n&&e.sets.length);
  if(!ex.length){toast('Rien à enregistrer : note au moins une série avec ses reps.');return}
@@ -1060,6 +1071,8 @@ document.addEventListener('click',ev=>{unlockAudio();
  switch(act){
  case'sheet':{const sh=$('#sheet');sh.hidden=!sh.hidden;setTimeout(()=>{document.documentElement.style.setProperty('--hh',$('.top').offsetHeight+'px')},0);return}
  case'qa':return quick(b.dataset.q);
+ case'wknote':{buzz();wkFor={d:b.dataset.d,st:b.dataset.st,min:num(b.dataset.min)};startMode='mu';renderStart();return openSheet('seance')}
+ case'wkskip':{buzz();S.set.wkSkip={...(S.set.wkSkip||{}),[b.dataset.d+'@'+b.dataset.st]:1};put.set();renderView(cur());return toast('D\'accord, elle reste telle que la montre l\'a enregistrée.')}
  case'rpe':{const w=b.closest('.rpe'),inp=$('#'+w.dataset.for),v=+b.dataset.v,nv=num(inp.value)===v?'':v;buzz();
   w.outerHTML=rpeHTML(w.dataset.for,nv);$('#'+w.dataset.for).dispatchEvent(new Event('input',{bubbles:true}));return}
  case'gopoids':{location.hash='tendances';setTimeout(()=>{const p=$('#fw')?.closest('.panel');if(p)scrollTo({top:p.getBoundingClientRect().top+scrollY-90,behavior:calm()?'auto':'smooth'})},450);return}
@@ -1079,7 +1092,7 @@ document.addEventListener('click',ev=>{unlockAudio();
  case'ciopen':renderCheckin();return openSheet('checkin');
  case'metric':return openMetric(b.dataset.k);
  case'mper':buzz();metP=+b.dataset.n;return renderMetric();
- case'msopen':if(!S.cur){startMode=b.dataset.m||'mu';renderStart()}return openSheet('seance');
+ case'msopen':wkFor=null;if(!S.cur){startMode=b.dataset.m||'mu';renderStart()}return openSheet('seance');
  case'foodadd':return openFood(b.dataset.m);
  case'foodsave':return pick?addPicked():closeSheet();
  case'onb':if(b.dataset.to==='2'&&!b.dataset.skip)saveProfile();return showOnb(+b.dataset.to);
@@ -1352,7 +1365,7 @@ function msBar(){const t=$('#mstitle'),l=$('#msl'),r=$('#msr');
  else if(msKind==='metric'){t.textContent=(MET[metK]||{}).t||'';l.textContent='';r.innerHTML='<button type="button" class="ms-btn ms-done" data-act="msclose">OK</button>'}
  l.style.visibility=l.textContent?'':'hidden'}
 function openSheet(k){msKind=k;document.documentElement.style.setProperty('--sy',scrollY+'px');const m=$('#msheet');$$('#msheet .ms-body').forEach(b=>b.hidden=b.dataset.k!==k);msBar();m.hidden=false;document.documentElement.classList.add('ms-open');m.querySelector('.ms-body:not([hidden])').scrollTop=0}
-function closeSheet(){if(!msKind)return;msKind='';pick=null;const a=document.activeElement;if(a&&$('#msheet').contains(a))a.blur();$('#msheet').hidden=true;document.documentElement.classList.remove('ms-open');setTimeout(renderSoft,0)}
+function closeSheet(){wkFor=null;if(!msKind)return;msKind='';pick=null;const a=document.activeElement;if(a&&$('#msheet').contains(a))a.blur();$('#msheet').hidden=true;document.documentElement.classList.remove('ms-open');setTimeout(renderSoft,0)}
 function openFood(m){foodMeal=MEALS.includes(m)?m:mealNow();fAdded=[];$('#fq').value='';pick=null;renderPick();renderFoodSearch();openSheet('food');
  loadCiqual().then(()=>{if(msKind==='food')renderFoodSearch()});if(matchMedia('(pointer:fine)').matches)$('#fq').focus()}
 
@@ -1474,7 +1487,7 @@ function renderSessCard(){const c=S.cur,el=$('#sesscard');if(!el)return;
  const row=(m,col,ic,t,s2)=>`<button type="button" class="hr" data-act="msopen" data-m="${m}" style="--c:${col}"><i><svg viewBox="0 0 24 24">${ic}</svg></i><span><b>${t}</b><small>${s2}</small></span><em>›</em></button>`;
  if(c){const n=c.ex.filter(e=>norm(e.n)).length,h0=new Date(c.t||Date.now()).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
   el.innerHTML=`<div class="panel sessnow"><button type="button" class="hr" data-act="msopen" style="--c:var(--trn)"><i><svg viewBox="0 0 24 24">${IC.lift}</svg></i><span><b>Séance en cours</b><small>${esc(c.name||'Séance')} · ${n} exercice${n>1?'s':''} · commencée à ${h0}</small></span><em class="go">Reprendre</em></button></div>`;return}
- {const rm=row('mu','var(--trn)',IC.lift,'Séance de muscu','Séries, charges et progression suggérée'),rs=row('sp','var(--eff)',IC.bolt,trackMu()?'Autre sport':'Sport','Course, vélo, natation, yoga…');el.innerHTML=`<div class="panel sessnew"><h2>Noter une séance</h2>${trackMu()?rm+rs:rs+rm}</div>`}}
+ {const rm=row('mu','var(--trn)',IC.lift,'Séance de muscu','Séries, charges et progression suggérée'),rs=row('sp','var(--eff)',IC.bolt,trackMu()?'Autre sport':'Sport','Course, vélo, natation, yoga…');el.innerHTML=`${wkAskHTML(S.day)}<div class="panel sessnew"><h2>Noter une séance</h2>${trackMu()?rm+rs:rs+rm}</div>`}}
 
 /* ---------- pages de détail des tuiles (comme dans Santé) ---------- */
 let metK='',metP=30;

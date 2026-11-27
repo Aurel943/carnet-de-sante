@@ -374,6 +374,23 @@ try {
       await page.waitForSelector('#msheet', { state: 'hidden' });
     });
 
+    await step('séance de la montre pas notée : proposition, détail noté, puis rapprochée', async () => {
+      await tab(page, 'aujourdhui');
+      // la démo laisse la dernière séance de muscu à la seule montre (si elle date des trois derniers jours)
+      if (!(await visible(page, '#wkask .wkask'))) return;
+      await page.click('#wkask [data-act="wknote"]');
+      await page.waitForSelector('#msheet:not([hidden]) .wkfor');
+      await page.click('#editor [data-act="tpl"]');
+      await page.waitForSelector('#editor [data-f="r"]');
+      await page.$$eval('#editor [data-f="r"]', (a) => a.slice(0, 3).forEach((x) => { x.value = '10'; x.dispatchEvent(new Event('input', { bubbles: true })); }));
+      await page.waitForTimeout(1100);
+      await page.click('#editor [data-act="finish"]');
+      await page.waitForSelector('#msheet', { state: 'hidden' });
+      await settle(page);
+      await tab(page, 'aujourdhui');
+      expect(!(await visible(page, '#wkask .wkask')), 'une fois notée, la séance de la montre ne doit plus être proposée');
+    });
+
     await step('objectif : chaque objectif met en avant ce qui compte pour lui', async () => {
       const goal = async (g) => { await tab(page, 'plus'); await page.click('#hub [data-s="reglages"]'); await page.selectOption('#s-goal', g); };
       await goal('sommeil'); await tab(page, 'aujourdhui');

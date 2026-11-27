@@ -1705,3 +1705,15 @@ ul#favs{display:block;margin:0 0 6px;padding:0;overflow:hidden;flex-wrap:nowrap}
 #demobar .dlab b{color:var(--trn)}
 /* une séance notée complétée par l'entraînement de la montre : la mention le dit */
 .wlk{color:var(--rec);font-weight:500}
+/* proposition : noter le détail d'une séance enregistrée par la montre */
+#wkask:empty{display:none}
+.wkask{display:grid;gap:6px;padding:16px;margin:0}
+.wkask .eyebrow{color:var(--rec)}
+.wkask .rt{font:600 1.1875rem/1.25 var(--serif)}
+.wkask p{margin:0;color:var(--mute);font-size:0.9375rem}
+.wkask .row{margin-top:6px}
+#sesscard .wkask{margin-bottom:14px}
+.wkfor{margin:0 0 12px;padding:10px 14px;border-radius:var(--r-ctl);background:color-mix(in srgb,var(--rec) 12%,var(--panel));font-size:0.9375rem}
+@media(max-width:800px){#v-aujourdhui>#wkask{order:3;margin-bottom:14px}}
+/* journal : en grand texte, l'intitulé passe à la ligne au lieu d'être coupé (« Musculation · montre ») */
+:root:is([data-dt=xl],[data-dt=xxl]) .je .tl{white-space:normal;overflow:visible}

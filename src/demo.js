@@ -245,6 +245,9 @@ export function demoManual(now = Date.now()) {
   m('Vaccin', -230, 'Rappel grippe', 'Pharmacie', '', 135);
   m('Rendez-vous', 12, 'Dentiste : détartrage', 'Dr Martin');
   m('Rendez-vous', 26, 'Kiné : genou droit', 'Cabinet Rive gauche', 'Apporter la radio');
+  // La dernière séance de muscu (si elle date des trois derniers jours) n'est pas notée : seule la montre l'a
+  // enregistrée, pour que la démo montre la proposition « Noter le détail » de la séance de la montre.
+  if (sessions.length && sessions[sessions.length - 1].date >= addD(t0, -3)) sessions.pop();
   return { sessions, days, med };
 }
 
