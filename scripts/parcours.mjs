@@ -119,6 +119,20 @@ try {
       expect(await page.isHidden('#hub'), 'un raccourci vers une sous-page de Plus doit l\'ouvrir directement');
     });
 
+    await step('Noter : quatre gestes du quotidien, le reste en liste, sans doublon', async () => {
+      await tab(page, 'aujourdhui');
+      await page.click('.tplus');
+      const qs = await page.$$eval('#sheet [data-q]', (a) => a.map((x) => x.dataset.q).filter((q) => q !== 'close'));
+      expect(qs.join(',') === 'food,mu,ci,bw,meas,med', 'actions inattendues : ' + qs.join(','));
+      await page.click('#sheet [data-q="meas"]');
+      await page.waitForSelector('#v-tendances:not([hidden])');
+      await page.waitForSelector('#mf', { state: 'visible', timeout: 3000 }).catch(() => { throw new Error('Noter → Mensurations doit ouvrir le formulaire'); });
+      await page.click('[data-act="mfopen"]');
+      await tab(page, 'aujourdhui');
+      await page.click('.tplus'); await page.click('#sheet [data-q="med"]');
+      await page.waitForSelector('[data-sub="dossier"]:not([hidden])');
+    });
+
     await step('dossier médical : ce qui est prévu d\'abord, formulaire ouvert par « Ajouter » ou par Noter', async () => {
       await page.waitForSelector('#medf', { state: 'visible', timeout: 3000 }).catch(() => { throw new Error('Noter → Rendez-vous doit ouvrir le formulaire'); });
       await page.fill('#mti', 'Ophtalmo');
@@ -348,7 +362,7 @@ try {
     });
 
     await step('respiration guidée : inspire, expire, puis fermer', async () => {
-      await page.click('.tplus'); await page.click('#sheet [data-q="breath"]');
+      await tab(page, 'recuperation'); await page.click('#v-recuperation [data-act="breath"]');
       await page.waitForSelector('#breath:not([hidden])');
       await page.click('[data-act="bzgo"]');
       await page.waitForTimeout(1500);
@@ -359,6 +373,7 @@ try {
       expect(/écourtée/.test(await text(page, '#bzw')), 'fin de séance non affichée');
       await page.click('#bzend [data-act="bzclose"]');
       await page.waitForSelector('#breath', { state: 'hidden' });
+      await tab(page, 'aujourdhui');
     });
 
     await step('page de détail : le grand chiffre suit le doigt sur le graphique', async () => {
@@ -452,7 +467,7 @@ try {
     });
 
     await step('scan à la caméra, Open Food Facts, portion, ajout', async () => {
-      await page.click('.tplus'); await page.click('#sheet [data-q="scan"]');
+      await page.click('.tplus'); await page.click('#sheet [data-q="food"]'); await page.click('#msheet .scanb');
       await page.waitForSelector('#fpick:not([hidden])', { timeout: 15000 });
       expect(/Pâte à tartiner/.test(await text(page, '#fpick')), 'produit scanné absent');
       expect(await page.isHidden('#scan'), 'la caméra reste ouverte');
@@ -465,7 +480,7 @@ try {
 
     await step('produit déjà scanné : retrouvé hors connexion', async () => {
       offline = true; asked = [];
-      await page.click('.tplus'); await page.click('#sheet [data-q="scan"]');
+      await page.click('.tplus'); await page.click('#sheet [data-q="food"]'); await page.click('#msheet .scanb');
       await page.waitForSelector('#fpick:not([hidden])', { timeout: 15000 });
       expect(/Pâte à tartiner/.test(await text(page, '#fpick')), 'produit mémorisé non retrouvé');
       expect(!asked.length, 'Open Food Facts interrogé pour un produit connu');
@@ -474,7 +489,7 @@ try {
     });
 
     const typeCode = async (c) => {
-      await page.click('.tplus'); await page.click('#sheet [data-q="scan"]');
+      await page.click('.tplus'); await page.click('#sheet [data-q="food"]'); await page.click('#msheet .scanb');
       await page.waitForSelector('#scan:not([hidden])');
       await page.fill('#sccode', c);
       await page.press('#sccode', 'Enter');
@@ -483,10 +498,14 @@ try {
     await step('produit inconnu : alerte, puis « Annuler » sans rien ouvrir', async () => {
       await typeCode('12345670');
       expect(/Produit inconnu/.test(await text(page, '#dlgt')), 'alerte attendue : ' + await text(page, '#dlgt'));
-      expect(await page.isHidden('#msheet'), 'la fiche ne doit pas s\'ouvrir avant le choix');
+      expect(!(await page.$('#pk-n')), 'la fiche ne doit pas s\'ouvrir avant le choix');
       await page.click('[data-dlg="cancel"]');
       await page.waitForSelector('#dlg', { state: 'hidden' });
-      expect(await page.isHidden('#msheet'), 'rien ne doit s\'ouvrir après « Annuler »');
+      expect(!(await page.$('#pk-n')), 'rien ne doit s\'ouvrir après « Annuler »');
+      // on revient à la recherche du repas, d'où le scan est parti
+      expect(await visible(page, '#fq'), 'la recherche du repas doit rester ouverte');
+      await page.click('#msl');
+      await page.waitForSelector('#msheet', { state: 'hidden' });
     });
 
     await step('pas de connexion : « Réessayer », puis « Ajouter moi-même »', async () => {

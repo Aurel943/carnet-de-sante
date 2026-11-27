@@ -11,6 +11,8 @@ L'appli fonctionne dans un navigateur, s'installe sur l'écran d'accueil (PWA) e
 
 ## Fonctionnalités
 
+Le bouton **+** (Noter) va droit à l'essentiel : **Repas, Séance, Check-in, Poids** en grand, puis « Plus rarement » : **Mensurations** et **Rendez-vous médical**. Rien n'y est en double : le scan est dans la recherche du repas, l'eau dans la tuile Hydratation, le choix muscu / autre sport dans la feuille Séance, la synchro Apple Santé dans la capsule en haut, la respiration guidée sur la page Énergie.
+
 Sur iPhone, la barre d'onglets suit l'ordre des jauges : **Résumé · Dépense · Énergie · Sommeil · Plus**, avec le bouton **+** (Noter) à côté. **Nutrition** s'ouvre depuis sa carte du Résumé ou depuis Plus, **Tendances** depuis la carte « Ta semaine » du Résumé ou depuis Plus ; le bouton « ‹ » ramène à l'onglet d'où l'on vient, qui reste allumé. Sur ordinateur, tous les onglets sont dans la barre latérale.
 
 | Onglet | Contenu |
@@ -49,7 +51,7 @@ glissent d'un jour à l'autre, une jauge touchée s'agrandit jusqu'à sa page, s
 Dans les pages de détail, le grand chiffre suit le doigt sur le graphique, avec un tic haptique par
 jour. Le check-in se règle avec des cadrans à tourner du doigt, l'eau monte dans la tuile
 Hydratation, le minuteur de repos est un arc qui se vide, et le ciel dérive lentement (étoiles la
-nuit). **Respiration guidée** (Noter → Respirer, ou depuis le plan les jours de stress) : 1, 3 ou
+nuit). **Respiration guidée** (page Énergie, ou depuis le plan les jours de stress) : 1, 3 ou
 5 min à six respirations par minute, guidées par l'arc et les vibrations, notées dans la journée.
 Tout le mouvement s'arrête si « Réduire les animations » est activé sur l'iPhone.
 

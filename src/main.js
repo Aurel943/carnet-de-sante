@@ -877,15 +877,13 @@ function renderBody(){const W=weights(),wk=Object.keys(W).sort(),L=hLast()||toda
 /* ---------- plus ---------- */
 const SUBT={dossier:'Dossier médical',reglages:'Réglages',apple:'Apple Santé',donnees:'Données et confidentialité'};
 function quick(q){$('#sheet').hidden=true;setTimeout(()=>document.documentElement.style.setProperty('--hh',$('.top').offsetHeight+'px'),0);if(q==='close')return;const go=(h,fn)=>{if(location.hash!=='#'+h)location.hash=h;else route();setTimeout(fn||(()=>{}),150)};
- if(q==='mu'||q==='sp'){if(!S.cur){startMode=q;renderStart()}openSheet('seance')}
+ if(q==='mu'){if(!S.cur)renderStart();openSheet('seance')}
  else if(q==='food'){S.day=today();openFood(mealNow())}
- else if(q==='scan'){S.day=today();openScan()}
- else if(q==='breath')openBreath()
+ else if(q==='meas')go('tendances',()=>{openForm('#mf',null,'#m-taille',true);$('#mf').scrollIntoView({behavior:calm()?'auto':'smooth',block:'center'})})
  else if(q==='bw'){S.day=today();go('nutrition',()=>{const b=$('#bw');if(b){b.scrollIntoView({behavior:'smooth',block:'center'});b.focus({preventScroll:true})}})}
- else if(q==='water'){const o=getDay(today());o.w=num(o.w)+250;put.day(today());renderView(cur());toast(`Eau : ${fx(o.w/1000)} L aujourd'hui`)}
  else if(q==='ci'){S.day=today();renderCheckin();openSheet('checkin')}
  else if(q==='med'){psub='dossier';go('plus',()=>{renderPlus();openForm('#medf',null,'#mti',true)})}
- else if(q==='apple'){if(HKN&&S.health.src==='hk'){hkSync();return}psub='apple';go('plus',renderPlus)}}
+}
 
 /* ouvre (ou referme) un formulaire replié derrière son bouton, et place le curseur dans son premier champ */
 function openForm(f,b,focus,open){const F=$(f);open=open??F.hidden;F.hidden=!open;b=b||F.parentElement.querySelector('[aria-expanded]');if(b){b.setAttribute('aria-expanded',open);b.textContent=open?'Fermer':b.dataset.act==='medopen'?'Ajouter':'Noter';b.classList.toggle('pri',!open&&b.dataset.act==='medopen')}if(open&&focus)$(focus).focus({preventScroll:true})}
@@ -1205,7 +1203,6 @@ async function hkSync({full=false,quiet=false,spin=false}={}){
 function setupHK(){
  document.documentElement.classList.add('hk');
  const ch=$('#onb [data-go2="apple"]');ch.dataset.go2='hk';ch.querySelector('b').textContent='Connecter Apple Santé';ch.querySelector('small').textContent='Lecture seule : sommeil, cœur, activité, entraînements';
- const qa=$('#sheet [data-q="apple"]');qa.lastChild.textContent='Synchro Santé';
  $('#hkpanel').hidden=false;$('#impt').textContent="Importer un fichier d'export (facultatif)";$('#hkmsg').after($('#hstat'));
  addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S.health.src==='hk'&&!S.set.demo&&Date.now()-(S.health.sync||0)>15*6e4)hkSync({quiet:true})})}
 

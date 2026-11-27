@@ -1553,7 +1553,8 @@ ul#favs{display:block;margin:0 0 6px;padding:0;overflow:hidden;flex-wrap:nowrap}
 }
 @media(prefers-reduced-motion:reduce){#sc{transition:none}}
 /* « Noter » : cinq tuiles par rangée, moins quand le texte est très grand (Dynamic Type) pour qu'aucun libellé ne déborde */
-#sheet .sh{grid-template-columns:repeat(auto-fill,minmax(3.8rem,1fr))}
+#sheet .sh{grid-template-columns:repeat(4,minmax(0,1fr))}
+:root[data-dt=xxl] #sheet .sh{grid-template-columns:repeat(2,minmax(0,1fr))}
 #sheet .qa{min-width:0}
 /* en-tête de carte avec un bouton (Ajouter, Noter) : le bouton reste aligné sur le titre */
 .ph:has(> .btn){align-items:center}.ph:has(> .btn) h2{margin-bottom:0}.ph:has(> .btn){margin-bottom:8px}
@@ -1575,3 +1576,11 @@ ul#favs{display:block;margin:0 0 6px;padding:0;overflow:hidden;flex-wrap:nowrap}
 .wkcard .wkl{color:var(--mute);font-size:0.9375rem}
 .wkcard .go{color:var(--trn);font-weight:600;font-size:0.9375rem;margin-top:4px}
 @media(min-width:801px){#dback{display:none!important}}
+/* « Noter » : quatre gestes du quotidien en tuiles, le reste en liste « Plus rarement » (comme le menu Plus) */
+#sheet .qmore{grid-column:1/-1;margin-top:4px}
+#sheet .qmore p{margin:2px 4px 6px;font-size:0.8125rem;font-weight:600;color:var(--mute)}
+#sheet .qmore .hr{background:color-mix(in srgb,var(--panel) 70%,transparent);min-height:54px;padding:10px 14px}
+#sheet .qmore .hr:first-of-type{border-radius:var(--r-in) var(--r-in) 0 0}#sheet .qmore .hr:last-of-type{border-radius:0 0 var(--r-in) var(--r-in)}
+#sheet .qmore .hr:not(:first-of-type)::before{content:'';position:absolute;top:0;left:58px;right:0;border-top:.5px solid var(--line)}
+#sheet .qmore .hr em{color:var(--mute);font-style:normal}
+.breathl{margin-top:12px;background:var(--panel2)}.breathl svg{stroke:var(--rec)}.breathl svg circle{fill:var(--rec)}

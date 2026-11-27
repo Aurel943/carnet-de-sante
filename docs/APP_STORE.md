@@ -117,7 +117,7 @@ Dans l'appli iOS, Apple Santé est lu directement : plus besoin du fichier d'exp
   lit les 13 derniers mois, par tranches de 30 jours (barre de progression en haut de l'écran).
 - **Ensuite** : mise à jour automatique à chaque ouverture (et au retour dans l'appli après
   15 minutes), en ne relisant que les derniers jours. Bouton « Synchroniser maintenant » dans
-  **Plus → Apple Santé**, et « Synchro Santé » dans le menu **Noter**.
+  **Plus → Apple Santé**, la capsule Santé en haut de l'écran, ou en tirant l'écran vers le bas.
 - **Lecture seule** : l'appli n'écrit rien dans Apple Santé.
 - **Comment ça marche** : le module natif (`HealthSyncPlugin.swift`) renvoie les mesures brutes,
   et `src/healthkit.js` les convertit au format de l'export Apple avant de les passer au même

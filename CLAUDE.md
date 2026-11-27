@@ -40,6 +40,9 @@ https://aurel943.github.io/carnet-de-sante/ : rien ne doit rester seulement en l
   Noter). Nutrition et Tendances n'ont pas d'onglet : elles s'ouvrent depuis le Résumé (carte Nutrition, carte
   « Ta semaine ») ou depuis Plus, l'onglet d'origine reste allumé et « ‹ » y ramène. La nutrition reste mise en avant
   (carte en tête du Résumé, « Repas » en premier dans Noter).
+- Noter (bouton +) : quatre gestes du quotidien en tuiles (Repas, Séance, Check-in, Poids), puis « Plus rarement »
+  en liste (Mensurations, Rendez-vous médical). N'y ajouter que ce qui n'existe nulle part ailleurs : pas de doublon
+  avec les pages (scan dans Repas, eau dans Hydratation, synchro dans la capsule Santé, respiration sur Énergie).
 - Navigation (comme sur iPhone) : un onglet rouvert depuis une autre partie de l'appli repart de son
   point de départ (aujourd'hui pour les onglets de jour, menu pour Plus) ; toucher l'onglet où l'on est
   déjà y ramène aussi. Entre onglets de jour (Résumé, Sommeil, Énergie, Dépense), le jour choisi est
