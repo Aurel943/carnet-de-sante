@@ -401,7 +401,7 @@ td.num,th.num{text-align:right}
  .tabs .lb{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
  .lb .lf{display:none}.lb .ls{display:inline}
  .tabs .dsk{display:none!important}
- .tabs a[href="#aujourdhui"]{order:1}.tabs a[href="#sommeil"]{order:2}.tabs a[href="#recuperation"]{order:3}.tabs a[href="#effort"]{order:4}.tabs .tplus{order:5}.tabs a[href="#plus"]{order:6}
+ .tabs a[href="#aujourdhui"]{order:1}.tabs a[href="#effort"]{order:2}.tabs a[href="#recuperation"]{order:3}.tabs a[href="#sommeil"]{order:4}.tabs .tplus{order:5}.tabs a[href="#plus"]{order:6}
  #toast{top:calc(var(--sat) + 8px);position:fixed}
  #timer{position:fixed;top:calc(var(--sat) + 8px)}
 
@@ -1242,7 +1242,7 @@ input[type=search]::-webkit-search-cancel-button{filter:grayscale(1) opacity(.55
  #v-aujourdhui>#upn{order:3}
  #v-aujourdhui>#ritual{order:2}
  #v-aujourdhui>#sh-bal{order:10}#v-aujourdhui>#bal{order:11}#v-aujourdhui>#tiles{order:12}
- #v-aujourdhui>#sh-vit{order:20}#v-aujourdhui>#vitals{order:21}
+ #v-aujourdhui>#sh-vit{order:20}#v-aujourdhui>#vitals{order:21}#v-aujourdhui>#wkc{order:22;margin-top:14px}
  #v-aujourdhui>.sech:has(+.dayp){order:30}#v-aujourdhui>.panel.dayp:has(#fday){order:31}
  #v-aujourdhui>#sh-chr{order:40}#v-aujourdhui>#chrono{order:41}
  #v-aujourdhui>#checkin{order:50;margin-top:14px}
@@ -1558,3 +1558,20 @@ ul#favs{display:block;margin:0 0 6px;padding:0;overflow:hidden;flex-wrap:nowrap}
 /* en-tête de carte avec un bouton (Ajouter, Noter) : le bouton reste aligné sur le titre */
 .ph:has(> .btn){align-items:center}.ph:has(> .btn) h2{margin-bottom:0}.ph:has(> .btn){margin-bottom:8px}
 #medf,#mf{margin-top:6px}
+/* ---------- Résumé : carte Nutrition (ce qu'il reste à manger, protéines, prochain repas) ---------- */
+.nutc .nuth{display:flex;align-items:center;gap:12px;width:100%;border:0;background:none;color:var(--ink);font:inherit;padding:0;margin:0 0 8px;cursor:pointer;text-align:left;transition:transform .3s var(--spring)}
+.nutc .nuth:active{transform:scale(.97)}
+.nutc .nuk{width:3.6rem;flex:none}
+.nutc .nuth .balh{margin:0;display:grid;gap:4px}
+.nupr{display:grid;grid-template-columns:6.4rem minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;border:0;background:none;color:var(--ink);font:inherit;padding:7px 0;cursor:pointer;text-align:left}
+.nupr>span{font-size:0.9375rem}
+.nupr i{display:block;height:8px;border-radius:99px;background:color-mix(in srgb,var(--nut) 16%,transparent);overflow:hidden}
+.nupr i b{display:block;height:100%;border-radius:99px;background:var(--nut)}
+.nupr em{font:500 0.9375rem var(--round);font-style:normal;color:var(--mute);font-variant-numeric:tabular-nums}.nupr em b{color:var(--ink);font-weight:600}
+.nuq{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+/* ---------- Résumé : « Ta semaine », vers Tendances ---------- */
+.wkcard{display:grid;gap:4px;width:100%;border:0;text-align:left;color:var(--ink);font:inherit;cursor:pointer;margin:0;padding:16px}
+.wkcard b{font:600 1.25rem/1.2 var(--serif)}
+.wkcard .wkl{color:var(--mute);font-size:0.9375rem}
+.wkcard .go{color:var(--trn);font-weight:600;font-size:0.9375rem;margin-top:4px}
+@media(min-width:801px){#dback{display:none!important}}

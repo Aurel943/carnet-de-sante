@@ -11,15 +11,17 @@ L'appli fonctionne dans un navigateur, s'installe sur l'écran d'accueil (PWA) e
 
 ## Fonctionnalités
 
+Sur iPhone, la barre d'onglets suit l'ordre des jauges : **Résumé · Dépense · Énergie · Sommeil · Plus**, avec le bouton **+** (Noter) à côté. **Nutrition** s'ouvre depuis sa carte du Résumé ou depuis Plus, **Tendances** depuis la carte « Ta semaine » du Résumé ou depuis Plus ; le bouton « ‹ » ramène à l'onglet d'où l'on vient, qui reste allumé. Sur ordinateur, tous les onglets sont dans la barre latérale.
+
 | Onglet | Contenu |
 | --- | --- |
-| **Aujourd'hui** | Titre du jour et sa phrase, jauges dépense / énergie / sommeil (zone de dépense conseillée sur l'arc), plan du jour, action principale, carte du soir avant le coucher, moniteur de santé, tuiles (stress, VFC, FC au repos, activité, nutrition, hydratation), courbe cardiaque de la journée, activités, check-in (humeur, énergie, stress, courbatures, étiquettes) |
+| **Aujourd'hui** | Titre du jour et sa phrase, jauges dépense / énergie / sommeil (zone de dépense conseillée sur l'arc), plan du jour, action principale, carte du soir avant le coucher, carte **Nutrition** (ce qu'il reste à manger, protéines, dépense en regard, prochain repas à noter en un toucher ou « Comme hier »), moniteur de santé, carte « Ta semaine » qui mène à Tendances, tuiles (stress, VFC, FC au repos, activité, nutrition, hydratation), courbe cardiaque de la journée, activités, check-in (humeur, énergie, stress, courbatures, étiquettes) |
 | **Sommeil** | Score et composantes, hypnogramme de la nuit avec FC et VFC, 14 dernières nuits, tendances, besoin de sommeil et heure de coucher conseillée |
 | **Énergie** | Score, moniteur de santé (plage normale personnelle), VFC nocturne, FC nocturne, stress estimé, signes vitaux (SpO₂, respiration, température au poignet…) |
 | **Dépense** | Zones cardiaques, journal de séances de muscu (séries, minuteur de repos, progression suggérée), autres sports, charge d'entraînement (ratio 7 j / 28 j), volume par groupe musculaire, 1RM estimé, records |
 | **Nutrition** | Ce qu'il reste à manger aujourd'hui (arc des calories, protéines, glucides, lipides), les quatre repas avec ajout en un toucher (« Comme hier », récents), eau, compléments, poids du matin, la semaine ; en analyse détaillée : besoins caloriques réels, protéines sur 14 jours |
 | **Tendances** | Ta semaine en un coup d'œil (image à partager), bilan santé sur 30 jours, corrélations observées, mensurations (« Noter » ouvre le formulaire), poids ; en analyse détaillée : la semaine mesure par mesure, rigueur du suivi, bien-être, masse grasse, VO2 max, activité quotidienne |
-| **Plus** | Énergie et signes vitaux (aussi par un toucher sur la jauge Énergie), Nutrition, dossier médical (ce qui est prévu d'abord, rappels à leur date ; « Ajouter » ouvre le formulaire), import Apple Santé, réglages et objectifs, données et confidentialité (sauvegarde en fichier, restauration, suppression) |
+| **Plus** | Nutrition, Tendances, dossier médical (ce qui est prévu d'abord, rappels à leur date ; « Ajouter » ouvre le formulaire), import Apple Santé, réglages et objectifs, données et confidentialité (sauvegarde en fichier, restauration, suppression) |
 
 La tuile **Calories brûlées** donne la dépense depuis minuit, à l'instant présent : métabolisme de
 base (formule de Mifflin-St Jeor à partir du poids, de la taille, de l'âge et du sexe, réparti sur

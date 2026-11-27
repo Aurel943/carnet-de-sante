@@ -36,6 +36,10 @@ https://aurel943.github.io/carnet-de-sante/ : rien ne doit rester seulement en l
   tirer pour synchroniser (appli iOS), tic haptique en parcourant un graphique. Ressorts à l'appui
   (`cubic-bezier(.25,1.6,.4,1)`). Tout s'arrête avec « Réduire les animations » ; les captures App Store
   sont faites dans ce mode pour montrer les valeurs finales.
+- Barre d'onglets sur iPhone, dans l'ordre des jauges : Résumé · Dépense · Énergie · Sommeil · Plus (+ le bouton
+  Noter). Nutrition et Tendances n'ont pas d'onglet : elles s'ouvrent depuis le Résumé (carte Nutrition, carte
+  « Ta semaine ») ou depuis Plus, l'onglet d'origine reste allumé et « ‹ » y ramène. La nutrition reste mise en avant
+  (carte en tête du Résumé, « Repas » en premier dans Noter).
 - Navigation (comme sur iPhone) : un onglet rouvert depuis une autre partie de l'appli repart de son
   point de départ (aujourd'hui pour les onglets de jour, menu pour Plus) ; toucher l'onglet où l'on est
   déjà y ramène aussi. Entre onglets de jour (Résumé, Sommeil, Énergie, Dépense), le jour choisi est

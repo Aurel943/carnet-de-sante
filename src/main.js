@@ -345,6 +345,8 @@ function paintSky(el,k){if(el.id==='sky'){el.classList.toggle('night',!!k.night)
 /* ---------- vue commune : jour ---------- */
 const VT={sommeil:'Sommeil',recuperation:'Énergie',effort:'Dépense',nutrition:'Nutrition'};
 const DAYV=['aujourdhui','sommeil','recuperation','effort','nutrition'];
+/* Nutrition et Tendances n'ont pas d'onglet sur iPhone : elles s'ouvrent depuis un onglet (Résumé, Plus…), qui reste allumé, et « ‹ » y ramène */
+const SUBV=['nutrition','tendances'],TABV=['aujourdhui','effort','recuperation','sommeil','plus'],TABN={aujourdhui:'Résumé',effort:'Dépense',recuperation:'Énergie',sommeil:'Sommeil',plus:'Plus'};let subFrom='plus';
 /* Phrase de conclusion de chaque section, sous le grand titre : ce qu'il faut retenir avant les chiffres. */
 const SLW={Durée:'un peu courte',Efficacité:'du temps éveillé au lit',Récupératrice:'peu de sommeil profond',Régularité:'un coucher irrégulier',Continuité:'plusieurs réveils'};
 function sectionLede(v,d){const h=H(d);
@@ -367,10 +369,10 @@ function renderDayNav(){const d=S.day,v0=cur(),rel=d===today()?"Aujourd'hui":d==
  else{$('#dtitle').textContent=story.t;$('#dsub').textContent=rel?`${rel} · ${dLong(d)}`:dLong(d)}
  $('#dlede').innerHTML=!dayv?'':v0==='aujourdhui'?esc(story.l):esc(sectionLede(v0,d));
  $('[data-act=dnext]').disabled=d>=today();
- $('#appbar').hidden=!dayv;$('#abback').hidden=v0!=='recuperation'&&v0!=='nutrition';$('#abback').dataset.go=v0==='nutrition'?'plus':'aujourdhui';$('#abback').setAttribute('aria-label',v0==='nutrition'?'Retour à Plus':'Retour au Résumé');if(dayv){$('#abrel').textContent=rel||new Date(d+'T12:00').toLocaleDateString('fr-FR',{weekday:'long'});$('#abday').textContent=new Date(d+'T12:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+ $('#appbar').hidden=!dayv;$('#abback').hidden=v0!=='nutrition';$('#abback').dataset.go=subFrom;$('#abback').setAttribute('aria-label','Retour à '+TABN[subFrom]);if(dayv){$('#abrel').textContent=rel||new Date(d+'T12:00').toLocaleDateString('fr-FR',{weekday:'long'});$('#abday').textContent=new Date(d+'T12:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
   const L0=hLast(),age=L0?Math.round((new Date(today()+'T12:00')-new Date(L0+'T12:00'))/864e5):null;$('#abdot').className=age==null?'':age<=1?'ok':'old';
   $('.abdate').setAttribute('aria-expanded',String(!S.set.wkc));$('#wk').classList.toggle('cl',!!S.set.wkc)}
- document.documentElement.classList.toggle('dayv',dayv);$('#dback').hidden=v0!=='recuperation';
+ document.documentElement.classList.toggle('dayv',dayv);$('#dback').hidden=v0!=='tendances';$('#dback').dataset.go=subFrom;$('#dback').textContent='‹ '+TABN[subFrom];
  paintSky($('#sky'),skyFor(v0,story.tone));
  const L=hLast();
  $('#dn').hidden=!dayv;$('#wk').hidden=$('#dn').hidden;if(!$('#wk').hidden)renderWeek(v0);
@@ -421,13 +423,21 @@ function upNextHTML(){const up=S.med.filter(m=>(m.date>=today()&&m.date<=addD(to
 
 /* ---------- Résumé façon appli : bilan, moniteur en tuiles, chronologie ---------- */
 /* Bilan du jour : dépensé (base + actif) et mangé sur la même échelle, l'écart en grand. */
-function balHTML(d){const x=burnOf(d),it=(S.days[d]||{}).items||[],ate=it.reduce((a,y)=>a+kcalOf(y),0),goal=num(S.set.kcal);
- if(!x&&!it.length)return'';const burn=x?x.total:0,mx=Math.max(burn,ate,goal||0,1),W=v=>clamp(v/mx*100,0,100).toFixed(1)+'%',dl=Math.round(ate-burn);
- const lab=!x?'calories mangées':Math.abs(dl)<100?'à l\'équilibre':dl<0?'de déficit, pour l\'instant':'de surplus';
- return `<div class="panel balc"><div class="balh"><b>${x?(dl>0?'+':dl<0?'−':'')+r0(Math.abs(x?dl:ate)):r0(ate)}<small> kcal</small></b><span>${lab}</span></div>
- <button type="button" class="balr" data-act="metric" data-k="burn" style="--c:var(--eff)"><span class="bl"><i><svg viewBox="0 0 24 24"><path d="M12 2.5c.8 3.8 5.5 5.6 5.5 11a5.5 5.5 0 0 1-11 0c0-2.8 1.6-4.2 2.4-6 .9 1.3 1.8 1.9 2.9 2.2-.3-2.5-.6-4.6.2-7.2z"/></svg></i>Dépensé</span><span class="bt"><i class="b0" style="width:${W(x?x.basal:0)}"></i><i class="b1" style="width:${W(x?x.active:0)}"></i></span><em>${x?r0(burn):'–'}</em></button>
+/* Résumé : la nutrition du jour en une carte. Ce qu'il reste à manger, les protéines, la dépense en regard,
+   et le prochain repas à noter en un toucher (« Comme hier » quand c'est possible). */
+function balHTML(d){const x=burnOf(d),it=dayIt(d),ate=it.reduce((a,y)=>a+kcalOf(y),0),goal=num(S.set.kcal),T=num(S.set.prot),Pr=sum(it,'p'),isT=d===today();
+ if(!x&&!it.length&&!isT)return'';const burn=x?x.total:0,mx=Math.max(burn,ate,goal||0,1),W=v=>clamp(v/mx*100,0,100).toFixed(1)+'%',dl=Math.round(ate-burn),left=goal-ate;
+ const big=!goal?r0(ate):ate&&left<0?'+'+r0(-left):r0(Math.max(0,left)),lab=!goal?'mangées':left<0?'au-dessus de ton objectif':isT?'à manger aujourd\'hui':'sous l\'objectif';
+ const nx=isT?(()=>{const m0=MEALS.indexOf(mealNow());for(let k=m0;k<MEALS.length;k++){const m=MEALS[k];if(!it.some(y=>y.m===m))return m}return null})():null,ym=nx?dayIt(addD(d,-1)).filter(y=>y.m===nx):[];
+ return `<div class="panel balc nutc"><button type="button" class="nuth" data-go="nutrition"><span class="nuk">${kcalArc(ate,goal)}</span><span class="balh"><b>${big}<small> kcal</small></b><span>${lab}</span></span></button>
+ ${T?`<button type="button" class="nupr" data-go="nutrition"><span>Protéines</span><i><b style="width:${clamp(Pr/T*100,0,100).toFixed(1)}%"></b></i><em><b>${r0(Pr)}</b> / ${r0(T)} g</em></button>`:''}
  <button type="button" class="balr" data-go="nutrition" style="--c:var(--nut)"><span class="bl"><i><svg viewBox="0 0 24 24"><path d="M4 11h16a8 8 0 0 1-16 0zM9 7c0-2 1.5-3 3-3s3 1 3 3"/></svg></i>Mangé</span><span class="bt"><i class="b1" style="width:${W(ate)}"></i>${goal?`<u style="left:${W(goal)}"></u>`:''}</span><em>${r0(ate)}</em></button>
- <p class="balf">${x?`${r0(x.basal)} de base · ${r0(x.active)} actives`:'renseigne ton profil pour la dépense'}${goal?` · objectif ${r0(goal)}`:''}</p></div>`}
+ <button type="button" class="balr" data-act="metric" data-k="burn" style="--c:var(--eff)"><span class="bl"><i><svg viewBox="0 0 24 24"><path d="M12 2.5c.8 3.8 5.5 5.6 5.5 11a5.5 5.5 0 0 1-11 0c0-2.8 1.6-4.2 2.4-6 .9 1.3 1.8 1.9 2.9 2.2-.3-2.5-.6-4.6.2-7.2z"/></svg></i>Dépensé</span><span class="bt"><i class="b0" style="width:${W(x?x.basal:0)}"></i><i class="b1" style="width:${W(x?x.active:0)}"></i></span><em>${x?r0(burn):'–'}</em></button>
+ <p class="balf">${x?`Bilan ${dl>0?'+':dl<0?'−':''}${r0(Math.abs(dl))} kcal${isT?' pour l\'instant':''} · ${r0(x.basal)} de base, ${r0(x.active)} actives`:'Renseigne ton profil pour voir ta dépense'}</p>
+ ${nx?`<div class="nuq"><button type="button" class="btn small" data-act="foodadd" data-m="${esc(nx)}">+ ${nx}</button>${ym.length?`<button type="button" class="mchip" data-act="likey" data-m="${esc(nx)}"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4"/></svg>Comme hier · ${r0(ym.reduce((a,y)=>a+kcalOf(y),0))} kcal</button>`:''}</div>`:''}</div>`}
+/* Résumé : la semaine en cours, qui mène à Tendances */
+function weekCardHTML(d){if(d!==today()||!hKeys().length)return'';const w=weekRecap(today());if(!w)return'';
+ return `<button type="button" class="panel wkcard" data-go="tendances"><span class="eyebrow">Ta semaine</span><b>${esc(w.title)}</b><span class="wkl">${esc(w.line)}</span><span class="go">Voir tes tendances ›</span></button>`}
 /* Mini-arc d'Arden pour une mesure : piste, plage normale en couleur, point-curseur sur la valeur. */
 function miniArc(p,lo,hi,col){const r=13,c=18,P=t=>{const a=GA0+GSPAN*clamp(t,0,1);return [c+r*Math.cos(a),c+r*Math.sin(a)]},[x,y]=P(p);
  return `<svg class="ma" viewBox="0 0 36 36" aria-hidden="true"><path d="${arcPath(c,c,r,GA0,GA0+GSPAN)}" class="mat"/><path d="${arcPath(c,c,r,GA0+GSPAN*clamp(lo,0,1),GA0+GSPAN*clamp(hi,0,1))}" class="man" style="stroke:${col}"/><circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="3.6" class="mad" style="stroke:${col}"/></svg>`}
@@ -496,7 +506,7 @@ function renderToday(){const d=S.day,h=H(d),D=S.days[d]||{},it=D.items||[],T=day
  const mo=monitor(d),bad=mo.filter(x=>x.warn);
  $('#monmini').innerHTML=mo.length?`<div class="mm" data-go="recuperation"><div><div class="eyebrow">Moniteur de santé</div><b style="font-size:1.0625rem">${bad.length?`${bad.length} ${bad.length>1?'signaux':'signal'} inhabituel${bad.length>1?'s':''} : ${bad.map(x=>x.l).join(', ')}`:'Tous tes signes vitaux sont dans ta normale'}</b></div><div class="dots" style="margin-left:auto">${mo.map(x=>`<i style="--c:${x.col}" data-tip="${esc(x.l+' : '+monFmt(x,x.v)+'\n'+x.lab)}"></i>`).join('')}</div></div>`:'<div class="eyebrow">Moniteur de santé</div><p class="mute small" style="margin:4px 0 0">Il faut au moins 7 nuits importées pour établir ta normale.</p>';
  $('#upn').innerHTML=upNextHTML();
- $('#bal').innerHTML=balHTML(d);$('#vitals').innerHTML=vitalsHTML(d);$('#sh-vit').hidden=!$('#vitals').innerHTML;$('#sh-bal').hidden=false;
+ $('#bal').innerHTML=balHTML(d);$('#wkc').innerHTML=$('#ritual .wkr')?'':weekCardHTML(d);$('#sh-bal').hidden=!$('#bal').innerHTML;$('#vitals').innerHTML=vitalsHTML(d);$('#sh-vit').hidden=!$('#vitals').innerHTML;
  $('#chrono').innerHTML=chronoHTML(d);
  renderCheckin()}
 function coach(d,rc,sl,ef,tg){const h=H(d),out=[];
@@ -926,7 +936,7 @@ function renderSoft(){updateDatalist();
  if(!S.cur&&!$('#editor').contains(document.activeElement))renderStart();
  if(S.cur)S.cur.ex.forEach((e,i)=>updateHint(i));
  const v=cur();if(v==='aujourdhui'&&$('#checkin').contains(document.activeElement))return;if(v==='effort'&&$('#editor').contains(document.activeElement))return;renderView(v)}
-function route(){const v=cur();views.forEach(n=>$('#v-'+n).hidden=n!==v);$$('#tabs a').forEach(a=>{a.setAttribute('aria-current',a.getAttribute('href')==='#'+v?'page':'false');a.classList.toggle('sub-on',(a.getAttribute('href')==='#plus'&&v==='nutrition')||(a.getAttribute('href')==='#aujourdhui'&&v==='recuperation'))});renderView(v);tabInd()}
+function route(){const v=cur();views.forEach(n=>$('#v-'+n).hidden=n!==v);$$('#tabs a').forEach(a=>{a.setAttribute('aria-current',a.getAttribute('href')==='#'+v?'page':'false');a.classList.toggle('sub-on',SUBV.includes(v)&&a.getAttribute('href')==='#'+subFrom&&matchMedia('(max-width:800px)').matches)});renderView(v);tabInd()}
 /* indicateur de l'onglet actif : il glisse d'un onglet à l'autre (ressort), à la couleur de la section */
 function tabInd(){const nav=$('#tabs');let ind=nav.querySelector('.tabind');if(!ind){ind=document.createElement('i');ind.className='tabind';ind.setAttribute('aria-hidden','true');nav.prepend(ind)}
  const a=nav.querySelector('a[aria-current=page]:not(.dsk),a.sub-on');if(!a||!a.offsetWidth){ind.classList.add('off');return}
@@ -1039,7 +1049,7 @@ document.addEventListener('click',ev=>{unlockAudio();
  case'pkdel':{const k=pick.ek;pick=null;closeSheet();return delFood(k)}
  case'fedit':return openEdit(+b.dataset.k);
  case'radd':{let x=null;try{x=JSON.parse(b.dataset.r)}catch(e){return}return quickAdd(x,b.dataset.m)}
- case'likey':{const m=b.dataset.m,d=S.day,y=dayIt(addD(d,-1)).filter(x=>x.m===m);if(!y.length)return;const os=y.map(x=>pushItem(x,m));if(msKind==='food')fAdded.push(...os);buzz('ok');renderNutri();if(msKind==='food')renderFoodSearch();
+ case'likey':{const m=b.dataset.m,d=S.day,y=dayIt(addD(d,-1)).filter(x=>x.m===m);if(!y.length)return;const os=y.map(x=>pushItem(x,m));if(msKind==='food')fAdded.push(...os);buzz('ok');renderNutri();if(cur()==='aujourdhui')renderToday();if(msKind==='food')renderFoodSearch();
   return toast(`${os.length} aliment${os.length>1?'s':''} comme hier · ${r0(os.reduce((a,x)=>a+kcalOf(x),0))} kcal`,()=>{const D=getDay(d);D.items=D.items.filter(x=>!os.includes(x));fAdded=fAdded.filter(x=>!os.includes(x));put.day(d);renderNutri();if(msKind==='food')renderFoodSearch()})}
  case'mprod':return openPick(prods()[+b.dataset.i]);
  case'pickq':buzz();pick.q=+b.dataset.q;$('#pq').value=String(pick.q).replace('.',',');return pickTotal();
@@ -1094,11 +1104,11 @@ $('#hfile').addEventListener('change',async ev=>{const f=ev.target.files[0];ev.t
 /* Revenir sur un onglet depuis une autre partie de l'appli le rouvre à son point de départ (aujourd'hui,
    menu Plus) ; entre onglets de jour (Résumé, Sommeil, Énergie, Dépense), le jour choisi est gardé. */
 let lastV=cur();
-addEventListener('hashchange',()=>{$('#sheet').hidden=true;buzz();const v=cur(),from=lastV;lastV=v;
+addEventListener('hashchange',()=>{$('#sheet').hidden=true;buzz();const v=cur(),from=lastV;lastV=v;if(SUBV.includes(v)&&TABV.includes(from))subFrom=from;
  if(DAYV.includes(v)&&!DAYV.includes(from))S.day=today();
  vt(()=>{route();scrollTo(0,0)},zoomFrom?'zoom':'tab')});
 document.addEventListener('keydown',e=>{if(e.metaKey||e.ctrlKey||e.altKey)return;const t=e.target;if(t.closest&&t.closest('input,textarea,select,[contenteditable]'))return;
- const tabs=['aujourdhui','sommeil','recuperation','effort','nutrition','tendances','plus'];
+ const tabs=['aujourdhui','effort','recuperation','sommeil','nutrition','tendances','plus'];
  if(e.key==='Escape'){if(!$('#breath').hidden)return closeBreath();if(!$('#dlg').hidden)return closeDlg('cancel');if(!$('#scan').hidden)return closeScan();$('#sheet').hidden=true;closeSheet();if(!$('#brief').hidden)hideBrief();hideCele();return}
  if(/^[1-7]$/.test(e.key)){location.hash=tabs[+e.key-1];return}
  if(e.key==='n'||e.key==='N'){e.preventDefault();$('.tplus').click();return}

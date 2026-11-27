@@ -46,6 +46,12 @@ async function tab(page, h) {
   await page.click(`#tabs a[href="#${h}"]`);
   await page.waitForSelector(`#v-${h}:not([hidden])`);
 }
+/* Tendances n'a pas d'onglet sur iPhone : elle s'ouvre depuis Plus */
+async function tend(page) {
+  await tab(page, 'plus');
+  await page.click('#hub [data-go="tendances"]');
+  await page.waitForSelector('#v-tendances:not([hidden])');
+}
 /* referme ce qui peut s'ouvrir tout seul : briefing du matin, célébration (« Dans ta zone »…) */
 async function settle(page) {
   await page.waitForTimeout(700);
@@ -84,13 +90,15 @@ try {
       expect((await page.$$('#chrono .ev')).length >= 1, 'chronologie vide');
     });
 
-    await step('barre d\'onglets : Résumé, Sommeil, Dépense, Tendances, Plus', async () => {
+    await step('barre d\'onglets : Résumé, Dépense, Énergie, Sommeil, Plus (l\'ordre des jauges)', async () => {
       const labels = await page.$$eval('#tabs a', (a) => a.filter((x) => x.offsetParent).map((x) => x.innerText.trim()));
-      expect(labels.join('|') === 'Résumé|Sommeil|Dépense|Tendances|Plus', 'onglets visibles : ' + labels.join(', '));
-      for (const [h, vd] of [['sommeil', '#vd-s14'], ['effort', '#vd-heat'], ['tendances', '#vd-mk'], ['plus', null]]) {
+      expect(labels.join('|') === 'Résumé|Dépense|Énergie|Sommeil|Plus', 'onglets visibles : ' + labels.join(', '));
+      for (const [h, vd] of [['effort', '#vd-heat'], ['recuperation', '#vd-hv'], ['sommeil', '#vd-s14'], ['plus', null]]) {
         await tab(page, h);
         if (vd) expect((await text(page, vd)).length > 10, `pas de conclusion en tête de carte (${vd})`);
       }
+      await tend(page);
+      expect((await text(page, '#vd-mk')).length > 10, 'pas de conclusion en tête de carte (#vd-mk)');
     });
 
     await step('onglet Plus : toujours le menu, même après une sous-page', async () => {
@@ -133,20 +141,37 @@ try {
       await page.waitForFunction(() => /^Aujourd/.test(document.querySelector('#dsub').textContent));
       await page.$eval('[data-act="dprev"]', (b) => b.click()); // flèches cachées sur téléphone (glisser ou frise)
       await page.waitForFunction(() => /^Hier/.test(document.querySelector('#dsub').textContent));
-      await tab(page, 'tendances');
+      await tab(page, 'plus');
       await tab(page, 'sommeil');
       expect(/^Aujourd/.test(await text(page, '#dsub')), 'au retour, l\'onglet doit rouvrir aujourd\'hui');
       await tab(page, 'aujourdhui');
     });
 
-    await step('Énergie : depuis la jauge du Résumé, puis retour', async () => {
+    await step('Énergie : un onglet, ouvert aussi par sa jauge, sans bouton retour', async () => {
       await tab(page, 'aujourdhui');
       await page.click('#g3 [data-go="recuperation"]');
       await page.waitForSelector('#v-recuperation:not([hidden])');
-      expect(await visible(page, '#abback'), 'bouton retour vers le Résumé absent de la barre du haut');
+      expect(await page.$eval('#tabs a[href="#recuperation"]', (a) => a.getAttribute('aria-current') === 'page'), 'onglet Énergie non allumé');
+      expect(await page.isHidden('#abback'), 'un onglet n\'a pas de bouton retour');
+    });
+
+    await step('Nutrition et Tendances depuis le Résumé, puis retour', async () => {
+      await tab(page, 'aujourdhui');
+      await page.click('#bal .nuth');
+      await page.waitForSelector('#v-nutrition:not([hidden])');
+      expect(await visible(page, '#abback'), 'bouton retour absent de la barre du haut');
       expect(await page.$eval('#tabs a[href="#aujourdhui"]', (a) => a.classList.contains('sub-on')), 'Résumé non surligné');
       await page.click('#abback');
       await page.waitForSelector('#v-aujourdhui:not([hidden])');
+      if (await page.$('#wkc .wkcard')) {
+        await page.click('#wkc .wkcard');
+        await page.waitForSelector('#v-tendances:not([hidden])');
+        expect((await text(page, '#dback')) === '‹ Résumé', 'le retour doit ramener au Résumé');
+        await page.click('#dback');
+        await page.waitForSelector('#v-aujourdhui:not([hidden])');
+      }
+      await tend(page);
+      expect((await text(page, '#dback')) === '‹ Plus', 'depuis Plus, le retour doit ramener à Plus');
     });
 
     await step('analyse détaillée : repliée, dépliée, gardée après rechargement', async () => {
@@ -196,7 +221,7 @@ try {
     });
 
     await step('image de la semaine à partager', async () => {
-      await tab(page, 'tendances');
+      await tend(page);
       expect(await visible(page, '#recap'), 'carte de la semaine absente');
       const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 8000 }), page.click('[data-act="share"]')]);
       expect(/arden-semaine-.*\.png$/.test(dl.suggestedFilename()), 'nom de fichier inattendu');
