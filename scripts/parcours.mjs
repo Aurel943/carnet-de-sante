@@ -682,7 +682,7 @@ try {
       await page.goto(url + '?demo=seance');
       await page.waitForFunction(() => document.querySelector('#plan li'), null, { timeout: 30000 });
       await settle(page);
-      expect(/Reprendre ma séance/.test(await text(page, '#heroact .btn.pri')), 'action principale attendue : Reprendre ma séance');
+      expect(/Séance en cours · \d+ min/.test(await text(page, '#heroact .btn.pri')), 'action principale attendue : « Séance en cours · 26 min »');
       expect(!page.url().includes('demo='), 'le paramètre doit disparaître de l\'adresse');
       await page.click('#heroact .btn.pri');
       await page.waitForSelector('#msheet:not([hidden])');
@@ -698,7 +698,7 @@ try {
       await page.click('#demobar .dlab');
       await page.waitForSelector('#dlg:not([hidden])');
       await page.click('[data-dlg="plain"]');
-      await page.waitForFunction(() => !/Reprendre/.test(document.querySelector('#heroact').textContent), null, { timeout: 30000 });
+      await page.waitForFunction(() => !/Séance en cours/.test(document.querySelector('#heroact').textContent), null, { timeout: 30000 });
     });
 
     await step('appli iPhone : la FC de la montre arrive en direct, sans redessiner l\'écran', async () => {

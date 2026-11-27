@@ -365,9 +365,12 @@ function planItems(d){const out=[],P=(c,html)=>out.push([c,html]),h=H(d),D=S.day
  return out.slice(0,4)}
 const planHTML=items=>items.map(([c,h])=>`<li style="--c:${c}">${ARC}<span>${h}</span></li>`).join('');
 /* Action principale du moment, puis les autres en capsules grises. */
+/* temps écoulé d'une séance en cours : les éléments [data-since] avancent tout seuls (sans redessiner la page) */
+const sinceTxt=t=>{const m=Math.max(0,Math.floor((Date.now()-(t||Date.now()))/6e4));return m<1?'à l\'instant':m<60?m+' min':`${Math.floor(m/60)} h ${String(m%60).padStart(2,'0')}`};
+setInterval(()=>{for(const e of document.querySelectorAll('[data-since]')){const t=sinceTxt(+e.dataset.since);if(e.textContent!==t)e.textContent=t}},15000);
 function heroActs(d){if(d!==today())return'';const j=J(d),ci=!!(j.mood||j.energy||j.stress||j.sore),T=dayTrain(d),act=T.mu.length+T.sp.length+T.ap.length>0||!!S.cur,hr=new Date().getHours();
- const A={ci:['ciopen','','Faire mon check-in','Check-in'],mu:['msopen',`data-m="${trackMu()?'mu':'sp'}"`,S.cur?'Reprendre ma séance':'Noter une séance','Séance'],food:['foodadd',`data-m="${mealNow()}"`,'Ajouter un repas','Repas']};
- /* une séance en cours passe avant tout : « Reprendre ma séance » */
+ const A={ci:['ciopen','','Faire mon check-in','Check-in'],mu:['msopen',`data-m="${trackMu()?'mu':'sp'}"`,S.cur?`<span class="beat" aria-hidden="true"></span>Séance en cours · <span data-since="${S.cur.t||Date.now()}">${sinceTxt(S.cur.t)}</span>`:'Noter une séance','Séance'],food:['foodadd',`data-m="${mealNow()}"`,'Ajouter un repas','Repas']};
+ /* une séance en cours passe avant tout : « ● Séance en cours · 26 min » (elle tourne, elle n'est pas en pause) */
  const first=S.cur?'mu':!ci?'ci':!act&&hr<21?'mu':'food',rest=['ci','mu','food'].filter(k=>k!==first&&!(k==='ci'&&ci)).slice(0,1);
  const b=(k,pri)=>{const [a,x,l,s]=A[k];return `<button type="button" class="btn${pri?' pri':' small'}" data-act="${a}" ${x}>${pri?l:s}</button>`};
  return b(first,true)+rest.map(k=>b(k,false)).join('')}
@@ -1327,7 +1330,7 @@ function applyHealth(R,inc=false){
 /* ---------- données de démo ---------- */
 const PROFILE_KEYS=['birth','sex','height','goalw','sups','goal','trackMu','trackProt'];
 const hasRealData=()=>!S.set.demo&&!!(hKeys().length||S.sessions.length||Object.keys(S.days).length||S.med.length);
-/* Démo ; avec { live: true }, une séance de muscu est en cours (pour voir « Reprendre ma séance », l'éditeur, la progression) */
+/* Démo ; avec { live: true }, une séance de muscu est en cours (pour voir « Séance en cours », l'éditeur, la progression) */
 async function loadDemo(opts={}){
  if(S.set.demo)clearDemo();
  toast('Préparation des données de démo…');await new Promise(r=>setTimeout(r,30));
@@ -1339,7 +1342,7 @@ async function loadDemo(opts={}){
  S.set.demo={prev};S.set.onb=1;S.day=today();put.set();put.day(today());
  if(opts.live)demoLive();
  hideOnb();renderEditor();if(location.hash!=='#aujourdhui')location.hash='aujourdhui';else renderSoft();
- toast(opts.live?'Démo chargée avec une séance en cours : touche « Reprendre ma séance ».':'Données de démo chargées : un profil fictif sur deux mois.')}
+ toast(opts.live?'Démo chargée avec une séance en cours : touche « Séance en cours » pour l\'ouvrir.':'Données de démo chargées : un profil fictif sur deux mois.')}
 /* Séance en cours de démo : la dernière séance du profil reprise il y a 26 minutes, charges proposées par la progression ;
    deux exercices terminés, le troisième à moitié, les deux derniers à faire. */
 function demoLive(){const last=done().find(s=>s.kind!=='sport'&&(s.ex||[]).length);if(!last)return;
@@ -1508,7 +1511,7 @@ async function handleCode(code){const known=prods().find(x=>x.id===code);if(know
 function renderSessCard(){const c=S.cur,el=$('#sesscard');if(!el)return;
  const row=(m,col,ic,t,s2)=>`<button type="button" class="hr" data-act="msopen" data-m="${m}" style="--c:${col}"><i><svg viewBox="0 0 24 24">${ic}</svg></i><span><b>${t}</b><small>${s2}</small></span><em>›</em></button>`;
  if(c){const n=c.ex.filter(e=>norm(e.n)).length,h0=new Date(c.t||Date.now()).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-  el.innerHTML=`<div class="panel sessnow"><button type="button" class="hr" data-act="msopen" style="--c:var(--trn)"><i><svg viewBox="0 0 24 24">${IC.lift}</svg></i><span><b>Séance en cours</b><small>${esc(c.name||'Séance')} · ${n} exercice${n>1?'s':''} · commencée à ${h0}</small></span><em class="go">Reprendre</em></button></div>`;return}
+  el.innerHTML=`<div class="panel sessnow"><button type="button" class="hr" data-act="msopen" style="--c:var(--trn)"><i><svg viewBox="0 0 24 24">${IC.lift}</svg></i><span><b><span class="beat" aria-hidden="true"></span>Séance en cours · <span data-since="${c.t||Date.now()}">${sinceTxt(c.t)}</span></b><small>${esc(c.name||'Séance')} · ${n} exercice${n>1?'s':''} · commencée à ${h0}</small></span><em class="go">Ouvrir</em></button></div>`;return}
  {const rm=row('mu','var(--trn)',IC.lift,'Séance de muscu','Séries, charges et progression suggérée'),rs=row('sp','var(--eff)',IC.bolt,trackMu()?'Autre sport':'Sport','Course, vélo, natation, yoga…');el.innerHTML=`${wkAskHTML(S.day)}<div class="panel sessnew"><h2>Noter une séance</h2>${trackMu()?rm+rs:rs+rm}</div>`}}
 
 /* ---------- pages de détail des tuiles (comme dans Santé) ---------- */

@@ -54,8 +54,8 @@ d'import propose aussi « Pas de montre ? Commence par tes repas et ton poids »
 sans Apple Santé.
 
 Séances : la date tient en une ligne (« Aujourd'hui › ») et l'effort ressenti se note sur dix crans à toucher
-(« 7/10 · dur »), pour la muscu comme pour les autres sports. Une séance en cours passe avant tout : « Reprendre
-ma séance » devient l'action principale du Résumé.
+(« 7/10 · dur »), pour la muscu comme pour les autres sports. Une séance en cours passe avant tout : « ● Séance en cours
+· 26 min » devient l'action principale du Résumé (le point bat, le temps écoulé avance : elle tourne, elle n'est pas en pause).
 
 **Séance notée + Apple Watch = une seule séance.** Une séance notée dans Arden et l'entraînement que la montre a
 enregistré en même temps sont rapprochés : la séance est complétée par la montre (durée, FC, calories, zones
@@ -76,7 +76,7 @@ seule dès qu'une mesure de la montre arrive sur l'iPhone (`HealthSync.startLive
 décalage restant vient de la synchronisation montre → iPhone. La requête s'ouvre avec la feuille de la séance et se
 referme avec elle. Dans le simulateur (`?ios=1`), une fréquence cardiaque simulée permet de tester.
 
-**Démo avec une séance de muscu en cours** (pour voir l'éditeur, « Reprendre ma séance », la progression) :
+**Démo avec une séance de muscu en cours** (pour voir l'éditeur, « Séance en cours », la progression) :
 - sur le site : ajouter `?demo=seance` à l'adresse (`?demo` seul charge la démo normale) ;
 - dans l'appli, une fois la démo chargée : toucher « Démo · profil fictif » dans le bandeau, puis « Avec une séance en cours » ;
 - dans le simulateur (`npm run sim`) : bouton « Démo avec une séance en cours ».

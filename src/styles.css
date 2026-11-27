@@ -1732,3 +1732,8 @@ ul#favs{display:block;margin:0 0 6px;padding:0;overflow:hidden;flex-wrap:nowrap}
 .lvz{padding:2px 8px;border-radius:99px;font-size:0.75rem;font-weight:600;color:#fff;background:var(--c,var(--mute));white-space:nowrap}
 .lvw{grid-column:2/-1;margin:0}
 @media(prefers-reduced-motion:reduce){.lvh .beat{animation:none}}
+/* bouton et carte d'une séance en cours : un point qui bat, comme le bandeau en direct */
+.btn .beat,.sessnow b .beat{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--hrt);margin-right:8px;vertical-align:.08em;animation:beat 1s ease-in-out infinite}
+.btn.pri .beat{background:#ff6b6b}
+@media(prefers-reduced-motion:reduce){.btn .beat,.sessnow b .beat{animation:none}}
+[data-since]{white-space:nowrap}
