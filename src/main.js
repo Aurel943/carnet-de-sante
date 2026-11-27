@@ -319,7 +319,7 @@ function bedIn(d){const b=bedOf(d);if(!b||d!==today())return null;const n=new Da
 /* Le titre du jour : une conclusion en quelques mots, puis une phrase qui dit quoi faire. */
 function dayStory(d){const h=H(d),rc=recovery(d),sl=sleepScore(d),ef=effortOf(d),tg=effTarget(rc&&rc.s),isT=d===today(),warn=monitor(d).filter(x=>x.warn),bi=bedIn(d);
  const S1=(t,l,tone)=>({t,l,tone});
- if(!hKeys().length)return S1(isT?'Ta journée commence ici':'Pas de mesure ce jour',IMP('Note ton check-in, tes séances et tes repas. Importe Apple Santé pour que je calcule aussi ta dépense, ton énergie et ton sommeil.','Note ton check-in, tes séances et tes repas. Connecte Apple Santé pour que je calcule aussi ta dépense, ton énergie et ton sommeil.'),'none');
+ if(!hKeys().length)return S1(isT?'Ta journée commence ici':'Pas de mesure ce jour',S.set.nowatch?'Note tes repas, ton poids, tes séances et ton humeur : Arden en tire ta journée et ta semaine.':IMP('Note ton check-in, tes séances et tes repas. Importe Apple Santé pour que je calcule aussi ta dépense, ton énergie et ton sommeil.','Note ton check-in, tes séances et tes repas. Connecte Apple Santé pour que je calcule aussi ta dépense, ton énergie et ton sommeil.'),'none');
  if(!rc&&!sl){const cb=calib(d);return cb<7&&cb>0?S1('Arden apprend à te connaître',`Encore ${7-cb} nuit${7-cb>1?'s':''} pour établir ta normale ; ton énergie s'affichera ensuite chaque matin.`,'none'):S1(isT?'En attente de ta nuit':'Pas de nuit ce jour',isT?IMP('Réimporte ton export Apple Santé pour obtenir tes scores du jour.','Synchronise Apple Santé pour obtenir tes scores du jour.'):'Aucune mesure de sommeil ni de VFC pour cette date.','none')}
  if(warn.length>=2)return S1('Écoute ton corps',`Plusieurs signaux inhabituels cette nuit (${warn.map(x=>x.l.toLowerCase()).join(', ')}) : journée légère, hydrate-toi et surveille ton ressenti.`,'warn');
  if(bi!=null&&bi<=120&&new Date().getHours()>=18){const b=bedOf(d);return S1(bi<=10?'C\'est l\'heure':'Prépare ta nuit',bi<=10?`Pour tes ${fmtSl(b.need)} de sommeil, c'est maintenant : lumière douce, écrans de côté.`:`Au lit vers ${hhmm(b.bed)}, dans ${fmtSl(bi)}, pour dormir ${fmtSl(b.need)} et te lever à ${hhmm(b.wake)}.`,'eve')}
@@ -434,7 +434,9 @@ const EMPTY={
  effort:['var(--eff)','<path d="M12 2.5c.8 3.8 5.5 5.6 5.5 11a5.5 5.5 0 0 1-11 0c0-2.8 1.6-4.2 2.4-6 .9 1.3 1.8 1.9 2.9 2.2-.3-2.5-.6-4.6.2-7.2z"/>','Pas encore de fréquence cardiaque','La dépense du jour, les zones cardiaques et la charge d\'entraînement viennent de ta FC. Tu peux déjà noter tes séances à la main.'],
 };
 function emptyHTML(v){if(!EMPTY[v])return'';const [c,ic,t,p]=EMPTY[v];
- return `<div class="emptyv" style="--c:${c}"><i><svg viewBox="0 0 24 24">${ic}</svg></i><h3>${t}</h3><p>${p}</p><div class="row">${HKN?'<button type="button" class="btn pri" data-act="hkauth">Connecter Apple Santé</button>':'<button type="button" class="btn pri" data-act="psub" data-s="apple">Importer Apple Santé</button>'}<button type="button" class="btn" data-act="demoTry">Essayer avec la démo</button></div></div>`}
+ /* sans montre : sur le Résumé, une seule ligne discrète au lieu de la grande carte « importe tes données » */
+ if(v==='aujourdhui'&&S.set.nowatch)return `<button type="button" class="ritual-link watchl" data-act="watchyes">${ARC}<span>Tu as une Apple Watch ? ${HKN?'Connecte':'Importe'} Apple Santé</span><em>›</em></button>`;
+ return `<div class="emptyv" style="--c:${c}"><i><svg viewBox="0 0 24 24">${ic}</svg></i><h3>${t}</h3><p>${p}</p><div class="row">${HKN?'<button type="button" class="btn pri" data-act="hkauth">Connecter Apple Santé</button>':'<button type="button" class="btn pri" data-act="psub" data-s="apple">Importer Apple Santé</button>'}<button type="button" class="btn" data-act="demoTry">Essayer avec la démo</button></div>${v==='aujourdhui'?'<button type="button" class="btn ghost nowl" data-act="nowatch">Pas de montre ? Commence par tes repas et ton poids</button>':''}</div>`}
 
 /* ---------- calories brûlées : métabolisme de base + calories actives ---------- */
 /* Métabolisme de base par la formule de Mifflin-St Jeor (la plus fiable chez l'adulte selon les études
@@ -699,7 +701,10 @@ function bestE1(name,excl){const k=norm(name);let b=0;for(const s of done()){if(
 function prefill(n,excl){const g=suggest(n,excl);if(!g)return[{w:'',r:''}];return g.sets.map(x=>{const atTop=num(x.w)===g.top;return{w:atTop?g.w:num(x.w),r:'',p:atTop&&g.up?S.set.rmin:num(x.r)}})}
 /* La date d'une séance : « Aujourd'hui » en une ligne ; un toucher ouvre le calendrier (le vrai champ date est posé dessus, invisible) */
 const dayWord=d=>d===today()?'Aujourd\'hui':d===addD(today(),-1)?'Hier':dLong(d).replace(/^./,c=>c.toUpperCase());
-const dateRow=id=>`<label class="drow"><span>Date</span><span class="dval">${dayWord(today())}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg><input id="${id}" type="date" value="${today()}" max="${today()}" aria-label="Date de la séance"></label>`;
+const dateRow=(id,v=today())=>`<label class="drow"><span>Date</span><span class="dval">${dayWord(v)}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg><input id="${id}" type="date" value="${esc(v)}" max="${today()}" aria-label="Date de la séance"></label>`;
+/* L'effort ressenti : dix crans à toucher (le même pour la muscu et le sport), au lieu d'un menu « Ressenti /10 » */
+const rpeLab=v=>v<=3?'facile':v<=6?'modéré':v<=8?'dur':'maximal';
+const rpeHTML=(id,v)=>{v=num(v);return `<div class="rpe" data-for="${id}"><div class="rph"><span>Effort ressenti</span><b>${v?`${v}/10 · ${rpeLab(v)}`:'touche pour noter'}</b></div><div class="rps" role="radiogroup" aria-label="Effort ressenti, de 1 à 10">${[1,2,3,4,5,6,7,8,9,10].map(i=>`<button type="button" role="radio" aria-checked="${i===v}" aria-label="${i} sur 10, ${rpeLab(i)}" class="${i<=v?'on':''}" data-act="rpe" data-v="${i}" style="--k:${i}"></button>`).join('')}</div><input type="hidden" id="${id}" value="${v||''}"></div>`};
 document.addEventListener('change',ev=>{const t=ev.target;if(t.matches&&t.matches('.drow input')){if(!t.value)t.value=today();t.parentElement.querySelector('.dval').textContent=dayWord(t.value)}});
 function renderStart(){const seen=new Set(),tpl=[];
  for(const s of done()){if(s.kind==='sport')continue;const k=norm(s.name);if(k&&!seen.has(k)){seen.add(k);tpl.push(s)}if(tpl.length>=8)break}
@@ -709,7 +714,7 @@ function renderStart(){const seen=new Set(),tpl=[];
  <button class="btn pri" data-act="start">Commencer une séance</button>
  ${tpl.length?`<h3>Ou reprendre une séance récente</h3><div class="chips">${tpl.map(s=>`<button class="chip" data-act="tpl" data-id="${esc(s.id)}"><b>${esc(s.name)}</b><span>${dShort(s.date)} · ${(s.ex||[]).length} exos</span></button>`).join('')}</div><p class="mute small">Charges pré-remplies avec la progression suggérée.</p>`:''}`
  :`<form id="spf"><div class="grid3"><label>Sport<select id="spt">${SPORTS.map(x=>`<option>${x}</option>`).join('')}</select></label>${dateRow('spd')}<label>Durée (min)<input id="spm" inputmode="numeric" required></label>
- <label>Intensité ressentie (1 à 10)<select id="spr"><option value="">Non notée</option>${[1,2,3,4,5,6,7,8,9,10].map(i=>`<option value="${i}">${i}${i<=3?' · facile':i<=6?' · modéré':i<=8?' · dur':' · maximal'}</option>`).join('')}</select></label><label>Distance (km, option)<input id="spk" inputmode="decimal"></label><label>Note<input id="spn" placeholder="ex. fractionné 8×400 m"></label></div>
+ ${rpeHTML('spr','')}<label>Distance (km, option)<input id="spk" inputmode="decimal"></label><label>Note<input id="spn" placeholder="ex. fractionné 8×400 m"></label></div>
  <button class="btn pri">Enregistrer</button></form>`)+`</div>`;
  const f=$('#spf');if(f)f.addEventListener('submit',ev=>{ev.preventDefault();const m=num($('#spm').value);if(!(m>0))return $('#spm').focus();
   const o={id:nid(),kind:'sport',type:$('#spt').value,date:$('#spd').value||today(),min:Math.round(m),rpe:num($('#spr').value)||'',km:num($('#spk').value)||'',note:$('#spn').value.trim(),t:Date.now()};
@@ -720,7 +725,7 @@ function exHTML(e,i){return `<article class="ex" data-i="${i}"><div class="exh">
  <div class="sets"><div class="set hd"><span></span><div>Charge (kg)</div><div>Reps</div><span></span></div>${e.sets.map((s,j)=>`<div class="set"><span>${j+1}</span><input data-f="w" data-s="${j}" inputmode="decimal" value="${esc(s.w)}" placeholder="kg" aria-label="Charge série ${j+1}"><input data-f="r" data-s="${j}" inputmode="numeric" value="${esc(s.r)}" placeholder="${esc(s.p||'reps')}" aria-label="Reps série ${j+1}"><button class="x" data-act="delSet" data-s="${j}" aria-label="Supprimer la série">×</button></div>`).join('')}</div>
  <div class="row"><button class="btn small" data-act="addSet">+ Série</button><button class="btn small ghost" data-act="tstart">Minuteur de repos</button></div></article>`}
 function renderEditor(){const c=S.cur;if(!c)return renderStart();
- $('#editor').innerHTML=`<div class="panel"><div class="edh"><input id="cn" class="tin" value="${esc(c.name)}" aria-label="Nom de la séance"><input id="cd" type="date" value="${esc(c.date)}" aria-label="Date"><select id="crpe" aria-label="Ressenti"><option value="">Ressenti /10</option>${[1,2,3,4,5,6,7,8,9,10].map(i=>`<option value="${i}"${num(c.rpe)===i?' selected':''}>Ressenti ${i}/10</option>`).join('')}</select></div>
+ $('#editor').innerHTML=`<div class="panel"><div class="edh"><input id="cn" class="tin" value="${esc(c.name)}" aria-label="Nom de la séance">${dateRow('cd',c.date)}${rpeHTML('crpe',c.rpe)}</div>
  <p class="mute small" id="svst">Enregistrement automatique</p><div>${c.ex.map(exHTML).join('')}</div>
  <button class="btn wide" data-act="addEx">+ Ajouter un exercice</button>
  <div class="foot"><button class="btn pri" data-act="finish">Terminer la séance</button><button class="btn ghost" data-act="discard">Abandonner</button></div></div>`;
@@ -1037,6 +1042,8 @@ document.addEventListener('click',ev=>{unlockAudio();
  switch(act){
  case'sheet':{const sh=$('#sheet');sh.hidden=!sh.hidden;setTimeout(()=>{document.documentElement.style.setProperty('--hh',$('.top').offsetHeight+'px')},0);return}
  case'qa':return quick(b.dataset.q);
+ case'rpe':{const w=b.closest('.rpe'),inp=$('#'+w.dataset.for),v=+b.dataset.v,nv=num(inp.value)===v?'':v;buzz();
+  w.outerHTML=rpeHTML(w.dataset.for,nv);$('#'+w.dataset.for).dispatchEvent(new Event('input',{bubbles:true}));return}
  case'gopoids':{location.hash='tendances';setTimeout(()=>{const p=$('#fw')?.closest('.panel');if(p)scrollTo({top:p.getBoundingClientRect().top+scrollY-90,behavior:calm()?'auto':'smooth'})},450);return}
  case'gloss':{const g=GLOSS.find(x=>x[0]===b.dataset.g);if(g)ask(g[2],g[3],[['ok','Compris','pri']]);return}
  case'obgoal':buzz();$$('#onb [data-act="obgoal"]').forEach(x=>{const on=x===b;x.classList.toggle('on',on);x.setAttribute('aria-checked',String(on))});return;
@@ -1059,6 +1066,8 @@ document.addEventListener('click',ev=>{unlockAudio();
  case'foodsave':return pick?addPicked():closeSheet();
  case'onb':if(b.dataset.to==='2'&&!b.dataset.skip)saveProfile();return showOnb(+b.dataset.to);
  case'onbGo':return onbGo(b.dataset.go2);
+ case'nowatch':{buzz();S.set.nowatch=1;put.set();renderSoft();if(location.hash!=='#aujourdhui')location.hash='aujourdhui';return toast('C\'est noté : Arden suit ce que tu notes. Commence par un repas ou ton poids, avec le bouton +.')}
+ case'watchyes':{buzz();S.set.nowatch=0;put.set();if(HKN)return hkConnect();psub='apple';scrollTo(0,0);if(location.hash!=='#plus'){location.hash='plus';return}return renderPlus()}
  case'demoEnd':clearDemo();renderSoft();return showOnb(2);
  case'bksave':return saveBackup();
  case'hksync':return hkSync();
@@ -1604,12 +1613,12 @@ function showOnb(step=0){const o=$('#onb');o.hidden=false;document.documentEleme
 function hideOnb(){$('#onb').hidden=true;document.documentElement.style.overflow=''}
 function saveProfile(){const y=new Date().getFullYear(),b=Math.round(num($('#ob-birth').value)),h=Math.round(num($('#ob-height').value)),sl=num($('#ob-sleep').value);
  if(b>=y-110&&b<=y-10)S.set.birth=b;if(h>=100&&h<=250)S.set.height=h;S.set.sex=$('#ob-sex').value;if(sl>=300)S.set.sleep=sl;const g=$('#onb [data-act="obgoal"].on');if(g){S.set.goal=g.dataset.g;delete S.set.trackMu;delete S.set.trackProt}put.set()}
-function onbGo(to){if(!S.set.goal&&!S.set.onb)S.set.goal='forme';S.set.onb=1;put.set();
+function onbGo(to){if(!S.set.goal&&!S.set.onb)S.set.goal='forme';S.set.onb=1;if(to==='empty')S.set.nowatch=1;else if(to!=='demo')S.set.nowatch=0;put.set();
  if(to==='demo')return loadDemo();
  hideOnb();
  if(to==='hk'){if(location.hash!=='#aujourdhui')location.hash='aujourdhui';else renderSoft();return hkConnect()}
  if(to==='apple'){psub='apple';if(location.hash!=='#plus')location.hash='plus';else renderPlus();return}
- if(location.hash!=='#aujourdhui')location.hash='aujourdhui';else renderSoft();toast((matchMedia('(max-width:800px)').matches?'Touche + en bas à droite':'Touche « Noter »')+' pour ta première séance, ton repas ou ton check-in.')}
+ if(location.hash!=='#aujourdhui')location.hash='aujourdhui';else renderSoft();toast((matchMedia('(max-width:800px)').matches?'Touche + en bas à droite':'Touche « Noter »')+' pour ton premier repas, ta pesée ou ta séance.')}
 
 /* ---------- sauvegarde en fichier, effacement ---------- */
 let pendingBk='';

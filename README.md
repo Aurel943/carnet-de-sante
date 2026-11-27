@@ -48,7 +48,13 @@ cohorte ; ce sont des estimations, pas un diagnostic.
 
 Au premier lancement, un accueil en trois écrans présente l'appli, demande le profil
 (facultatif) et propose d'importer Apple Santé, d'explorer **des données de démo** (deux mois
-d'un profil fictif) ou de commencer sans données.
+d'un profil fictif) ou de commencer **sans montre**. Sans montre, le Résumé parle de ce qui se note à la main
+(repas, poids, séances, humeur) et ne garde qu'une ligne discrète « Tu as une Apple Watch ? » ; la grande carte
+d'import propose aussi « Pas de montre ? Commence par tes repas et ton poids ». Nutrition s'utilise entièrement
+sans Apple Santé.
+
+Séances : la date tient en une ligne (« Aujourd'hui › ») et l'effort ressenti se note sur dix crans à toucher
+(« 7/10 · dur »), pour la muscu comme pour les autres sports.
 
 Le texte suit la taille choisie dans les Réglages de l'iPhone (Dynamic Type), jusqu'aux tailles
 d'accessibilité ; sur ordinateur, c'est la taille de police du navigateur qui s'applique. Le simulateur

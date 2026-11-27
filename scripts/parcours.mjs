@@ -674,6 +674,24 @@ try {
       await page.waitForSelector('#msheet', { state: 'hidden' });
     });
 
+    await step('sans montre : le Résumé parle de ce qu\'on note, une ligne discrète pour Apple Santé', async () => {
+      await tab(page, 'aujourdhui');
+      expect(await visible(page, '#dnote .watchl'), 'lien « Tu as une Apple Watch ? » attendu');
+      expect(!(await page.$('#dnote .emptyv')), 'la grande carte « Ajoute tes données Santé » ne doit plus s\'afficher');
+      expect(/repas/.test(await text(page, '#dlede')), 'phrase du jour sans montre attendue');
+    });
+
+    await step('effort ressenti : dix crans à toucher', async () => {
+      await page.click('.tplus'); await page.click('#sheet [data-q="mu"]');
+      await page.waitForSelector('#msheet:not([hidden])');
+      await page.click('.rps [data-v="6"]');
+      expect(await page.inputValue('#spr') === '6' && /6\/10 · modéré/.test(await text(page, '.rph b')), 'ressenti non noté');
+      await page.click('.rps [data-v="6"]');
+      expect(await page.inputValue('#spr') === '', 'toucher le même cran doit l\'effacer');
+      await page.click('#msl');
+      await page.waitForSelector('#msheet', { state: 'hidden' });
+    });
+
     await step('sans Apple Santé, Nutrition s\'ouvre et se remplit normalement', async () => {
       await tab(page, 'plus');
       await page.click('#hub [data-go="nutrition"]');

@@ -1688,3 +1688,15 @@ ul#favs{display:block;margin:0 0 6px;padding:0;overflow:hidden;flex-wrap:nowrap}
 :root.goal-endurance #v-effort>.panel:first-child,:root.goal-endurance #v-effort>#sesscard{order:0}
 :root.goal-endurance #v-effort>.panel:has(#z28),:root.goal-endurance #v-effort>.panel:has(#fl){order:1}
 :root.goal-endurance .view:not(.deep-on)>.panel.adv:is(:has(#z28),:has(#fl)){display:block!important}
+/* séance : effort ressenti en dix crans, du turquoise (facile) au corail (maximal) */
+.rpe{grid-column:1/-1;display:grid;gap:8px;padding:10px 14px 12px;border-radius:var(--r-ctl);background:var(--field)}
+.rph{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:1rem}
+.rph span{color:var(--mute)}.rph b{font-weight:500}
+.rps{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px}
+.rps button{height:28px;border:0;border-radius:8px;padding:0;cursor:pointer;background:color-mix(in srgb,var(--ink) 9%,transparent);transition:background .15s,transform .2s var(--spring)}
+.rps button.on{background:color-mix(in oklab,var(--rec),var(--eff) calc((var(--k) - 1) * 11%))}
+.rps button:active{transform:scaleY(.85)}
+.edh{grid-template-columns:minmax(0,1fr)!important}.edh .drow{grid-column:1/-1}
+/* sans montre : le lien discret vers Apple Santé, et le bouton « Pas de montre ? » sous la grande carte */
+.watchl{margin:0 0 4px}.watchl svg{stroke:var(--rec)}.watchl svg circle{fill:var(--rec)}
+.emptyv .nowl{margin-top:10px;font-size:0.9375rem}
