@@ -332,6 +332,43 @@ try {
         expect(!/Bouge : vise/.test(await text(page, '#plan')), 'le plan pousse à bouger le soir');
       });
     }
+
+    await step('lexique : un « ? » à côté des termes techniques, une phrase pour comprendre', async () => {
+      await tab(page, 'recuperation');
+      await page.waitForSelector('#v-recuperation .glq[data-g="vfc"]');
+      await page.click('#v-recuperation .glq[data-g="vfc"]');
+      await page.waitForSelector('#dlg:not([hidden])');
+      expect(await text(page, '#dlgt') === 'VFC' && /variabilité/i.test(await text(page, '#dlgm')), 'définition de la VFC attendue');
+      await page.click('[data-dlg="ok"]');
+      await page.waitForSelector('#dlg', { state: 'hidden' });
+      expect(await page.$$eval('#v-recuperation .glq[data-g="vfc"]', (a) => a.length) === 1, 'un seul « ? » par terme et par écran');
+    });
+
+    await step('frise : chaque jour dit ses chiffres (toucher long, survol, VoiceOver)', async () => {
+      await tab(page, 'aujourdhui');
+      const lab = await page.$eval('#wk .wd:not([disabled])', (b) => b.getAttribute('aria-label') + ' | ' + b.dataset.tip);
+      expect(/Dépense/.test(lab) && /Énergie/.test(lab) && /Sommeil/.test(lab), 'chiffres du jour absents : ' + lab);
+    });
+
+    await step('séance : la date tient en une ligne, « Aujourd\'hui »', async () => {
+      await page.click('.tplus'); await page.click('#sheet [data-q="mu"]');
+      await page.waitForSelector('#msheet:not([hidden])');
+      if (await page.$('.drow .dval')) expect((await text(page, '.drow .dval')) === 'Aujourd\'hui', 'date du jour attendue');
+      await page.click('#msl');
+      await page.waitForSelector('#msheet', { state: 'hidden' });
+    });
+
+    await step('objectif : chaque objectif met en avant ce qui compte pour lui', async () => {
+      const goal = async (g) => { await tab(page, 'plus'); await page.click('#hub [data-s="reglages"]'); await page.selectOption('#s-goal', g); };
+      await goal('sommeil'); await tab(page, 'aujourdhui');
+      expect(await visible(page, '#nightc .nightc'), '« Mieux dormir » : la carte « Ta nuit » manque');
+      await goal('poids'); await tab(page, 'aujourdhui');
+      expect(await visible(page, '#wtc .wtc'), '« Perdre du poids » : la carte du poids manque');
+      expect(!(await visible(page, '#nightc .nightc')), 'la carte « Ta nuit » ne doit pas rester');
+      await goal('endurance'); await tab(page, 'effort');
+      expect(await visible(page, '#v-effort .panel:has(#z28)'), '« Endurance » : les zones cardiaques doivent être dépliées');
+      await goal('muscle');
+    });
     await ctx.close();
   }
 

@@ -49,7 +49,10 @@ https://aurel943.github.io/carnet-de-sante/ : rien ne doit rester seulement en l
   avec les pages (scan dans Repas, eau dans Hydratation, synchro dans la capsule Santé, respiration sur Énergie).
 - Ne pas supposer que tout le monde fait de la muscu ou vise des protéines : `trackMu()` / `trackProt()` (objectif
   choisi à l'accueil ou dans Réglages, interrupteurs) décident ; classes `mu-only` / `prot-only` pour masquer, et tout
-  nouveau contenu sur la muscu ou les protéines doit en tenir compte.
+  nouveau contenu sur la muscu ou les protéines doit en tenir compte. L'objectif pose aussi `goal-<objectif>` sur la
+  racine pour mettre en avant ce qui compte (cartes « Ta nuit » et « Ton poids », zones cardiaques dépliées…).
+- Mini-lexique : tout nouveau terme technique visible s'ajoute à `GLOSS` (`src/main.js`), avec une phrase simple ;
+  le « ? » se pose tout seul sur titres, libellés, légendes et en-têtes de tableau.
 - Navigation (comme sur iPhone) : un onglet rouvert depuis une autre partie de l'appli repart de son
   point de départ (aujourd'hui pour les onglets de jour, menu pour Plus) ; toucher l'onglet où l'on est
   déjà y ramène aussi. Entre onglets de jour (Résumé, Sommeil, Énergie, Dépense), le jour choisi est

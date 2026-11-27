@@ -44,14 +44,22 @@ try {
       reducedMotion: 'reduce',
     });
     const page = await ctx.newPage();
-    // Matin type : 9 h 41, comme sur les visuels d'Apple
-    const d = new Date(); d.setHours(9, 41, 0, 0);
+    // Matin type : 9 h 41, comme sur les visuels d'Apple, un mardi : le profil de démo y fait son footing à 7 h 15,
+    // donc la jauge Dépense de la première capture est déjà remplie (et pas presque vide comme un matin sans séance)
+    const d = new Date(); d.setDate(d.getDate() - ((d.getDay() + 5) % 7)); d.setHours(9, 41, 0, 0);
     await page.clock.setFixedTime(d);
     await page.goto(url);
     // Zones sûres d'un iPhone 16 Pro Max, pour que la mise en page soit celle de l'appareil
     await page.addStyleTag({ content: ':root{--sat:62px!important;--sab:34px!important}#demobar,#toast{display:none!important}' });
     await page.evaluate(() => window.carnet.loadDemo());
     await page.waitForFunction(() => document.querySelector('#onb').hidden && !!document.querySelector('#g3 svg'), null, { timeout: 30000 });
+    // ce qui s'ouvre tout seul (briefing du matin, célébration « Dans ta zone ») est refermé avant les captures
+    await page.waitForTimeout(1500);
+    for (let k = 0; k < 3; k++) {
+      if (await page.isVisible('#brief')) { await page.click('[data-act="briefok"]'); await page.waitForTimeout(500); }
+      if (await page.isVisible('#cele')) { await page.click('#cele'); await page.waitForTimeout(500); }
+      await page.waitForTimeout(400);
+    }
     await page.evaluate((html) => document.body.insertAdjacentHTML('beforeend', html), STATUS_BAR);
     for (const [name, hash, sel, workoutDay] of SHOTS) {
       await page.evaluate((h) => { location.hash = h; }, hash);

@@ -1650,3 +1650,41 @@ ul#favs{display:block;margin:0 0 6px;padding:0;overflow:hidden;flex-wrap:nowrap}
 .dlgin{display:flex;align-items:center;justify-content:center;gap:8px;margin:-4px 0 16px}
 .dlgin input{width:7.5rem;text-align:center;font:600 1.75rem var(--round);font-variant-numeric:tabular-nums;padding:8px 10px;border-radius:14px;background:var(--field);border:0;color:var(--ink)}
 .dlgin span{font:500 1.0625rem var(--round);color:var(--mute)}
+/* Séance : la date en une ligne « Aujourd'hui › », le calendrier s'ouvre d'un toucher */
+.drow{position:relative;display:flex;align-items:center;gap:8px;min-height:46px;padding:0 14px;border-radius:var(--r-ctl);background:var(--field);color:var(--ink);font-size:1rem;cursor:pointer}
+.drow>span:first-child{flex:1;color:var(--mute)}
+.drow .dval{font-weight:500}
+.drow svg{width:16px;height:16px;fill:none;stroke:var(--mute2);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.drow input{position:absolute;inset:0;width:100%;height:100%;opacity:0;margin:0;padding:0;border:0;cursor:pointer;-webkit-appearance:none;appearance:none}
+.drow input::-webkit-calendar-picker-indicator{position:absolute;inset:0;width:auto;height:auto;opacity:0;cursor:pointer}
+/* frise : le toucher long montre la bulle, sans sélectionner le texte ni ouvrir le menu d'iOS */
+#wk .wd{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+/* mini-lexique : le « ? » discret à côté d'un terme technique */
+.glq{display:inline-grid;place-items:center;width:1.15em;height:1.15em;margin-left:.3em;padding:0;border:0;border-radius:50%;background:var(--field);color:var(--mute);font:600 0.75em/1 var(--font);vertical-align:.12em;cursor:pointer;flex:none;-webkit-tap-highlight-color:transparent;position:relative}
+.glq::after{content:'';position:absolute;inset:-10px}
+.glq:active{background:color-mix(in srgb,var(--ink) 14%,var(--field))}
+/* ---------- l'objectif met en avant ce qui compte pour lui ---------- */
+#nightc:empty,#wtc:empty{display:none}
+.nightc,.wtc{display:grid;gap:6px;width:100%;border:0;text-align:left;color:var(--ink);font:inherit;cursor:pointer;margin:0;padding:16px}
+.nightc .rt,.wtc .rt{font:600 1.5rem/1.15 var(--round);letter-spacing:-.01em}
+.nightc .nstk{display:flex;height:10px;border-radius:99px;overflow:hidden;gap:2px;margin:4px 0 0}
+.nightc .nstk i{background:var(--c)}
+.nightc .nlg,.nightc .nl,.wtc .nl{color:var(--mute);font-size:0.875rem}
+.nightc .go{color:var(--slp);font-weight:600;font-size:0.9375rem;margin-top:2px}
+.wtc .go{color:var(--bod);font-weight:600;font-size:0.9375rem;margin-top:2px}
+.wtc .vd{margin:0}
+@media(max-width:800px){
+ #v-aujourdhui>#nightc{order:2;margin-bottom:14px}
+ #v-aujourdhui>#wtc{order:12;margin-top:14px}
+ /* Perdre du poids : dans Tendances, la courbe de poids juste après la semaine */
+ :root.goal-poids #v-tendances:not([hidden]),:root.goal-endurance #v-effort:not([hidden]){display:flex;flex-direction:column}
+}
+:root.goal-poids #v-tendances>*{order:5}
+:root.goal-poids #v-tendances>.vhead,:root.goal-poids #v-tendances>#tnote{order:0}
+:root.goal-poids #v-tendances>#recap{order:1}
+:root.goal-poids #v-tendances>.panel:has(#fw){order:2}
+/* Endurance : zones cardiaques et charge d'entraînement dépliées, juste après la jauge et la séance */
+:root.goal-endurance #v-effort>*{order:5}
+:root.goal-endurance #v-effort>.panel:first-child,:root.goal-endurance #v-effort>#sesscard{order:0}
+:root.goal-endurance #v-effort>.panel:has(#z28),:root.goal-endurance #v-effort>.panel:has(#fl){order:1}
+:root.goal-endurance .view:not(.deep-on)>.panel.adv:is(:has(#z28),:has(#fl)){display:block!important}

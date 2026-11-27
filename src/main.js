@@ -84,7 +84,7 @@ const GOALS=[['forme','Être en forme'],['poids','Perdre du poids'],['muscle','P
 const isB=v=>typeof v==='boolean';
 const trackMu=()=>isB(S.set.trackMu)?S.set.trackMu:!S.set.goal||S.set.goal==='muscle'||done().some(s=>s.kind!=='sport');
 const trackProt=()=>isB(S.set.trackProt)?S.set.trackProt:!S.set.goal||['muscle','poids'].includes(S.set.goal);
-function applyTrack(){const r=document.documentElement;r.classList.toggle('no-mu',!trackMu());r.classList.toggle('no-prot',!trackProt())}
+function applyTrack(){const r=document.documentElement;for(const [g] of GOALS)r.classList.toggle('goal-'+g,S.set.goal===g);r.classList.toggle('no-mu',!trackMu());r.classList.toggle('no-prot',!trackProt())}
 const done=()=>{if(_dv!==DV){_dv=DV;_done=S.sessions.filter(s=>!s.open).sort(sortDesc);_idx=new Map();for(const x of _done){const a=_idx.get(x.date);a?a.push(x):_idx.set(x.date,[x])}}return _done};
 const sessOn=d=>{done();return _idx.get(d)||[]};
 const H=d=>S.health.d[d]||{};
@@ -344,6 +344,7 @@ function planItems(d){const out=[],P=(c,html)=>out.push([c,html]),h=H(d),D=S.day
  if(num(h.stz)>=30)P('var(--str)','<b>Journée stressante</b> : quelques minutes de respiration lente aident ta FC à redescendre. <button type="button" class="pbtn" data-act="breath">Respirer 1 min</button>');
  if(isT&&hr>=13&&hr<21&&out.length<4&&trackProt()){const pr=sum(D.items||[],'p'),T=num(S.set.prot);if(T&&(D.items||[]).length&&pr<T*.5)P('var(--nut)',`Protéines : <b>${r0(pr)} g</b> sur ${r0(T)}, pense à en mettre au prochain repas.`)}
  if(!out.length){P('var(--mind)','Fais ton <b>check-in</b> : 20 secondes pour dire comment tu te sens.');P('var(--trn)','Note ta prochaine <b>séance</b> ou ton prochain <b>repas</b>.')}
+ if(S.set.goal==='sommeil')out.sort((a,b)=>(b[0]==='var(--slp)')-(a[0]==='var(--slp)'));
  return out.slice(0,4)}
 const planHTML=items=>items.map(([c,h])=>`<li style="--c:${c}">${ARC}<span>${h}</span></li>`).join('');
 /* Action principale du moment, puis les autres en capsules grises. */
@@ -403,11 +404,25 @@ function renderDayNav(){const d=S.day,v0=cur(),rel=d===today()?"Aujourd'hui":d==
 function barsSVG(bars){const sz=34,n=bars.length,w=n>1?5.5:9,gap=n>1?3.5:0,x0=(sz-(n*w+(n-1)*gap))/2,top=3,H=28,id='rw'+(++ringN);
  return `<svg viewBox="0 0 ${sz} ${sz}" aria-hidden="true">${bars.map(([v,col],i)=>{const p=v==null?0:clamp(v/100,0,1),x=x0+i*(w+gap),h=p>0?Math.max(w,p*H):0,g=id+'g'+i;
   return `<rect x="${x}" y="${top}" width="${w}" height="${H}" rx="${w/2}" fill="${col}" fill-opacity=".16"/>${h?`<linearGradient id="${g}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" style="stop-color:color-mix(in oklab, ${col} 82%, #000)"/><stop offset="1" style="stop-color:color-mix(in oklab, ${col} 70%, #fff)"/></linearGradient><rect x="${x}" y="${(top+H-h).toFixed(2)}" width="${w}" height="${h.toFixed(2)}" rx="${w/2}" fill="url(#${g})"/>`:''}`}).join('')}</svg>`}
+/* Frise : un toucher long sur un jour montre ses chiffres dans une bulle, au-dessus du doigt ; relâcher la referme sans changer de jour */
+{let lt=0,lp=false,x0=0,y0=0,hideT=0;const T=()=>$('#tip'),wk=$('#wk');
+ const show=b=>{const t=T();t.dataset.own='wk';t.textContent=b.dataset.tip;t.hidden=false;const r=b.getBoundingClientRect(),w=t.offsetWidth,h=t.offsetHeight,W=document.documentElement.clientWidth;
+  t.style.left=Math.max(8,Math.min(W-w-8,r.left+r.width/2-w/2))+scrollX+'px';t.style.top=r.top+scrollY-h-10+'px'};
+ wk.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse')return;const b=e.target.closest('.wd[data-tip]');if(!b)return;clearTimeout(lt);clearTimeout(hideT);lp=false;x0=e.clientX;y0=e.clientY;
+  lt=setTimeout(()=>{lp=true;show(b);buzz('light')},420)});
+ wk.addEventListener('pointermove',e=>{if(Math.hypot(e.clientX-x0,e.clientY-y0)>10)clearTimeout(lt)});
+ const end=()=>{clearTimeout(lt);if(lp)hideT=setTimeout(()=>{T().hidden=true;T().dataset.own=''},700)};
+ wk.addEventListener('pointerup',end);wk.addEventListener('pointercancel',end);
+ wk.addEventListener('contextmenu',e=>e.preventDefault());
+ wk.addEventListener('click',e=>{if(lp){e.preventDefault();e.stopImmediatePropagation();lp=false}},true)}
 function renderWeek(v){const d=S.day,t=today(),wd=(new Date(d+'T12:00').getDay()+6)%7,mon=addD(d,-wd),L='LMMJVSD';
  const val=(f,x)=>{try{const r=f(x);return r==null?null:typeof r==='object'?r.s:r}catch(e){return null}};
  $('#wk').innerHTML=[0,1,2,3,4,5,6].map(i=>{const x=addD(mon,i),fut=x>t;
   const rings=fut?[]:v==='sommeil'?[[val(sleepScore,x),'var(--slp)']]:v==='recuperation'?[[val(recovery,x),'var(--rec)']]:v==='effort'?[[val(effortOf,x),'var(--eff)']]:v==='nutrition'?[[(()=>{const c=dayIt(x).reduce((a,y)=>a+kcalOf(y),0);return c?Math.min(100,c/num(S.set.kcal)*100):null})(),'var(--nut)']]:[[val(effortOf,x),'var(--eff)'],[val(recovery,x),'var(--rec)'],[val(sleepScore,x),'var(--slp)']];
-  return `<button type="button" class="wd${x===d?' on':''}${x===t?' tod':''}" data-act="dpick" data-d="${x}"${fut?' disabled':''} aria-label="${esc(dLong(x))}"><span>${L[i]}</span>${fut?'<i class="ph"></i>':barsSVG(rings)}<b>${+x.slice(8)}</b></button>`}).join('')}
+  const lab=fut?'':v==='sommeil'?['Sommeil']:v==='recuperation'?['Énergie']:v==='effort'?['Dépense']:v==='nutrition'?['Calories mangées']:['Dépense','Énergie','Sommeil'];
+  const vals=fut?'':v==='nutrition'?(()=>{const c=dayIt(x).reduce((a,y)=>a+kcalOf(y),0);return `Calories mangées ${c?r0(c):'–'}`})():lab.map((l,j)=>{const r=rings[j]&&rings[j][0];return `${l} ${r==null?'–':r0(r)+(l==='Énergie'?' %':'')}`}).join(' · ');
+  const tip=fut?'':`${dWk(x).replace(/^./,c=>c.toUpperCase())}\n${vals}`;
+  return `<button type="button" class="wd${x===d?' on':''}${x===t?' tod':''}" data-act="dpick" data-d="${x}"${fut?' disabled':''}${tip?` data-tip="${esc(tip)}"`:''} aria-label="${esc(dLong(x)+(vals?' : '+vals:''))}"><span>${L[i]}</span>${fut?'<i class="ph"></i>':barsSVG(rings)}<b>${+x.slice(8)}</b></button>`}).join('')}
 
 /* ---------- état d'attente quand il n'y a pas encore de données Apple Santé ---------- */
 const EMPTY={
@@ -455,6 +470,17 @@ function balHTML(d){const x=burnOf(d),it=dayIt(d),ate=it.reduce((a,y)=>a+kcalOf(
  <button type="button" class="balr" data-act="metric" data-k="burn" style="--c:var(--eff)"><span class="bl"><i><svg viewBox="0 0 24 24"><path d="M12 2.5c.8 3.8 5.5 5.6 5.5 11a5.5 5.5 0 0 1-11 0c0-2.8 1.6-4.2 2.4-6 .9 1.3 1.8 1.9 2.9 2.2-.3-2.5-.6-4.6.2-7.2z"/></svg></i>Dépensé</span><span class="bt"><i class="b0" style="width:${W(x?x.basal:0)}"></i><i class="b1" style="width:${W(x?x.active:0)}"></i></span><em>${x?r0(burn):'–'}</em></button>
  <p class="balf">${x?`Bilan ${dl>0?'+':dl<0?'−':''}${r0(Math.abs(dl))} kcal${isT?' pour l\'instant':''} · ${r0(x.basal)} de base, ${r0(x.active)} actives`:'Renseigne ton profil pour voir ta dépense'}</p>
  ${nx?`<div class="nuq"><button type="button" class="btn small" data-act="foodadd" data-m="${esc(nx)}">+ ${nx}</button>${ym.length?`<button type="button" class="mchip" data-act="likey" data-m="${esc(nx)}"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4"/></svg>Comme hier · ${r0(ym.reduce((a,y)=>a+kcalOf(y),0))} kcal</button>`:''}</div>`:''}</div>`}
+/* Objectif « Mieux dormir » : la nuit passée en tête du Résumé (durée, score, phases, horaires) et le coucher de ce soir */
+function nightHTML(d){const h=H(d);if(!h.sl)return'';const ss=sleepScore(d),tot=num(h.sd)+num(h.sc)+num(h.sr)+num(h.aw);
+ const seg=(v,c,l)=>v?`<i style="flex:${v};--c:${c}" title="${l}"></i>`:'';
+ return `<button type="button" class="panel nightc" data-go="sommeil"><span class="eyebrow">Ta nuit</span><b class="rt">${fmtSl(h.sl)}${ss?` · ${ss.s}/100`:''}</b>
+  ${tot?`<span class="nstk">${seg(num(h.sd),'var(--deep)','Profond')}${seg(num(h.sc),'var(--core)','Léger')}${seg(num(h.sr),'var(--rem)','Paradoxal')}${seg(num(h.aw),'var(--awake)','Éveil')}</span><span class="nlg">Profond ${fmtSl(num(h.sd))} · léger ${fmtSl(num(h.sc))} · paradoxal ${fmtSl(num(h.sr))}</span>`:''}
+  <span class="nl">${has(h.sb)?`Endormi à ${hhmm(h.sb)}, réveillé à ${hhmm(h.sw)}`:''}${has(h.wu)?` · ${h.wu} réveil${h.wu>1?'s':''}`:''}</span><span class="go">Voir ta nuit en détail ›</span></button>`}
+/* Objectif « Perdre du poids » : le poids juste sous la nutrition, avec sa tendance et ce qu'il reste vers l'objectif */
+function weightHTML(d){const W=weights(),wk=Object.keys(W).filter(k=>k<=d).sort();
+ if(!wk.length)return `<div class="panel wtc"><span class="eyebrow">Ton poids</span><p class="vd">Pèse-toi le matin, à jeun, pour voir ta courbe se dessiner.</p><button type="button" class="btn small" data-act="qa" data-q="bw">Noter mon poids</button></div>`;
+ const now=wAvg(W,wk[wk.length-1]),old=wk.filter(k=>k<=addD(d,-28)),was=old.length?wAvg(W,old[old.length-1]):null,gw=num(S.set.goalw),dv=was!=null?Math.round((now-was)*10)/10:null;
+ return `<button type="button" class="panel wtc" data-act="gopoids"><span class="eyebrow">Ton poids</span><b class="rt">${fx(now)} kg</b><span class="nl">moyenne des 7 derniers jours${dv!=null?` · ${dv===0?'stable':sg(dv)+' kg'} en 4 semaines`:''}</span>${gw?`<span class="nl">${Math.abs(now-gw)<0.3?'Objectif atteint : '+fx(gw)+' kg':`Objectif ${fx(gw)} kg : encore ${fx(Math.abs(now-gw))} kg`}</span>`:''}<span class="go">Voir la courbe ›</span></button>`}
 /* Résumé : la semaine en cours, qui mène à Tendances */
 function weekCardHTML(d){if(d!==today()||!hKeys().length)return'';const w=weekRecap(today());if(!w)return'';
  return `<button type="button" class="panel wkcard" data-go="tendances"><span class="eyebrow">Ta semaine</span><b>${esc(w.title)}</b><span class="wkl">${esc(w.line)}</span><span class="go">Voir tes tendances ›</span></button>`}
@@ -526,7 +552,7 @@ function renderToday(){const d=S.day,h=H(d),D=S.days[d]||{},it=D.items||[],T=day
  const mo=monitor(d),bad=mo.filter(x=>x.warn);
  $('#monmini').innerHTML=mo.length?`<div class="mm" data-go="recuperation"><div><div class="eyebrow">Moniteur de santé</div><b style="font-size:1.0625rem">${bad.length?`${bad.length} ${bad.length>1?'signaux':'signal'} inhabituel${bad.length>1?'s':''} : ${bad.map(x=>x.l).join(', ')}`:'Tous tes signes vitaux sont dans ta normale'}</b></div><div class="dots" style="margin-left:auto">${mo.map(x=>`<i style="--c:${x.col}" data-tip="${esc(x.l+' : '+monFmt(x,x.v)+'\n'+x.lab)}"></i>`).join('')}</div></div>`:'<div class="eyebrow">Moniteur de santé</div><p class="mute small" style="margin:4px 0 0">Il faut au moins 7 nuits importées pour établir ta normale.</p>';
  $('#upn').innerHTML=upNextHTML();
- $('#bal').innerHTML=balHTML(d);$('#wkc').innerHTML=$('#ritual .wkr')?'':weekCardHTML(d);$('#sh-bal').hidden=!$('#bal').innerHTML;$('#vitals').innerHTML=vitalsHTML(d);$('#sh-vit').hidden=!$('#vitals').innerHTML;
+ $('#bal').innerHTML=balHTML(d);$('#nightc').innerHTML=S.set.goal==='sommeil'?nightHTML(d):'';$('#wtc').innerHTML=S.set.goal==='poids'?weightHTML(d):'';$('#wkc').innerHTML=$('#ritual .wkr')?'':weekCardHTML(d);$('#sh-bal').hidden=!$('#bal').innerHTML;$('#vitals').innerHTML=vitalsHTML(d);$('#sh-vit').hidden=!$('#vitals').innerHTML;
  $('#chrono').innerHTML=chronoHTML(d);
  renderCheckin()}
 function coach(d,rc,sl,ef,tg){const h=H(d),out=[];
@@ -670,14 +696,18 @@ function lastFor(name,excl){const k=norm(name);if(!k)return null;for(const s of 
 function suggest(name,excl){const L=lastFor(name,excl);if(!L)return null;const sets=L.e.sets.filter(x=>num(x.r)>0);const top=Math.max(...sets.map(x=>num(x.w)));const up=top>0&&sets.filter(x=>num(x.w)===top).every(x=>num(x.r)>=S.set.rmax);return{L,sets,top,up,w:up?top+num(S.set.inc):top}}
 function bestE1(name,excl){const k=norm(name);let b=0;for(const s of done()){if(s.id===excl)continue;for(const e of s.ex||[])if(norm(e.n)===k)for(const x of e.sets)b=Math.max(b,e1(num(x.w),num(x.r)))}return b}
 function prefill(n,excl){const g=suggest(n,excl);if(!g)return[{w:'',r:''}];return g.sets.map(x=>{const atTop=num(x.w)===g.top;return{w:atTop?g.w:num(x.w),r:'',p:atTop&&g.up?S.set.rmin:num(x.r)}})}
+/* La date d'une séance : « Aujourd'hui » en une ligne ; un toucher ouvre le calendrier (le vrai champ date est posé dessus, invisible) */
+const dayWord=d=>d===today()?'Aujourd\'hui':d===addD(today(),-1)?'Hier':dLong(d).replace(/^./,c=>c.toUpperCase());
+const dateRow=id=>`<label class="drow"><span>Date</span><span class="dval">${dayWord(today())}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg><input id="${id}" type="date" value="${today()}" max="${today()}" aria-label="Date de la séance"></label>`;
+document.addEventListener('change',ev=>{const t=ev.target;if(t.matches&&t.matches('.drow input')){if(!t.value)t.value=today();t.parentElement.querySelector('.dval').textContent=dayWord(t.value)}});
 function renderStart(){const seen=new Set(),tpl=[];
  for(const s of done()){if(s.kind==='sport')continue;const k=norm(s.name);if(k&&!seen.has(k)){seen.add(k);tpl.push(s)}if(tpl.length>=8)break}
  const seg=`<div class="seg"><button data-act="smode" data-m="mu" class="${startMode==='mu'?'on':''}">Muscu</button><button data-act="smode" data-m="sp" class="${startMode==='sp'?'on':''}">Autre sport</button></div>`;
  $('#editor').innerHTML=`<div class="panel">${seg}`+(startMode==='mu'?`
- <div class="grid2"><label>Nom de la séance<input id="nn" placeholder="Push, Pull, Jambes…" autocomplete="off"></label><label>Date<input id="nd" type="date" value="${today()}"></label></div>
+ <div class="grid2"><label>Nom de la séance<input id="nn" placeholder="Push, Pull, Jambes…" autocomplete="off"></label>${dateRow('nd')}</div>
  <button class="btn pri" data-act="start">Commencer une séance</button>
  ${tpl.length?`<h3>Ou reprendre une séance récente</h3><div class="chips">${tpl.map(s=>`<button class="chip" data-act="tpl" data-id="${esc(s.id)}"><b>${esc(s.name)}</b><span>${dShort(s.date)} · ${(s.ex||[]).length} exos</span></button>`).join('')}</div><p class="mute small">Charges pré-remplies avec la progression suggérée.</p>`:''}`
- :`<form id="spf"><div class="grid3"><label>Sport<select id="spt">${SPORTS.map(x=>`<option>${x}</option>`).join('')}</select></label><label>Date<input id="spd" type="date" value="${today()}"></label><label>Durée (min)<input id="spm" inputmode="numeric" required></label>
+ :`<form id="spf"><div class="grid3"><label>Sport<select id="spt">${SPORTS.map(x=>`<option>${x}</option>`).join('')}</select></label>${dateRow('spd')}<label>Durée (min)<input id="spm" inputmode="numeric" required></label>
  <label>Intensité ressentie (1 à 10)<select id="spr"><option value="">Non notée</option>${[1,2,3,4,5,6,7,8,9,10].map(i=>`<option value="${i}">${i}${i<=3?' · facile':i<=6?' · modéré':i<=8?' · dur':' · maximal'}</option>`).join('')}</select></label><label>Distance (km, option)<input id="spk" inputmode="decimal"></label><label>Note<input id="spn" placeholder="ex. fractionné 8×400 m"></label></div>
  <button class="btn pri">Enregistrer</button></form>`)+`</div>`;
  const f=$('#spf');if(f)f.addEventListener('submit',ev=>{ev.preventDefault();const m=num($('#spm').value);if(!(m>0))return $('#spm').focus();
@@ -1006,6 +1036,8 @@ document.addEventListener('click',ev=>{unlockAudio();
  switch(act){
  case'sheet':{const sh=$('#sheet');sh.hidden=!sh.hidden;setTimeout(()=>{document.documentElement.style.setProperty('--hh',$('.top').offsetHeight+'px')},0);return}
  case'qa':return quick(b.dataset.q);
+ case'gopoids':{location.hash='tendances';setTimeout(()=>{const p=$('#fw')?.closest('.panel');if(p)scrollTo({top:p.getBoundingClientRect().top+scrollY-90,behavior:calm()?'auto':'smooth'})},450);return}
+ case'gloss':{const g=GLOSS.find(x=>x[0]===b.dataset.g);if(g)ask(g[2],g[3],[['ok','Compris','pri']]);return}
  case'obgoal':buzz();$$('#onb [data-act="obgoal"]').forEach(x=>{const on=x===b;x.classList.toggle('on',on);x.setAttribute('aria-checked',String(on))});return;
  case'kcalc':return askNutriCalc();
  case'medopen':return openForm('#medf',b,'#mti');
@@ -1014,7 +1046,7 @@ document.addEventListener('click',ev=>{unlockAudio();
  case'share':return shareWeek();
  case'briefok':return hideBrief();
  case'briefopen':return showBrief();
- case'dpick':return pageTo(b.dataset.d);
+ case'dpick':if(b.closest('#wk')&&!S.set.hintWk&&matchMedia('(pointer:coarse)').matches){S.set.hintWk=1;put.set();setTimeout(()=>toast('Astuce : appuie longuement sur un jour pour voir ses chiffres.'),500)}return pageTo(b.dataset.d);
  case'msclose':return closeSheet();
  case'showall':buzz();$(b.dataset.t).classList.add('all');return;
  case'demoTry':return loadDemo();
@@ -1141,17 +1173,47 @@ document.addEventListener('keydown',e=>{if(e.metaKey||e.ctrlKey||e.altKey)return
  if(e.key==='n'||e.key==='N'){e.preventDefault();$('.tplus').click();return}
  if(!$('#dn').hidden){if(e.key==='ArrowLeft')goDay(-1);else if(e.key==='ArrowRight')goDay(1)}});
 {const fit=()=>{const r=document.documentElement;r.style.setProperty('--hh',$('.top').offsetHeight+'px');};fit();addEventListener('resize',fit);setTimeout(fit,300)}
+/* ---------- mini-lexique : un « ? » à côté des termes techniques, une phrase pour les comprendre ----------
+   Posé tout seul sur les titres, libellés, légendes et en-têtes de tableau, une fois par terme et par écran. */
+const GLOSS=[
+ ['sdnn',/\b(SDNN|RMSSD)\b/,'SDNN et RMSSD','Deux façons de calculer la VFC. SDNN, celle d\'Apple : l\'écart entre les intervalles de battements. RMSSD : la variation d\'un battement au suivant, la mesure la plus utilisée pour la récupération.'],
+ ['vfc',/\bVFC\b/,'VFC','Variabilité de la fréquence cardiaque : les petites variations de temps entre deux battements. Plus elle est haute par rapport à ta normale, mieux ton corps a récupéré. C\'est son évolution qui compte, pas le chiffre brut.'],
+ ['dip',/Baisse de FC/i,'Baisse de FC nocturne','De combien ton cœur ralentit la nuit par rapport à la journée. Une baisse de 10 à 20 % est habituelle ; elle diminue après un repas tardif, de l\'alcool ou un entraînement le soir.'],
+ ['rhr',/FC (au |de )?repos/i,'FC au repos','Ton cœur au calme, mesuré par la montre quand tu ne bouges pas depuis un moment. Plus basse, c\'est en général le signe d\'un cœur entraîné ; une hausse de plusieurs jours peut signaler fatigue ou maladie.'],
+ ['spo2',/SpO₂|Saturation en oxygène/i,'SpO₂','Saturation en oxygène : la part d\'oxygène transportée par ton sang. Entre 95 et 100 % est normal ; elle baisse un peu la nuit.'],
+ ['rr',/Fréquence respiratoire/i,'Fréquence respiratoire','Tes respirations par minute pendant le sommeil. Elle varie très peu d\'une nuit à l\'autre : une hausse nette peut précéder une infection.'],
+ ['tp',/Température au poignet/i,'Température au poignet','L\'écart de température de ta peau la nuit par rapport à ta normale, pas ta température exacte. Une hausse de plus de 0,5 °C peut accompagner une infection, l\'alcool ou une chambre chaude.'],
+ ['rem',/Paradoxal/i,'Sommeil paradoxal (REM)','Le sommeil des rêves. Il aide la mémoire et l\'humeur, et se concentre en fin de nuit : se coucher tard ou se lever tôt le raccourcit.'],
+ ['deep',/\bProfond\b/,'Sommeil profond','Le plus réparateur pour le corps, surtout en début de nuit. C\'est là que le corps récupère des efforts.'],
+ ['core',/\bLéger\b/,'Sommeil léger','La phase la plus longue de la nuit, entre l\'éveil et le sommeil profond. Elle compte aussi pour la récupération.'],
+ ['1rm',/\b1RM\b/,'1RM','La charge maximale que tu pourrais soulever une seule fois. Arden l\'estime à partir de tes séries (formule d\'Epley), sans que tu aies à la tenter.'],
+ ['vo2',/VO2 ?max/i,'VO2 max','La quantité maximale d\'oxygène que ton corps peut utiliser pendant l\'effort, l\'un des meilleurs repères de la forme cardio. Elle progresse avec l\'endurance et le fractionné.'],
+ ['zones',/Zones cardiaques/i,'Zones cardiaques','Cinq plages de fréquence cardiaque, de la zone 1 (très facile) à la zone 5 (effort maximal), calculées à partir de ta FC maximale.'],
+ ['load',/Charge d'entraînement/i,'Charge d\'entraînement','Tes efforts des 7 derniers jours comparés à ceux dont tu as l\'habitude (28 jours). Augmenter trop vite fait grimper le risque de blessure.'],
+ ['ton',/\bTonnage\b/i,'Tonnage','Le poids total soulevé : charge × répétitions, additionné sur toutes tes séries.'],
+ ['stz',/Stress estimé/i,'Stress estimé','Calculé à partir de ta fréquence cardiaque et de ta VFC dans la journée, hors efforts physiques. Il mesure la tension du corps, pas ce que tu ressens.'],
+ ['bmr',/Métabolisme de base/i,'Métabolisme de base','L\'énergie que ton corps dépense au repos, juste pour fonctionner : 60 à 70 % de la dépense d\'une journée.'],
+ ['fc',/\bFC\b/,'FC','Fréquence cardiaque : le nombre de battements de ton cœur par minute.'],
+];
+const GLSEL='.panel>h2,.ph>h2,.mr .n,.lg>span,.cr>span:first-child,.mkr .t2>span:first-child,.kpis span,th,.eyebrow';
+function glossify(root){const seen=new Set([...root.querySelectorAll('.glq')].map(b=>b.dataset.g));
+ for(const el of root.querySelectorAll(GLSEL)){if(el.querySelector('.glq')||el.closest('button,a,label,select,.adv:not(.deep-on *)'))continue;
+  const tn=[...el.childNodes].filter(n=>n.nodeType===3),own=tn.map(n=>n.textContent).join(' ');
+  const g=GLOSS.find(x=>x[1].test(own));if(!g||seen.has(g[0]))continue;seen.add(g[0]);
+  /* juste après le texte qui contient le terme (et pas après un sous-titre comme « normale 51 ms ») */
+  const at=tn.find(n=>g[1].test(n.textContent))||tn[tn.length-1],b=document.createElement('button');
+  b.type='button';b.className='glq';b.dataset.act='gloss';b.dataset.g=g[0];b.setAttribute('aria-label',`Qu'est-ce que ${g[2]} ?`);b.textContent='?';at.after(b)}}
 /* Menus et tableaux qui défilent de côté : un fondu sur le bord où il reste quelque chose à voir
    (à droite au départ, des deux côtés au milieu, à gauche à la fin), comme sur iPhone. */
 {const SEL='.seg,.scroll,#favs,.chips.scr',upd=e=>{const m=e.scrollWidth-e.clientWidth;e.classList.toggle('ovf',m>2);e.classList.toggle('ef-l',m>2&&e.scrollLeft>2);e.classList.toggle('ef-r',m>2&&e.scrollLeft<m-2)};
  /* un menu qui déborde montre son choix actif : si « Blessure » est choisi, il n'est pas caché hors de l'écran */
  const show=e=>{const on=e.querySelector(':scope>.on');if(!on||on===e._on)return;e._on=on;const l=on.getBoundingClientRect().left-e.getBoundingClientRect().left+e.scrollLeft,r=l+on.offsetWidth;if(l<e.scrollLeft||r>e.scrollLeft+e.clientWidth)e.scrollLeft=Math.max(0,l-24)};
- let q=0;const all=()=>{q=0;$$(SEL).forEach(e=>{upd(e);if(e.classList.contains('ovf'))show(e),upd(e)})},later=()=>{if(!q)q=requestAnimationFrame(all)};
+ let q=0;const all=()=>{q=0;$$(SEL).forEach(e=>{upd(e);if(e.classList.contains('ovf'))show(e),upd(e)});$$('.view:not([hidden]),#msheet:not([hidden])').forEach(glossify)},later=()=>{if(!q)q=requestAnimationFrame(all)};
  document.addEventListener('scroll',e=>{const t=e.target;if(t.matches&&t.matches(SEL))upd(t)},{capture:true,passive:true});
  new MutationObserver(later).observe(document.body,{childList:true,subtree:true,attributeFilter:['hidden']});addEventListener('resize',later);later()}
 {const T=$('#tip'),place=e=>{const w=T.offsetWidth,h=T.offsetHeight,W=document.documentElement.clientWidth;let x=e.pageX+14,y=e.pageY-h-12;if(x+w>W-8)x=e.pageX-w-14;if(y<scrollY+8)y=e.pageY+18;T.style.left=Math.max(8,x)+'px';T.style.top=y+'px'};
- document.addEventListener('pointerover',e=>{const t=e.target.closest&&e.target.closest('[data-tip]');if(!t){T.hidden=true;return}T.textContent=t.dataset.tip;T.hidden=false;place(e)});
- document.addEventListener('pointermove',e=>{if(!T.hidden)place(e)});const hideT=e=>{if(e.pointerType!=='mouse')T.hidden=true};document.addEventListener('pointerup',hideT);document.addEventListener('pointercancel',hideT);document.addEventListener('scroll',()=>{T.hidden=true;$$('.ov').forEach(o=>o.innerHTML='')},{passive:true,capture:true})}
+ document.addEventListener('pointerover',e=>{const t=e.target.closest&&e.target.closest('[data-tip]');if(t&&e.pointerType!=='mouse'&&t.closest('#wk'))return;if(!t){T.hidden=true;return}T.textContent=t.dataset.tip;T.hidden=false;place(e)});
+ document.addEventListener('pointermove',e=>{if(!T.hidden&&!T.dataset.own)place(e)});const hideT=e=>{if(e.pointerType!=='mouse'&&!T.dataset.own)T.hidden=true};document.addEventListener('pointerup',hideT);document.addEventListener('pointercancel',hideT);document.addEventListener('scroll',()=>{T.hidden=true;$$('.ov').forEach(o=>o.innerHTML='')},{passive:true,capture:true})}
 
 /* ---------- gestes : glisser d'un jour à l'autre, tirer pour synchroniser ---------- */
 {const sc=$('#sc'),wrap=$('#sc>.wrap'),ptr=$('#ptr'),dayV=()=>DAYV.includes(cur());
@@ -1423,7 +1485,7 @@ function renderMetric(){const m=MET[metK];if(!m)return;const end=S.day,from=addD
 /* ---------- rituels : la soirée, la semaine, le briefing du matin ---------- */
 const NIGHT_TIPS=['Lumière tamisée et écrans en mode nuit','Chambre fraîche, autour de 18 °C','Pas de caféine après 14 h, dîner léger','Dix minutes de lecture ou de respiration lente','Même heure de coucher que d\'habitude, à 30 min près'];
 function ritualHTML(d){if(d!==today()||!hKeys().length)return'';const n=new Date(),hr=n.getHours(),wd=n.getDay(),b=bedOf(d),bi=bedIn(d);
- if(b&&bi!=null&&hr>=18&&bi<=240){const k=+d.slice(8)%NIGHT_TIPS.length,tips=[0,1,2].map(i=>NIGHT_TIPS[(k+i)%NIGHT_TIPS.length]);
+ if(b&&bi!=null&&(S.set.goal==='sommeil'?hr>=16&&bi<=420:hr>=18&&bi<=240)){const k=+d.slice(8)%NIGHT_TIPS.length,tips=[0,1,2].map(i=>NIGHT_TIPS[(k+i)%NIGHT_TIPS.length]);
   return `<div class="panel ritual eve"><span class="eyebrow">Ce soir</span><b class="rt">${bi<=10?'C\'est l\'heure de dormir':'Au lit dans '+fmtSl(bi)}</b><p>Vers ${hhmm(b.bed)}, pour ${fmtSl(b.need)} de sommeil et un réveil à ${hhmm(b.wake)}.</p><ul class="tips">${tips.map(t=>`<li>${t}</li>`).join('')}</ul></div>`}
  if(wd===1||(wd===0&&hr>=17)){const w=weekRecap();if(w)return `<button type="button" class="panel ritual wkr" data-go="tendances"><span class="eyebrow">Ta semaine est prête</span><b class="rt">${w.title}</b><p>${w.line}</p><span class="go">Voir et partager ›</span></button>`}
  if(hr<12&&S.set.brief===d&&(H(d).sl||recovery(d)))return `<button type="button" class="ritual-link" data-act="briefopen">${ARC}<span>Revoir le briefing du matin</span><em>›</em></button>`;
