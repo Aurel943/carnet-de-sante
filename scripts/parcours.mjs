@@ -150,7 +150,7 @@ try {
       await page.click('#hub [data-s="reglages"]');
       await page.waitForSelector('[data-sub="reglages"]:not([hidden])');
       const groups = await page.$$eval('[data-sub="reglages"] .sgh', (a) => a.map((x) => x.textContent.trim()));
-      expect(groups.join('|') === 'Ton profil|Objectifs du jour|Nutrition|Musculation|Check-in|Avancé', 'groupes : ' + groups.join(', '));
+      expect(groups.join('|') === 'Tes données|Ton profil|Objectifs du jour|Nutrition|Musculation|Check-in|Avancé', 'groupes : ' + groups.join(', '));
       await page.fill('#s-prot', '150'); await page.press('#s-prot', 'Tab');
       await page.waitForFunction(() => JSON.parse(localStorage.getItem('carnet-muscu-v1') || '{}').set?.prot === 150, null, { timeout: 2000 }).catch(() => { throw new Error('objectif de protéines non gardé'); });
       const n = await page.$$eval('#taglist .schip', (a) => a.length);
@@ -159,6 +159,23 @@ try {
       await page.click('#taglist .schip:last-child button');
       await page.waitForFunction((k) => document.querySelectorAll('#taglist .schip').length === k, n);
       await page.fill('#s-prot', '140'); await page.press('#s-prot', 'Tab');
+      // Calculer pour moi : une proposition expliquée, appliquée seulement si on accepte
+      await page.click('[data-act="kcalc"]');
+      await page.waitForSelector('#dlg:not([hidden])');
+      expect(/kcal/.test(await text(page, '#dlgt')) && /Calculé à partir de/.test(await text(page, '#dlgm')), 'proposition attendue : ' + await text(page, '#dlgt'));
+      const kc = Number((await text(page, '#dlgt')).replace(/\D*kcal.*/, '').replace(/\D/g, ''));
+      await page.click('[data-dlg="ok"]');
+      await page.waitForFunction((k) => Number(document.querySelector('#s-kcal').value.replace(/\D/g, '')) === k, kc);
+      // Apple Santé et Sauvegarde sont rangées dans les Réglages, et y ramènent
+      await page.click('[data-sub="reglages"] [data-s="donnees"]');
+      await page.waitForSelector('[data-sub="donnees"]:not([hidden])');
+      expect((await text(page, '#subback')) === '‹ Réglages', 'le retour doit ramener aux Réglages');
+      await page.click('#subback');
+      await page.waitForSelector('[data-sub="reglages"]:not([hidden])');
+      await page.click('#subback');
+      await page.waitForSelector('#hub:not([hidden])');
+      const hub = await page.$$eval('#hub .hr b', (a) => a.map((x) => x.textContent));
+      expect(hub.join('|') === 'Nutrition|Tendances|Dossier médical|Réglages', 'menu Plus : ' + hub.join(', '));
     });
 
     await step('onglets de jour : aujourd\'hui au retour, jour gardé entre eux, toucher = revenir', async () => {

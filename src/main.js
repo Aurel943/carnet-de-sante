@@ -178,6 +178,18 @@ function markers(){const L=hLast()||today(),out=[],age=num(S.set.birth)>1900?new
 function tdeeEst(){const e=today(),ds=[];for(let i=1;i<=21;i++){const d=addD(e,-i);if(dayIt(d).length)ds.push(d)}if(ds.length<10)return null;const W=weights(),wp=[];for(let i=1;i<=21;i++){const d=addD(e,-i);if(W[d])wp.push([-i,W[d]])}if(wp.length<6)return null;
  const mx=avg(wp.map(p=>p[0])),my=avg(wp.map(p=>p[1])),sxx=wp.reduce((a,p)=>a+(p[0]-mx)**2,0);if(!sxx)return null;const rate=wp.reduce((a,p)=>a+(p[0]-mx)*(p[1]-my),0)/sxx;
  const intake=avg(ds.map(d=>dayIt(d).reduce((s,x)=>s+kcalOf(x),0)));return{t:Math.round(intake-rate*7700),intake:Math.round(intake),wk:rate*7,n:ds.length}}
+/* « Calculer pour moi » : les objectifs nutrition tirés de ce qu'Arden sait de toi, du plus fiable au plus approché :
+   dépense réelle (repas + pente du poids), métabolisme de base + calories actives de la montre, dépense Apple,
+   métabolisme de base × 1,45. Puis −450 kcal pour perdre (≈ 0,4 kg par semaine) ou +300 pour prendre, vers le poids visé.
+   Protéines : 1,6 g par kg, le repère des études pour qui fait de la musculation. */
+function nutriCalc(){const W=weights(),wk=Object.keys(W).sort(),wt=wk.length?wAvg(W,wk[wk.length-1]):null,b=bmrInfo(),td=tdeeEst(),gw=num(S.set.goalw);
+ const ac=[],ap=[];for(let i=1;i<=14;i++){const h=H(addD(today(),-i));if(num(h.ac)>0)ac.push(num(h.ac));if(num(h.bs)>0&&num(h.ac)>0)ap.push(num(h.bs)+num(h.ac))}
+ const pa=b.v&&ac.length>=5?[b.v+avg(ac),`ton métabolisme de base (${r0(b.v)} kcal) et tes calories actives des 14 derniers jours (${r0(avg(ac))} kcal en moyenne)`]:ap.length>=5?[avg(ap),`ta dépense des 14 derniers jours selon la montre (${r0(avg(ap))} kcal en moyenne)`]:b.v?[b.v*1.45,`ton métabolisme de base (${r0(b.v)} kcal), pour une activité modérée`]:null;
+ /* la dépense réelle n'est fiable que si tout est noté : on ne la garde que si elle concorde avec le corps (± 20 %) */
+ const [m,how]=td&&(!pa||Math.abs(td.t-pa[0])/pa[0]<=.2)?[td.t,`ta dépense réelle, mesurée sur 3 semaines à partir de tes repas et de ton poids (${r0(td.t)} kcal par jour)`]:pa||[null,''];
+ if(!m)return{miss:b.miss&&b.miss.length?b.miss:['ton poids']};
+ const dir=gw&&wt?(gw<wt-0.5?-1:gw>wt+0.5?1:0):0,raw=m+(dir<0?-450:dir>0?300:0),floor=b.v||(S.set.sex==='f'?1200:1500);
+ return{kcal:Math.round(Math.max(raw,floor)/50)*50,floor:raw<floor,prot:wt?Math.round(wt*1.6/5)*5:null,how,dir,wt,gw}}
 function zones28(){const Z=[0,0,0,0,0];for(let i=0;i<28;i++)for(const w of H(addD(today(),-i)).wk||[])(w.z||[]).forEach((m,j)=>Z[j]+=m);return Z}
 function monotony(d){const L=[];for(let i=0;i<7;i++)L.push(loadOf(addD(d,-i)));const m=avg(L);if(m<5)return null;const s=Math.max(sdv(L),m*0.1);return{mono:m/s,strain:L.reduce((a,b)=>a+b,0)*m/s}}
 function dailyPts(f,from,to){const o=[];for(let k=from;k<=to;k=addD(k,1)){const v=f(k);if(v!=null&&isFinite(v))o.push({x:k,y:Math.round(v*100)/100})}return o}
@@ -803,7 +815,7 @@ function renderNutri(){const d=S.day,D=S.days[d]||{},it=D.items||[],Pr=sum(it,'p
  const hv=L.filter(x=>x.has),mp=Math.max(T*1.25,...L.map(x=>x.p));
  $('#nk').innerHTML=hv.length?`<div><b>${r0(avg(hv.map(x=>x.p)))} g</b><span>protéines / jour</span></div><div><b>${r0(avg(hv.map(x=>x.c)))}</b><span>kcal / jour</span></div><div><b>${hv.filter(x=>x.p>=T).length} / ${hv.length}</b><span>jours à l'objectif</span></div>`:'';
  const td=tdeeEst(),gw=num(S.set.goalw),ab=[];for(let i=1;i<=14;i++){const h2=H(addD(today(),-i));if(h2.bs||h2.ac)ab.push(num(h2.bs)+num(h2.ac))}const apl=avg(ab);
- $('#tdee').innerHTML=td?`<div class="kpis"><div><b>${r0(td.t)} kcal</b><span>besoins réels par jour</span></div><div><b>${r0(td.intake)} kcal</b><span>apport moyen (${td.n} jours notés)</span></div><div><b>${sg(Math.round(td.wk*100)/100)} kg</b><span>par semaine (tendance du poids)</span></div>${apl?`<div><b>${r0(apl)} kcal</b><span>dépense selon la montre</span></div>`:''}</div><p class="small">Calculée à partir de ce que tu manges et de la pente de ton poids sur 3 semaines (1 kg ≈ 7 700 kcal). Fiable seulement si tu notes tout ce que tu manges les jours renseignés.${gw&&wtn?` Pour aller vers ${fx(gw)} kg, vise environ <b>${r0(td.t+(gw>wtn?300:-450))} kcal par jour</b>.`:''}${apl&&Math.abs(apl-td.t)>250?` La montre ${apl>td.t?'surestime':'sous-estime'} ta dépense d'environ ${r0(Math.abs(apl-td.t))} kcal.`:''}</p>`:'<p class="mute small">Note tes repas au moins 10 jours sur 3 semaines et pèse-toi régulièrement : l\'appli calculera ta dépense réelle.</p>';
+ $('#tdee').innerHTML=td?`<div class="kpis"><div><b>${r0(td.t)} kcal</b><span>besoins réels par jour</span></div><div><b>${r0(td.intake)} kcal</b><span>apport moyen (${td.n} jours notés)</span></div><div><b>${sg(Math.round(td.wk*100)/100)} kg</b><span>par semaine (tendance du poids)</span></div>${apl?`<div><b>${r0(apl)} kcal</b><span>dépense selon la montre</span></div>`:''}</div><p class="small">Calculée à partir de ce que tu manges et de la pente de ton poids sur 3 semaines (1 kg ≈ 7 700 kcal). Fiable seulement si tu notes tout ce que tu manges les jours renseignés.${gw&&wtn?` Pour aller vers ${fx(gw)} kg, vise environ <b>${r0(Math.max(td.t+(gw>wtn?300:-450),bmrInfo().v||1500))} kcal par jour</b>.`:''}${apl&&Math.abs(apl-td.t)>250?` La montre ${apl>td.t?'surestime':'sous-estime'} ta dépense d'environ ${r0(Math.abs(apl-td.t))} kcal.`:''}</p>`:'<p class="mute small">Note tes repas au moins 10 jours sur 3 semaines et pèse-toi régulièrement : l\'appli calculera ta dépense réelle.</p>';
  $('#prot14').innerHTML=L.map(x=>`<div class="hrow ${x.p>=T?'ok':''}" style="--c:var(--nut)" data-tip="${esc(x.has?`${dLong(x.k)}\n${r0(x.p)} g de protéines\n${r0(x.c)} kcal`:dLong(x.k)+' : rien de noté')}"><span>${dWk(x.k)}</span><div class="bar"><i style="width:${x.p/mp*100}%"></i><b class="tg" style="left:${T/mp*100}%"></b></div><span class="num">${x.has?r0(x.p)+' g':'–'}</span></div>`).join('')}
 function delFood(k){const d=S.day,D=getDay(d),x=D.items.splice(k,1)[0];put.day(d);renderNutri();buzz('light');toast(`${itemName(x)} retiré`,()=>{getDay(d).items.splice(k,0,x);put.day(d);renderNutri()})}
 
@@ -875,7 +887,7 @@ function renderBody(){const W=weights(),wk=Object.keys(W).sort(),L=hLast()||toda
  $('#ak').innerHTML=kk('st','pas / jour',r0)+kk('ac','kcal actives',r0)+kk('ex',"min d'exercice",r0)+kk('km','km / jour',fx)+kk('fl','étages',r0)}
 
 /* ---------- plus ---------- */
-const SUBT={dossier:'Dossier médical',reglages:'Réglages',apple:'Apple Santé',donnees:'Données et confidentialité'};
+const SUBT={dossier:'Dossier médical',reglages:'Réglages',apple:'Apple Santé',donnees:'Sauvegarde et confidentialité'};
 function quick(q){$('#sheet').hidden=true;setTimeout(()=>document.documentElement.style.setProperty('--hh',$('.top').offsetHeight+'px'),0);if(q==='close')return;const go=(h,fn)=>{if(location.hash!=='#'+h)location.hash=h;else route();setTimeout(fn||(()=>{}),150)};
  if(q==='mu'){if(!S.cur)renderStart();openSheet('seance')}
  else if(q==='food'){S.day=today();openFood(mealNow())}
@@ -887,7 +899,9 @@ function quick(q){$('#sheet').hidden=true;setTimeout(()=>document.documentElemen
 
 /* ouvre (ou referme) un formulaire replié derrière son bouton, et place le curseur dans son premier champ */
 function openForm(f,b,focus,open){const F=$(f);open=open??F.hidden;F.hidden=!open;b=b||F.parentElement.querySelector('[aria-expanded]');if(b){b.setAttribute('aria-expanded',open);b.textContent=open?'Fermer':b.dataset.act==='medopen'?'Ajouter':'Noter';b.classList.toggle('pri',!open&&b.dataset.act==='medopen')}if(open&&focus)$(focus).focus({preventScroll:true})}
-function renderPlus(){setTimeout(syncNav,0);$('#hub').hidden=!!psub;$('#subbar').hidden=!psub;$('#subt').textContent=SUBT[psub]||'';$$('[data-sub]').forEach(x=>x.hidden=x.dataset.sub!==psub);
+/* Apple Santé et la sauvegarde sont rangées dans les Réglages : leur « ‹ » y ramène */
+const PSUBUP={apple:'reglages',donnees:'reglages'};
+function renderPlus(){setTimeout(syncNav,0);{const up=PSUBUP[psub]||'';$('#subback').dataset.s=up;$('#subback').textContent='‹ '+(up?SUBT[up]:'Plus')}$('#hub').hidden=!!psub;$('#subbar').hidden=!psub;$('#subt').textContent=SUBT[psub]||'';$$('[data-sub]').forEach(x=>x.hidden=x.dataset.sub!==psub);
  const L=hLast();$('#hubapple').textContent=S.set.demo?"Données de démo pour l'instant":HKN?(S.health.src==='hk'?'Connecté · '+syncWhen():'Connecter Apple Santé'):L?`Données jusqu'au ${dShort(L)}${today()>addD(L,3)?' : pense à réimporter':''}`:'Importer tes données (pas encore fait)';
  if(psub==='dossier')renderMed();else if(psub)renderSettings()}
 function renderMed(){const t=today(),L=S.med.slice().sort((a,b)=>b.date.localeCompare(a.date)),types=['Tout','Rendez-vous','Vaccin','Analyse','Blessure','Note'];
@@ -983,6 +997,7 @@ document.addEventListener('click',ev=>{unlockAudio();
  switch(act){
  case'sheet':{const sh=$('#sheet');sh.hidden=!sh.hidden;setTimeout(()=>{document.documentElement.style.setProperty('--hh',$('.top').offsetHeight+'px')},0);return}
  case'qa':return quick(b.dataset.q);
+ case'kcalc':return askNutriCalc();
  case'medopen':return openForm('#medf',b,'#mti');
  case'mfopen':return openForm('#mf',b,'#m-taille');
  case'deep':{buzz();const v=b.dataset.v;S.set.deep={...(S.set.deep||{}),[v]:!(S.set.deep||{})[v]};put.set();applyDeep();return}
@@ -1306,6 +1321,10 @@ function ask(title,msg,btns){const d=$('#dlg');if(dlgDone)dlgDone(null);
  d.hidden=false;document.documentElement.classList.add('dlg-open');buzz('warn');setTimeout(()=>$('#dlgb .btn')?.focus({preventScroll:true}),60);
  return new Promise(res=>{dlgDone=k=>{dlgDone=null;d.hidden=true;document.documentElement.classList.remove('dlg-open');res(k)}})}
 const closeDlg=k=>{if(dlgDone)dlgDone(k)};
+async function askNutriCalc(){const r=nutriCalc();
+ if(r.miss)return ask('Il manque des infos',`Pour calculer tes besoins, renseigne ${r.miss.join(', ')}${r.miss.includes('ton poids')?' (une pesée dans Noter → Poids)':' dans « Ton profil »'}.`,[['ok','OK','pri']]);
+ const k=await ask(`${r0(r.kcal)} kcal${r.prot?` · ${r.prot} g de protéines`:''}`,`Calculé à partir de ${r.how}${r.dir<0?`, moins 450 kcal pour aller vers ${fx(r.gw)} kg (environ 0,4 kg par semaine)${r.floor?', sans descendre sous ton métabolisme de base':''}`:r.dir>0?`, plus 300 kcal pour aller vers ${fx(r.gw)} kg`:', pour garder ton poids'}.${r.prot?` Protéines : 1,6 g par kg pour ${fx(r.wt)} kg.`:''}`,[['cancel','Annuler'],['ok','Appliquer','pri']]);
+ if(k!=='ok')return;S.set.kcal=r.kcal;if(r.prot)S.set.prot=r.prot;put.set();renderSettings();buzz('ok');toast('Objectifs nutrition mis à jour')}
 /* Code lu : produit déjà connu, trouvé sur Open Food Facts, ou alerte (inconnu, incomplet, hors connexion) */
 async function handleCode(code){const known=prods().find(x=>x.id===code);if(known)return openPick(known);
  toast('Recherche du produit…');let r=null,f=null,err=false;

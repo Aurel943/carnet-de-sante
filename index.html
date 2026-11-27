@@ -137,14 +137,14 @@
 <section id="v-plus" class="view" hidden>
  <div class="panel hub" id="hub">
   <h2>Plus</h2>
+ <div class="hg">
   <button class="hr" data-go="nutrition" style="--c:var(--nut)"><i><svg viewBox="0 0 24 24"><path d="M4 11h16a8 8 0 0 1-16 0zM9 7c0-2 1.5-3 3-3s3 1 3 3"/></svg></i><span><b>Nutrition</b><small>Repas, macros, hydratation, compléments, besoins caloriques</small></span><em>›</em></button>
   <button class="hr" data-go="tendances" style="--c:var(--trn)"><i><svg viewBox="0 0 24 24"><path d="M3 18.5c3.2 0 4-6.5 7-6.5s3.6 3.2 6.2 3.2c2.3 0 3-5.1 4.3-8.2"/></svg></i><span><b>Tendances</b><small>Ta semaine, bilan santé, poids, mensurations, corrélations</small></span><em>›</em></button>
   <button class="hr" data-act="psub" data-s="dossier" style="--c:var(--hrt)"><i><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg></i><span><b>Dossier médical</b><small>Rendez-vous, vaccins, analyses, blessures</small></span><em>›</em></button>
-  <button class="hr" data-act="psub" data-s="apple" style="--c:var(--rec)"><i><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></i><span><b>Apple Santé</b><small id="hubapple">Importer et mettre à jour tes données</small></span><em>›</em></button>
-  <button class="hr" data-act="psub" data-s="reglages" style="--c:var(--mute)"><i><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></i><span><b>Réglages</b><small>Objectifs, profil, VFC, favoris, compléments</small></span><em>›</em></button>
-  <button class="hr" data-act="psub" data-s="donnees" style="--c:var(--slp)"><i><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></i><span><b>Données et confidentialité</b><small>Sauvegarde, restauration, suppression</small></span><em>›</em></button>
- </div>
- <div class="subbar" id="subbar" hidden><button class="btn small" data-act="psub" data-s="">‹ Plus</button><h2 id="subt"></h2></div>
+ </div><div class="hg">
+  <button class="hr" data-act="psub" data-s="reglages" style="--c:var(--mute)"><i><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></i><span><b>Réglages</b><small>Profil, objectifs, Apple Santé, sauvegarde</small></span><em>›</em></button>
+ </div></div>
+ <div class="subbar" id="subbar" hidden><button class="btn small" id="subback" data-act="psub" data-s="">‹ Plus</button><h2 id="subt"></h2></div>
  <div data-sub="dossier" hidden>
   <div class="panel"><div class="ph"><h2>Ajouter au dossier</h2><button type="button" class="btn small pri" data-act="medopen" aria-expanded="false">Ajouter</button></div>
    <form id="medf" hidden><div class="grid3"><label>Type<select id="mt"><option>Rendez-vous</option><option>Vaccin</option><option>Analyse</option><option>Blessure</option><option>Note</option></select></label><label>Date<input id="md" type="date" required></label><label>Intitulé<input id="mti" required placeholder="ex. Dentiste, rappel DTP"></label><label>Praticien ou lieu<input id="mw" placeholder="option"></label><label>Prochain rappel<input id="mn" type="date"></label><label>Notes<input id="mno" placeholder="résultats, consignes…"></label></div><button class="btn pri">Ajouter</button></form></div>
@@ -152,6 +152,9 @@
   <div class="panel"><h2>Historique</h2><div class="seg" id="medflt"></div><ul class="flist med" id="medhist"></ul></div>
  </div>
  <div data-sub="reglages" hidden>
+  <p class="sgh">Tes données</p>
+  <div class="sgl"><button class="hr" data-act="psub" data-s="apple" style="--c:var(--rec)"><i><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></i><span><b>Apple Santé</b><small id="hubapple">Importer et mettre à jour tes données</small></span><em>›</em></button><button class="hr" data-act="psub" data-s="donnees" style="--c:var(--slp)"><i><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></i><span><b>Sauvegarde et confidentialité</b><small>Sauvegarder, restaurer, effacer</small></span><em>›</em></button></div>
+
   <p class="sgh">Ton profil</p>
   <div class="panel sg"><label class="srow"><span>Année de naissance</span><span class="sv"><input id="s-birth" inputmode="numeric" placeholder="ex. 1990"></span></label><label class="srow"><span>Taille</span><span class="sv"><input id="s-height" inputmode="numeric" placeholder="–"><u>cm</u></span></label><label class="srow"><span>Sexe</span><span class="sv"><select id="s-sex"><option value="">Non précisé</option><option value="h">Homme</option><option value="f">Femme</option></select></span></label></div>
   <p class="sgf">Sert à calculer ta dépense au repos et tes repères selon l'âge (VO2 max, FC max). Ton poids vient de tes pesées.</p>
@@ -161,7 +164,7 @@
   <p class="sgf">Ton besoin de sommeil part de ce chiffre, puis s'ajuste chaque soir à ta dette des 7 dernières nuits et à ta dépense de la journée.</p>
 
   <p class="sgh">Nutrition</p>
-  <div class="panel sg"><label class="srow"><span>Calories</span><span class="sv"><input id="s-kcal" inputmode="numeric"><u>kcal</u></span></label><label class="srow"><span>Protéines</span><span class="sv"><input id="s-prot" inputmode="numeric"><u>g</u></span></label><label class="srow"><span>Eau</span><span class="sv"><input id="s-water" inputmode="numeric"><u>ml</u></span></label><label class="srow"><span>Poids visé</span><span class="sv"><input id="s-goalw" inputmode="decimal" placeholder="facultatif"><u>kg</u></span></label>
+  <div class="panel sg"><label class="srow"><span>Calories</span><span class="sv"><input id="s-kcal" inputmode="numeric"><u>kcal</u></span></label><label class="srow"><span>Protéines</span><span class="sv"><input id="s-prot" inputmode="numeric"><u>g</u></span></label><label class="srow"><span>Eau</span><span class="sv"><input id="s-water" inputmode="numeric"><u>ml</u></span></label><label class="srow"><span>Poids visé</span><span class="sv"><input id="s-goalw" inputmode="decimal" placeholder="facultatif"><u>kg</u></span></label><button type="button" class="srow scalc" data-act="kcalc"><span><b>Calculer pour moi</b><small>Calories et protéines d'après ton profil, ta dépense et ton poids visé</small></span><em>›</em></button>
    <div class="srow scol"><span>Compléments suivis</span><div class="schips" id="suplist"></div><form id="supf" class="sadd"><input id="supn" placeholder="ex. Créatine 5 g" aria-label="Ajouter un complément"><button class="btn small">Ajouter</button></form></div>
    <div class="srow scol"><span>Aliments favoris</span><ul class="flist sfav" id="favlist"></ul></div></div>
   <p class="sgf">Les compléments se cochent d'un toucher dans Nutrition. Pour ajouter un favori, touche l'étoile d'un aliment en le notant.</p>
