@@ -1142,8 +1142,10 @@ document.addEventListener('keydown',e=>{if(e.metaKey||e.ctrlKey||e.altKey)return
 {const fit=()=>{const r=document.documentElement;r.style.setProperty('--hh',$('.top').offsetHeight+'px');};fit();addEventListener('resize',fit);setTimeout(fit,300)}
 /* Menus et tableaux qui défilent de côté : un fondu sur le bord où il reste quelque chose à voir
    (à droite au départ, des deux côtés au milieu, à gauche à la fin), comme sur iPhone. */
-{const SEL='.seg,.scroll,#favs,.chips.scr',upd=e=>{const m=e.scrollWidth-e.clientWidth;e.classList.toggle('ef-l',m>2&&e.scrollLeft>2);e.classList.toggle('ef-r',m>2&&e.scrollLeft<m-2)};
- let q=0;const all=()=>{q=0;$$(SEL).forEach(upd)},later=()=>{if(!q)q=requestAnimationFrame(all)};
+{const SEL='.seg,.scroll,#favs,.chips.scr',upd=e=>{const m=e.scrollWidth-e.clientWidth;e.classList.toggle('ovf',m>2);e.classList.toggle('ef-l',m>2&&e.scrollLeft>2);e.classList.toggle('ef-r',m>2&&e.scrollLeft<m-2)};
+ /* un menu qui déborde montre son choix actif : si « Blessure » est choisi, il n'est pas caché hors de l'écran */
+ const show=e=>{const on=e.querySelector(':scope>.on');if(!on||on===e._on)return;e._on=on;const l=on.getBoundingClientRect().left-e.getBoundingClientRect().left+e.scrollLeft,r=l+on.offsetWidth;if(l<e.scrollLeft||r>e.scrollLeft+e.clientWidth)e.scrollLeft=Math.max(0,l-24)};
+ let q=0;const all=()=>{q=0;$$(SEL).forEach(e=>{upd(e);if(e.classList.contains('ovf'))show(e),upd(e)})},later=()=>{if(!q)q=requestAnimationFrame(all)};
  document.addEventListener('scroll',e=>{const t=e.target;if(t.matches&&t.matches(SEL))upd(t)},{capture:true,passive:true});
  new MutationObserver(later).observe(document.body,{childList:true,subtree:true,attributeFilter:['hidden']});addEventListener('resize',later);later()}
 {const T=$('#tip'),place=e=>{const w=T.offsetWidth,h=T.offsetHeight,W=document.documentElement.clientWidth;let x=e.pageX+14,y=e.pageY-h-12;if(x+w>W-8)x=e.pageX-w-14;if(y<scrollY+8)y=e.pageY+18;T.style.left=Math.max(8,x)+'px';T.style.top=y+'px'};

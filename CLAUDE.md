@@ -25,7 +25,8 @@ https://aurel943.github.io/carnet-de-sante/ : rien ne doit rester seulement en l
   puces et icônes tirées de l'arc (bouts ronds, point-curseur au bout).
 - Ce qui défile de côté (`.seg`, `.scroll`, `#favs`, `.chips.scr`) reçoit tout seul un fondu sur le bord où il reste
   quelque chose à voir (classes `ef-l` / `ef-r` posées par `main.js`) : utiliser ces classes pour tout nouveau menu
-  horizontal plutôt que de laisser des catégories coupées sans indice.
+  horizontal plutôt que de laisser des catégories coupées sans indice. Un `.seg` qui déborde (classe `ovf`) devient une
+  rangée de pastilles qui va jusqu'au bord de la carte : un segment à capsule commune ne défile jamais.
 - Voix : tutoiement, phrases courtes, jamais culpabilisantes. Le Résumé répond dans l'ordre à « comment
   je vais » (titre du jour), « que faire » (jauges + plan), « que noter » (une action principale).
   Chaque carte commence par sa conclusion (`<p class="vd">`) ; les cartes pour experts portent la classe

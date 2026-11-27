@@ -1629,7 +1629,20 @@ ul#favs{display:block;margin:0 0 6px;padding:0;overflow:hidden;flex-wrap:nowrap}
 .ob-goals .chip.on{background:var(--tint);color:var(--on-tint)}
 .ob-sub{margin:0 0 6px;font-size:1.0625rem;font-weight:600}
 /* fondu sur les bords de ce qui défile de côté (classes ef-l / ef-r posées par main.js selon la position) */
-:is(.seg,.scroll,#favs,.chips.scr){--efl:0px;--efr:0px}
-:is(.seg,.scroll,#favs,.chips.scr):is(.ef-l,.ef-r){-webkit-mask-image:linear-gradient(to right,transparent,#000 var(--efl),#000 calc(100% - var(--efr)),transparent);mask-image:linear-gradient(to right,transparent,#000 var(--efl),#000 calc(100% - var(--efr)),transparent)}
-:is(.seg,.scroll,#favs,.chips.scr).ef-l{--efl:2.25rem}
-:is(.seg,.scroll,#favs,.chips.scr).ef-r{--efr:2.25rem}
+/* largeur du fondu de chaque côté, animée (apparaît et s'efface en douceur au lieu de sauter) */
+@property --efl{syntax:'<length>';inherits:false;initial-value:0px}
+@property --efr{syntax:'<length>';inherits:false;initial-value:0px}
+:is(.seg,.scroll,#favs,.chips.scr).ovf{--efl:0px;--efr:0px;transition:--efl .3s ease,--efr .3s ease;
+ /* dégradé adouci (plusieurs paliers plutôt qu'une ligne droite) : le contenu s'efface sans coupure visible */
+ -webkit-mask-image:linear-gradient(to right,transparent,rgba(0,0,0,.18) calc(var(--efl)*.3),rgba(0,0,0,.6) calc(var(--efl)*.65),#000 var(--efl),#000 calc(100% - var(--efr)),rgba(0,0,0,.6) calc(100% - var(--efr)*.65),rgba(0,0,0,.18) calc(100% - var(--efr)*.3),transparent);
+ mask-image:linear-gradient(to right,transparent,rgba(0,0,0,.18) calc(var(--efl)*.3),rgba(0,0,0,.6) calc(var(--efl)*.65),#000 var(--efl),#000 calc(100% - var(--efr)),rgba(0,0,0,.6) calc(100% - var(--efr)*.65),rgba(0,0,0,.18) calc(100% - var(--efr)*.3),transparent)}
+:is(.seg,.scroll,#favs,.chips.scr).ovf.ef-l{--efl:3.5rem}
+:is(.seg,.scroll,#favs,.chips.scr).ovf.ef-r{--efr:3.5rem}
+@media(prefers-reduced-motion:reduce){:is(.seg,.scroll,#favs,.chips.scr).ovf{transition:none}}
+/* un menu segmenté qui ne tient pas à l'écran devient une rangée de pastilles (comme les catégories de l'App Store) :
+   chaque choix a sa capsule, le choix actif est en graphite ; le fondu glisse alors sur des pastilles, sans ronger de fond commun */
+.seg.ovf{display:flex;width:auto;background:none;padding:0;border-radius:0;gap:8px;margin-left:0;margin-right:0}
+.seg.ovf button{background:var(--field);box-shadow:none;padding:6px 14px;min-height:34px}
+.seg.ovf button.on{background:var(--tint);color:var(--on-tint);box-shadow:none}
+/* dans une carte, la rangée va jusqu'au bord de la carte : les pastilles glissent sous son bord au lieu de s'arrêter dans le vide */
+@media(max-width:800px){.panel .seg.ovf{margin-left:-16px!important;margin-right:-16px;padding:0 16px;max-width:none;width:calc(100% + 32px)}}
