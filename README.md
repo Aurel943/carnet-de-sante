@@ -63,7 +63,7 @@ cardiaques, dépense), marquée « avec la montre », et l'effort n'est compté 
 par l'heure pour la muscu (les deux se chevauchent, quel que soit le type choisi sur la montre : Musculation,
 Entraînement croisé, Autre…), sinon le même jour par type compatible (séance notée après coup, sport). Chaque
 entraînement de la montre ne sert qu'à une séance : deux séances le même jour gardent chacune le leur.
-Quand la montre a enregistré une séance de musculation qu'aucune séance notée ne complète (sur les trois derniers
+Quand la montre a enregistré une séance de musculation (3 min ou plus) qu'aucune séance notée ne complète (sur les trois derniers
 jours), le Résumé et Dépense proposent « Noter le détail » : la séance s'ouvre calée sur l'heure et la durée de la
 montre, puis se rapproche d'elle toute seule ; « Non merci » la laisse telle quelle. La démo laisse sa dernière séance
 de muscu à la seule montre pour montrer cette proposition.

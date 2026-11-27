@@ -732,7 +732,7 @@ document.addEventListener('change',ev=>{const t=ev.target;if(t.matches&&t.matche
 let wkFor=null;
 const wkKey=(d,w)=>d+'@'+(has(w.st)?w.st:'');
 function wkCand(d){if(S.cur||!trackMu()||d<addD(today(),-3))return null;const skip=S.set.wkSkip||{};
- return dayTrain(d).ap.find(w=>isStr(w)&&num(w.min)>=10&&!skip[wkKey(d,w)])||null}
+ return dayTrain(d).ap.find(w=>isStr(w)&&num(w.min)>=3&&!skip[wkKey(d,w)])||null}
 /* sur le jour d'aujourd'hui, on regarde aussi les trois jours d'avant : la séance d'hier soir se note le lendemain matin */
 function wkAskHTML(d0){let d=d0,w=null;for(const k of d0===today()?[0,1,2,3]:[0]){d=addD(d0,-k);w=wkCand(d);if(w)break}if(!w)return'';const when=d===today()?'':d===addD(today(),-1)?'hier ':dLong(d)+' ';
  return `<div class="panel wkask"><span class="eyebrow">Apple Watch</span><b class="rt">Séance de musculation ${when}${has(w.st)?'à '+hm(w.st):''}</b><p>${esc(w.min)} min${w.hr?` · ${esc(w.hr)} bpm`:''}${w.kcal?` · ${esc(w.kcal)} kcal`:''}. Note tes exercices et tes charges : Arden suivra ta progression.</p><div class="row"><button type="button" class="btn pri small" data-act="wknote" data-d="${d}" data-st="${has(w.st)?w.st:''}" data-min="${num(w.min)}">Noter le détail</button><button type="button" class="btn small" data-act="wkskip" data-d="${d}" data-st="${has(w.st)?w.st:''}">Non merci</button></div></div>`}
@@ -1400,7 +1400,7 @@ function setupHK(){
  document.documentElement.classList.add('hk');
  const ch=$('#onb [data-go2="apple"]');ch.dataset.go2='hk';ch.querySelector('b').textContent='Connecter Apple Santé';ch.querySelector('small').textContent='Lecture seule : sommeil, cœur, activité, entraînements';
  $('#hkpanel').hidden=false;$('#impt').textContent="Importer un fichier d'export (facultatif)";$('#hkmsg').after($('#hstat'));
- addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S.health.src==='hk'&&!S.set.demo&&Date.now()-(S.health.sync||0)>15*6e4)hkSync({quiet:true})})}
+ addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S.health.src==='hk'&&!S.set.demo&&Date.now()-(S.health.sync||0)>6e4)hkSync({quiet:true})})}
 
 /* ---------- feuilles modales (comme iOS) : séance, aliment ---------- */
 let msKind='',foodMeal='';
