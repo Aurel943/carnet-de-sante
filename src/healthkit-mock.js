@@ -48,4 +48,11 @@ export const healthKitMock={
   if(!ok)cache={src:[],q:{},c:{},w:[],hr:{s:[],v:[]}};else cache=null;
   return{shown:true}},
  async query({start,end}){await wait(60);return sliceNative(data(),start,end)},
+ // En direct : une FC qui monte pendant les séries et redescend au repos, et des calories actives
+ _ls:[],_lt:null,
+ async addListener(ev,cb){if(ev!=='live')return{remove(){}};this._ls.push(cb);return{remove:()=>{this._ls=this._ls.filter(x=>x!==cb)}}},
+ async startLive(){clearInterval(this._lt);let v=118,k=0,ph=0;const emit=m=>this._ls.forEach(f=>f(m));
+  this._lt=setInterval(()=>{const t=Date.now()/1000;ph=(ph+1)%40;const aim=ph<14?148:112;v+=(aim-v)*0.18+(Math.random()-.5)*4;
+   emit({k:'hr',samples:[{t,e:t,v:Math.round(v)}]});if(++k%4===0)emit({k:'kcal',samples:[{t:t-6,e:t,v:Math.round((v-70)/10)/10+0.4}]})},1500)},
+ async stopLive(){clearInterval(this._lt);this._lt=null},
 };

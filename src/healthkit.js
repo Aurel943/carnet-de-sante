@@ -38,6 +38,23 @@ export function* exportLines(r){
   yield '</Workout>'}}
 
 /**
+ * Pendant une séance : la fréquence cardiaque et les calories actives au fil de l'eau.
+ * Apple Santé prévient dès qu'une mesure arrive sur l'iPhone (requête ouverte du module natif) ;
+ * `onSample({ k: 'hr' | 'kcal', samples: [{ t, e, v }] })` est appelé à chaque arrivée.
+ * Avec un module natif d'avant cette fonction, relecture toutes les 15 s en secours.
+ * Renvoie une fonction qui arrête tout.
+ */
+export async function startLiveHealth(since,onSample){const a=api();
+ try{const h=await a.addListener('live',onSample);await a.startLive({since});
+  return()=>{try{a.stopLive()}catch(e){/* déjà arrêté */}try{h.remove()}catch(e){/* déjà retiré */}}}
+ catch(e){
+  let stopped=false,from=since;const poll=async()=>{if(stopped)return;try{const now=Math.floor(Date.now()/1000),r=await a.query({start:from,end:now});
+   const h=r.hr||{s:[],v:[]};if(h.s.length)onSample({k:'hr',samples:h.s.map((t,i)=>({t,e:t+60,v:h.v[i]}))});
+   const k=(r.q||{}).ActiveEnergyBurned;if(k&&k.s.length)onSample({k:'kcal',samples:k.s.map((t,i)=>({t,e:t+k.d[i],v:k.v[i]}))});
+   from=Math.max(since,now-300)}catch(err){/* on réessaiera */}};
+  poll();const id=setInterval(poll,15000);return()=>{stopped=true;clearInterval(id)}}}
+
+/**
  * Lit Apple Santé depuis le jour `from` (AAAA-MM-JJ) jusqu'à maintenant, par périodes de 30 jours.
  * Renvoie le résultat de l'analyseur (même forme qu'un import de fichier), avec `from`.
  */

@@ -7,7 +7,7 @@ import {BASE_EX,SPORTS,MEALS,WT,MG,SCALES,MEAS,ZC,ZN,IC,DEF} from './constants.j
 import {readHealth} from './health-import.js';
 import {loadCiqual,searchFoods,forGrams,lookupOFF,validCode,startScanner} from './foods.js';
 import {demoHealthXML,demoManual,DEMO_PROFILE} from './demo.js';
-import {hasHealthKit,authorizeHealth,readHealthKit,useHealthProvider} from './healthkit.js';
+import {hasHealthKit,authorizeHealth,readHealthKit,useHealthProvider,startLiveHealth} from './healthkit.js';
 import {Capacitor} from '@capacitor/core';
 import {Haptics,ImpactStyle,NotificationType} from '@capacitor/haptics';
 
@@ -752,11 +752,33 @@ function exHTML(e,i){return `<article class="ex" data-i="${i}"><div class="exh">
  <div class="sets"><div class="set hd"><span></span><div>Charge (kg)</div><div>Reps</div><span></span></div>${e.sets.map((s,j)=>`<div class="set"><span>${j+1}</span><input data-f="w" data-s="${j}" inputmode="decimal" value="${esc(String(s.w??'').replace('.',','))}" placeholder="kg" aria-label="Charge série ${j+1}"><input data-f="r" data-s="${j}" inputmode="numeric" value="${esc(s.r)}" placeholder="${esc(s.p||'reps')}" aria-label="Reps série ${j+1}"><button class="x" data-act="delSet" data-s="${j}" aria-label="Supprimer la série">×</button></div>`).join('')}</div>
  <div class="row"><button class="btn small" data-act="addSet">+ Série</button><button class="btn small ghost" data-act="tstart">Minuteur de repos</button></div></article>`}
 function renderEditor(){const c=S.cur;if(!c)return renderStart();
- $('#editor').innerHTML=`<div class="panel"><div class="edh"><input id="cn" class="tin" value="${esc(c.name)}" aria-label="Nom de la séance">${dateRow('cd',c.date)}${rpeHTML('crpe',c.rpe)}</div>
+ $('#editor').innerHTML=`<div class="panel"><div class="live" id="live" aria-live="off"><div class="lvt"><span>Séance</span><b id="lvT">0:00</b></div><div class="lvh" id="lvH" hidden><div class="lvn"><i class="beat" aria-hidden="true"></i><b id="lvHr">–</b><small>bpm</small></div><div class="lvs"><span class="lvz" id="lvZ"></span><small class="lvage" id="lvAge"></small></div></div><div class="lvk" id="lvK" hidden><b id="lvKc">0</b><small>kcal</small></div><p class="lvw mute small" id="lvW" hidden></p></div><div class="edh"><input id="cn" class="tin" value="${esc(c.name)}" aria-label="Nom de la séance">${dateRow('cd',c.date)}${rpeHTML('crpe',c.rpe)}</div>
  <p class="mute small" id="svst">Enregistrement automatique</p><div>${c.ex.map(exHTML).join('')}</div>
  <button class="btn wide" data-act="addEx">+ Ajouter un exercice</button>
  <div class="foot"><button class="btn pri" data-act="finish">Terminer la séance</button><button class="btn ghost" data-act="discard">Abandonner</button></div></div>`;
- c.ex.forEach((e,i)=>updateHint(i));if(msKind==='seance')msBar()}
+ c.ex.forEach((e,i)=>updateHint(i));if(msKind==='seance'){msBar();liveStart()}liveTick()}
+/* ---------- en direct pendant la séance : chrono, FC et zone, calories actives ----------
+   Apple Santé prévient dès qu'une mesure de la montre arrive sur l'iPhone (requête ouverte, pas de relecture en boucle) ;
+   chaque seconde, seuls les chiffres du bandeau changent : l'écran n'est jamais redessiné. */
+let live=null;
+const hrMaxOf=()=>{const a=ageOf();return num(S.health.hrmax)||(a?Math.round(208-0.7*a):190)};
+const zoneOf=v=>{const p=v/hrMaxOf();return p<.6?0:p<.7?1:p<.8?2:p<.9?3:4};
+function liveStart(){if(live||!S.cur)return;const t0=S.cur.t||Date.now();
+ live={hr:[],cur:null,last:0,kc:new Map(),t0,stop:null,since:Math.floor(t0/1000),at:Date.now()};live.tick=setInterval(liveTick,1000);
+ if(HKN)startLiveHealth(live.since-60,onLive).then(st=>{if(live)live.stop=st;else st()}).catch(()=>{})}
+function liveStop(){if(!live)return;clearInterval(live.tick);if(live.stop)live.stop();live=null}
+function onLive(m){if(!live)return;for(const x of m.samples||[]){
+  if(m.k==='hr'){live.hr.push([x.t,x.v]);if(x.t>=live.last){live.last=x.t;live.cur=Math.round(x.v)}}
+  else if(m.k==='kcal'&&x.t>=live.since)live.kc.set(x.t+':'+x.e,num(x.v))}
+ liveTick()}
+const setTxt2=(id,t)=>{const e=document.getElementById(id);if(e&&e.textContent!==t)e.textContent=t};
+function liveTick(){const c=S.cur;if(!c){liveStop();return}if(!$('#live'))return;const s=Math.max(0,Math.floor((Date.now()-(c.t||Date.now()))/1000));
+ setTxt2('lvT',s>=3600?`${Math.floor(s/3600)}:${String(Math.floor(s/60)%60).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`:`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`);
+ const L=live,H=$('#lvH'),K=$('#lvK'),W=$('#lvW');
+ if(L&&L.cur!=null){H.hidden=false;W.hidden=true;setTxt2('lvHr',String(L.cur));const z=zoneOf(L.cur);setTxt2('lvZ',ZN[z]);$('#lvZ').style.setProperty('--c',ZC[z]);
+  const age=Math.max(0,Math.round(Date.now()/1000-L.last));setTxt2('lvAge',age<20?'en direct':age<60?`il y a ${age} s`:`il y a ${Math.round(age/60)} min`);H.classList.toggle('stale',age>=90)}
+ else if(W){W.hidden=false;setTxt2('lvW',!HKN?'Dans l\'appli iPhone, ta fréquence cardiaque s\'affiche ici pendant la séance.':L&&Date.now()-L.at<8000?'Lecture de ta montre…':s<45?'Lance un entraînement sur ta montre : ta fréquence cardiaque arrive ici.':'En attente de ta montre… Lance « Musculation » dans Exercice.')}
+ const kc=L?[...L.kc.values()].reduce((a,v)=>a+v,0):0;if(K){K.hidden=!(kc>=1);setTxt2('lvKc',r0(kc))}}
 function updateHint(i){const el=$('#h'+i);if(!el||!S.cur)return;const e=S.cur.ex[i];if(!e||!norm(e.n)){el.textContent='';return}
  const g=suggest(e.n,S.cur.id);if(!g){el.textContent="Nouvel exercice : pas encore d'historique.";return}
  const adv=g.top<=0?'vise +1 rep par série':g.up?`<span class="up">objectif validé, passe à ${fx(g.w)} kg</span>`:`garde ${fx(g.top)} kg et vise +1 rep (jusqu'à ${esc(S.set.rmax)})`;
@@ -1364,8 +1386,8 @@ function msBar(){const t=$('#mstitle'),l=$('#msl'),r=$('#msr');
  else if(msKind==='checkin'){t.textContent=S.day===today()?"Check-in du jour":'Check-in du '+dShort(S.day);l.textContent='';r.innerHTML='<button type="button" class="ms-btn ms-done" data-act="msclose">OK</button>'}
  else if(msKind==='metric'){t.textContent=(MET[metK]||{}).t||'';l.textContent='';r.innerHTML='<button type="button" class="ms-btn ms-done" data-act="msclose">OK</button>'}
  l.style.visibility=l.textContent?'':'hidden'}
-function openSheet(k){msKind=k;document.documentElement.style.setProperty('--sy',scrollY+'px');const m=$('#msheet');$$('#msheet .ms-body').forEach(b=>b.hidden=b.dataset.k!==k);msBar();m.hidden=false;document.documentElement.classList.add('ms-open');m.querySelector('.ms-body:not([hidden])').scrollTop=0}
-function closeSheet(){wkFor=null;if(!msKind)return;msKind='';pick=null;const a=document.activeElement;if(a&&$('#msheet').contains(a))a.blur();$('#msheet').hidden=true;document.documentElement.classList.remove('ms-open');setTimeout(renderSoft,0)}
+function openSheet(k){msKind=k;if(k==='seance'&&S.cur)setTimeout(()=>{liveStart();liveTick()},0);document.documentElement.style.setProperty('--sy',scrollY+'px');const m=$('#msheet');$$('#msheet .ms-body').forEach(b=>b.hidden=b.dataset.k!==k);msBar();m.hidden=false;document.documentElement.classList.add('ms-open');m.querySelector('.ms-body:not([hidden])').scrollTop=0}
+function closeSheet(){wkFor=null;liveStop();if(!msKind)return;msKind='';pick=null;const a=document.activeElement;if(a&&$('#msheet').contains(a))a.blur();$('#msheet').hidden=true;document.documentElement.classList.remove('ms-open');setTimeout(renderSoft,0)}
 function openFood(m){foodMeal=MEALS.includes(m)?m:mealNow();fAdded=[];$('#fq').value='';pick=null;renderPick();renderFoodSearch();openSheet('food');
  loadCiqual().then(()=>{if(msKind==='food')renderFoodSearch()});if(matchMedia('(pointer:fine)').matches)$('#fq').focus()}
 

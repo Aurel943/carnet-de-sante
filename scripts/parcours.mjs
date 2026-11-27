@@ -700,6 +700,25 @@ try {
       await page.click('[data-dlg="plain"]');
       await page.waitForFunction(() => !/Reprendre/.test(document.querySelector('#heroact').textContent), null, { timeout: 30000 });
     });
+
+    await step('appli iPhone : la FC de la montre arrive en direct, sans redessiner l\'écran', async () => {
+      page.on('dialog', (dl) => dl.accept());
+      await page.goto(url + '?ios=1&demo=seance');
+      await page.waitForFunction(() => document.querySelector('#plan li'), null, { timeout: 30000 });
+      await settle(page);
+      await page.click('#heroact .btn.pri');
+      await page.waitForSelector('#live');
+      await page.waitForFunction(() => /^\d+$/.test(document.querySelector('#lvHr')?.textContent || ''), null, { timeout: 8000 })
+        .catch(() => { throw new Error('la fréquence cardiaque n\'arrive pas'); });
+      const z = await text(page, '#lvZ');
+      expect(/^Z[1-5] /.test(z), 'zone cardiaque attendue : ' + z);
+      await page.evaluate(() => { window.__lv = document.getElementById('live'); });
+      await page.waitForTimeout(2500);
+      // (l'horloge des tests est figée : le chrono ne peut pas avancer ici)
+      expect(await page.evaluate(() => window.__lv === document.getElementById('live')), 'le bandeau a été redessiné');
+      await page.click('#msl');
+      await page.waitForSelector('#msheet', { state: 'hidden' });
+    });
     await ctx.close();
   }
 

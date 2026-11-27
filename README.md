@@ -68,6 +68,14 @@ jours), le Résumé et Dépense proposent « Noter le détail » : la séance s'
 montre, puis se rapproche d'elle toute seule ; « Non merci » la laisse telle quelle. La démo laisse sa dernière séance
 de muscu à la seule montre pour montrer cette proposition.
 
+**En direct pendant la séance** (appli iPhone) : en tête de la séance en cours, un bandeau donne le chrono, la
+fréquence cardiaque de la montre avec sa zone (« 138 bpm · Z3 tempo · en direct ») et les calories actives depuis le
+début. Arden ne relit pas Apple Santé en boucle : le module natif ouvre une requête qu'Apple Santé alimente toute
+seule dès qu'une mesure de la montre arrive sur l'iPhone (`HealthSync.startLive` / `stopLive` dans
+`ios/App/App/HealthSyncPlugin.swift`), et seuls les chiffres du bandeau changent, sans redessiner l'écran. Le léger
+décalage restant vient de la synchronisation montre → iPhone. La requête s'ouvre avec la feuille de la séance et se
+referme avec elle. Dans le simulateur (`?ios=1`), une fréquence cardiaque simulée permet de tester.
+
 **Démo avec une séance de muscu en cours** (pour voir l'éditeur, « Reprendre ma séance », la progression) :
 - sur le site : ajouter `?demo=seance` à l'adresse (`?demo` seul charge la démo normale) ;
 - dans l'appli, une fois la démo chargée : toucher « Démo · profil fictif » dans le bandeau, puis « Avec une séance en cours » ;

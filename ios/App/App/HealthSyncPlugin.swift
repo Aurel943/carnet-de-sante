@@ -17,6 +17,11 @@ import HealthKit
 ///       w:   [ { ty, s, d, kcal, km, hr, mx, o } ]
 ///     }
 ///
+/// Pendant une séance : `HealthSync.startLive({ since })` ouvre une requête qu'Apple Santé alimente toute seule
+/// dès qu'une mesure arrive sur l'iPhone (fréquence cardiaque, calories actives) : pas de relecture en boucle.
+/// Chaque arrivée est envoyée à l'appli par l'événement `live` : `{ k: "hr" | "kcal", samples: [{ t, e, v }] }`
+/// (début et fin en secondes depuis 1970, valeur en bpm ou en kcal). `HealthSync.stopLive()` la referme.
+///
 /// L'appli ne fait que lire : rien n'est écrit dans Apple Santé.
 @objc(HealthSyncPlugin)
 public class HealthSyncPlugin: CAPPlugin, CAPBridgedPlugin {
@@ -25,8 +30,13 @@ public class HealthSyncPlugin: CAPPlugin, CAPBridgedPlugin {
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "isAvailable", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "requestAuthorization", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "query", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "query", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "startLive", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "stopLive", returnType: CAPPluginReturnPromise)
     ]
+
+    /// Requêtes ouvertes pendant une séance (fermées par stopLive, ou à la séance suivante)
+    private var liveQueries: [HKQuery] = []
 
     private let store = HKHealthStore()
     private let bpm = HKUnit.count().unitDivided(by: HKUnit.minute())
@@ -245,6 +255,52 @@ public class HealthSyncPlugin: CAPPlugin, CAPBridgedPlugin {
             }
             call.resolve(["src": sources, "q": q, "hr": hr, "c": c, "w": workouts])
         }
+    }
+
+    // MARK: - En direct pendant une séance
+
+    @objc func startLive(_ call: CAPPluginCall) {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            call.reject("Apple Santé n'est pas disponible sur cet appareil.")
+            return
+        }
+        stopLiveQueries()
+        let sinceS = call.getDouble("since") ?? Date().addingTimeInterval(-600).timeIntervalSince1970
+        let predicate = HKQuery.predicateForSamples(withStart: Date(timeIntervalSince1970: sinceS), end: nil, options: .strictStartDate)
+        let kinds: [(HKQuantityTypeIdentifier, String, HKUnit)] = [
+            (.heartRate, "hr", bpm),
+            (.activeEnergyBurned, "kcal", .kilocalorie())
+        ]
+        for (id, key, unit) in kinds {
+            guard let type = HKObjectType.quantityType(forIdentifier: id) else { continue }
+            // Même traitement pour la première réponse et pour chaque arrivée suivante
+            let handler: (HKAnchoredObjectQuery, [HKSample]?, [HKDeletedObject]?, HKQueryAnchor?, Error?) -> Void = { [weak self] _, samples, _, _, _ in
+                guard let self = self, let samples = samples as? [HKQuantitySample], !samples.isEmpty else { return }
+                let list: [[String: Any]] = samples.compactMap { (x: HKQuantitySample) -> [String: Any]? in
+                    guard x.quantity.is(compatibleWith: unit) else { return nil }
+                    return ["t": x.startDate.timeIntervalSince1970, "e": x.endDate.timeIntervalSince1970,
+                            "v": (x.quantity.doubleValue(for: unit) * 10).rounded() / 10]
+                }
+                if list.isEmpty { return }
+                self.notifyListeners("live", data: ["k": key, "samples": list])
+            }
+            let query = HKAnchoredObjectQuery(type: type, predicate: predicate, anchor: nil,
+                                              limit: HKObjectQueryNoLimit, resultsHandler: handler)
+            query.updateHandler = handler
+            store.execute(query)
+            liveQueries.append(query)
+        }
+        call.resolve()
+    }
+
+    @objc func stopLive(_ call: CAPPluginCall) {
+        stopLiveQueries()
+        call.resolve()
+    }
+
+    private func stopLiveQueries() {
+        for q in liveQueries { store.stop(q) }
+        liveQueries.removeAll()
     }
 
     // MARK: - Outils
