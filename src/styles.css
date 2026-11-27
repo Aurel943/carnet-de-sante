@@ -1584,3 +1584,28 @@ ul#favs{display:block;margin:0 0 6px;padding:0;overflow:hidden;flex-wrap:nowrap}
 #sheet .qmore .hr:not(:first-of-type)::before{content:'';position:absolute;top:0;left:58px;right:0;border-top:.5px solid var(--line)}
 #sheet .qmore .hr em{color:var(--mute);font-style:normal}
 .breathl{margin-top:12px;background:var(--panel2)}.breathl svg{stroke:var(--rec)}.breathl svg circle{fill:var(--rec)}
+/* ---------- Réglages, groupés comme les Réglages d'iOS : titre de groupe, carte de lignes, phrase d'explication ---------- */
+[data-sub=reglages] .sgh{margin:22px 16px 6px;font-size:0.8125rem;font-weight:600;color:var(--mute);letter-spacing:.01em}
+[data-sub=reglages] .sgh:first-child{margin-top:6px}
+[data-sub=reglages] .sg{padding:2px 16px;margin:0}
+[data-sub=reglages] .sgf{margin:7px 16px 0;font-size:0.8125rem;line-height:1.4;color:var(--mute)}
+.srow{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:50px;padding:3px 0;margin:0;border-top:.5px solid var(--line);font-size:1.0625rem;color:var(--ink);letter-spacing:-.02em}
+.sg>.srow:first-child{border-top:0}
+.srow>span:first-child{flex:1 1 auto;min-width:0}
+.srow .sv{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex:0 1 46%;min-width:0;color:var(--mute)}
+.srow .sv :is(input,select){flex:1 1 auto;width:100%;min-width:0;min-height:36px;padding:6px 0;margin:0;border:0;border-radius:0;background-color:transparent;text-align:right;text-align-last:right;color:var(--mute);font:inherit;font-variant-numeric:tabular-nums}
+.srow .sv select{padding-right:20px;background-position:right 0 center}
+.srow .sv :is(input,select):focus{color:var(--ink);outline:none}
+.srow .sv input::placeholder{color:var(--mute2)}
+.srow .sv u{flex:none;text-decoration:none;color:var(--mute);font-size:0.9375rem}
+.srow .sv input#s-rmin,.srow .sv input#s-rmax{flex:0 0 2.6rem;width:2.6rem;text-align:center;background:var(--field);border-radius:10px;padding:6px 4px;color:var(--ink)}
+.srow.chk{margin:0}
+.srow.scol{display:grid;gap:10px;justify-content:stretch;padding:12px 0}
+.schips{display:flex;flex-wrap:wrap;gap:8px}
+.schip{display:inline-flex;align-items:center;gap:2px;background:var(--field);border-radius:99px;padding:4px 4px 4px 12px;font-size:0.9375rem;letter-spacing:-.01em}
+.schip button{width:26px;height:26px;border:0;border-radius:50%;background:none;color:var(--mute);font-size:1.0625rem;line-height:1;cursor:pointer;display:grid;place-items:center}
+.schip button:active{background:color-mix(in srgb,var(--bad) 15%,transparent);color:var(--bad)}
+.sadd{display:flex;gap:8px;align-items:center;margin:0}.sadd input{flex:1;min-width:0}
+.sfav{margin:0}.sfav li{display:grid;grid-template-columns:minmax(0,1fr) 44px;align-items:center;gap:8px;padding:6px 0}
+.sfav li b{display:block;font-weight:500;font-size:0.9375rem}.sfav li small{display:block;color:var(--mute);font-size:0.8125rem}
+.srow .sv:has(select){flex-basis:62%}

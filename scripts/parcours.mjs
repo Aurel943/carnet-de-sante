@@ -145,6 +145,22 @@ try {
       expect(await page.isHidden('#medf'), '« Fermer » ne replie pas le formulaire');
     });
 
+    await step('réglages : groupés, un objectif changé est gardé, étiquettes en pastilles', async () => {
+      await tab(page, 'plus');
+      await page.click('#hub [data-s="reglages"]');
+      await page.waitForSelector('[data-sub="reglages"]:not([hidden])');
+      const groups = await page.$$eval('[data-sub="reglages"] .sgh', (a) => a.map((x) => x.textContent.trim()));
+      expect(groups.join('|') === 'Ton profil|Objectifs du jour|Nutrition|Musculation|Check-in|Avancé', 'groupes : ' + groups.join(', '));
+      await page.fill('#s-prot', '150'); await page.press('#s-prot', 'Tab');
+      await page.waitForFunction(() => JSON.parse(localStorage.getItem('carnet-muscu-v1') || '{}').set?.prot === 150, null, { timeout: 2000 }).catch(() => { throw new Error('objectif de protéines non gardé'); });
+      const n = await page.$$eval('#taglist .schip', (a) => a.length);
+      await page.fill('#tagn', 'Sieste'); await page.press('#tagn', 'Enter');
+      await page.waitForFunction((k) => document.querySelectorAll('#taglist .schip').length === k + 1, n);
+      await page.click('#taglist .schip:last-child button');
+      await page.waitForFunction((k) => document.querySelectorAll('#taglist .schip').length === k, n);
+      await page.fill('#s-prot', '140'); await page.press('#s-prot', 'Tab');
+    });
+
     await step('onglets de jour : aujourd\'hui au retour, jour gardé entre eux, toucher = revenir', async () => {
       await tab(page, 'sommeil');
       await page.$eval('[data-act="dprev"]', (b) => b.click()); // flèches cachées sur téléphone (glisser ou frise)
