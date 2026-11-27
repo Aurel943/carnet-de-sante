@@ -53,6 +53,8 @@ https://aurel943.github.io/carnet-de-sante/ : rien ne doit rester seulement en l
   racine pour mettre en avant ce qui compte (cartes « Ta nuit » et « Ton poids », zones cardiaques dépliées…).
 - Mini-lexique : tout nouveau terme technique visible s'ajoute à `GLOSS` (`src/main.js`), avec une phrase simple ;
   le « ? » se pose tout seul sur titres, libellés, légendes et en-têtes de tableau.
+- Séance notée et entraînement de la montre : toujours passer par `dayTrain(d).pair` (séance → entraînement, rapprochés
+  par `pairDay()`), jamais par « le premier entraînement du jour », pour ne rien afficher ni compter deux fois.
 - Navigation (comme sur iPhone) : un onglet rouvert depuis une autre partie de l'appli repart de son
   point de départ (aujourd'hui pour les onglets de jour, menu pour Plus) ; toucher l'onglet où l'on est
   déjà y ramène aussi. Entre onglets de jour (Résumé, Sommeil, Énergie, Dépense), le jour choisi est

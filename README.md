@@ -57,6 +57,13 @@ Séances : la date tient en une ligne (« Aujourd'hui › ») et l'effort ressen
 (« 7/10 · dur »), pour la muscu comme pour les autres sports. Une séance en cours passe avant tout : « Reprendre
 ma séance » devient l'action principale du Résumé.
 
+**Séance notée + Apple Watch = une seule séance.** Une séance notée dans Arden et l'entraînement que la montre a
+enregistré en même temps sont rapprochés : la séance est complétée par la montre (durée, FC, calories, zones
+cardiaques, dépense), marquée « avec la montre », et l'effort n'est compté qu'une fois. Le rapprochement se fait
+par l'heure pour la muscu (les deux se chevauchent, quel que soit le type choisi sur la montre : Musculation,
+Entraînement croisé, Autre…), sinon le même jour par type compatible (séance notée après coup, sport). Chaque
+entraînement de la montre ne sert qu'à une séance : deux séances le même jour gardent chacune le leur.
+
 **Démo avec une séance de muscu en cours** (pour voir l'éditeur, « Reprendre ma séance », la progression) :
 - sur le site : ajouter `?demo=seance` à l'adresse (`?demo` seul charge la démo normale) ;
 - dans l'appli, une fois la démo chargée : toucher « Démo · profil fictif » dans le bandeau, puis « Avec une séance en cours » ;

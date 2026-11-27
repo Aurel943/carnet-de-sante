@@ -1703,3 +1703,5 @@ ul#favs{display:block;margin:0 0 6px;padding:0;overflow:hidden;flex-wrap:nowrap}
 /* bandeau de démo : le libellé se touche pour recharger la démo (avec ou sans séance en cours) */
 #demobar .dlab{border:0;background:none;padding:6px 0;font:inherit;color:inherit;cursor:pointer;text-align:left}
 #demobar .dlab b{color:var(--trn)}
+/* une séance notée complétée par l'entraînement de la montre : la mention le dit */
+.wlk{color:var(--rec);font-weight:500}

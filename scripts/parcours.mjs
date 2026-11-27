@@ -344,6 +344,22 @@ try {
       expect(await page.$$eval('#v-recuperation .glq[data-g="vfc"]', (a) => a.length) === 1, 'un seul « ? » par terme et par écran');
     });
 
+    await step('séance notée + montre : une seule entrée, complétée par la montre, sans doublon', async () => {
+      await tab(page, 'aujourdhui');
+      let seen = 0;
+      // neuf jours en arrière : toujours au moins un lundi ou un jeudi de muscu de la démo, quel que soit le jour du test
+      for (let i = 0; i < 9; i++) {
+        if (i) { const before = await text(page, '#dsub'); await page.$eval('[data-act="dprev"]', (b) => b.click()); await page.waitForFunction((x) => document.querySelector('#dsub').textContent.trim() !== x, before); await page.waitForTimeout(250); }
+        const d = i, t = await text(page, '#chrono');
+        if (!/Haut du corps|Jambes/.test(t)) continue;
+        seen++;
+        expect(/avec la montre/.test(t), `${d} : la séance devrait être complétée par la montre`);
+        expect(!/Musculation/.test(t), `${d} : l'entraînement de la montre apparaît en double`);
+      }
+      expect(seen > 0, 'aucun jour de muscu dans la semaine de démo');
+      await page.click('#tabs a[href="#aujourdhui"]');
+    });
+
     await step('frise : chaque jour dit ses chiffres (toucher long, survol, VoiceOver)', async () => {
       await tab(page, 'aujourdhui');
       const lab = await page.$eval('#wk .wd:not([disabled])', (b) => b.getAttribute('aria-label') + ' | ' + b.dataset.tip);

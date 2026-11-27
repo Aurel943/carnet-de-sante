@@ -109,16 +109,33 @@ function weights(){const m={};for(const [d,o] of Object.entries(S.health.d))if(n
 function wAvg(W,d){const v=[];for(let i=0;i<7;i++){const x=W[addD(d,-i)];if(x)v.push(x)}return avg(v)}
 function series(k,d0,d1,f=v=>v,n=7,raw){const out=[];for(let d=d0;d<=d1;d=addD(d,1)){const x=H(d)[k];if(!has(x)||(!raw&&!(num(x)>0)))continue;const v=[];for(let i=0;i<n;i++){const y=H(addD(d,-i))[k];if(has(y)&&(raw||num(y)>0))v.push(num(y))}const a=avg(v);if(a!=null)out.push({x:d,y:Math.round(f(a,d)*100)/100})}return out}
 const isStr=w=>/StrengthTraining|CoreTraining/.test(w.ty);
+/* Une séance notée dans Arden et l'entraînement que la montre a enregistré pendant ce temps sont le même effort :
+   on les rapproche pour que la séance soit complétée par la montre (durée, FC, calories, zones) et que l'effort
+   ne soit compté qu'une fois.
+   1) par l'heure (séances de muscu, chronométrées en direct) : elles se chevauchent (10 min, ou un tiers d'un entraînement court),
+      quel que soit le type choisi sur la montre (Musculation, Entraînement croisé, Autre…) ;
+   2) sinon, pour une séance notée après coup, le même jour, par type compatible, l'entraînement le plus proche.
+   Chaque entraînement ne sert qu'à une séance : deux séances le même jour gardent chacune le leur. */
+const MU_LIKE=/StrengthTraining|CoreTraining|CrossTraining|HighIntensityIntervalTraining|MixedCardio|Other/;
+const sessWin=(s,d)=>{if(!s.t)return null;const a=new Date(s.t);if(iso(a)!==d)return null;const m=a.getHours()*60+a.getMinutes();return[m,m+(num(s.dur||s.min)||60)]};
+function pairDay(d,mu,sp,wks){const pair=new Map(),used=new Set(),all=[...mu,...sp];
+ const ov=(s,w)=>{const x=sessWin(s,d);if(!x||!has(w.st))return 0;return Math.max(0,Math.min(x[1],w.st+num(w.min))-Math.max(x[0],w.st))};
+ const cand=[];for(const s of mu)for(const w of wks){const o=ov(s,w);if(o>0&&o>=Math.min(10,num(w.min)/3))cand.push([o,s,w])}
+ cand.sort((a,b)=>b[0]-a[0]);for(const [,s,w] of cand)if(!pair.has(s.id)&&!used.has(w)){pair.set(s.id,w);used.add(w)}
+ for(const s of all){if(pair.has(s.id))continue;const x=sessWin(s,d);
+  const c=wks.filter(w=>!used.has(w)&&(s.kind==='sport'?(WT[w.ty]||'')===s.type:MU_LIKE.test(w.ty)));if(!c.length)continue;
+  const w=x?c.slice().sort((a,b)=>Math.abs((has(a.st)?a.st:x[0])-x[0])-Math.abs((has(b.st)?b.st:x[0])-x[0]))[0]:c[0];pair.set(s.id,w);used.add(w)}
+ return{pair,used}}
 function dayTrain_(d){
- const ss=sessOn(d),mu=ss.filter(s=>s.kind!=='sport'),sp=ss.filter(s=>s.kind==='sport'),att=[],ap=[],wks=H(d).wk||[];
- const muAtt=new Set(),spAtt=new Set();
- for(const w of wks){if(isStr(w)&&mu.length){att.push(w);mu.forEach(s=>muAtt.add(s.id));continue}const m=sp.find(s=>s.type===(WT[w.ty]||''));if(m){att.push(w);spAtt.add(m.id);continue}ap.push(w)}
- const am=att.filter(isStr).reduce((a,w)=>a+num(w.min),0),mm=mu.reduce((a,s)=>a+num(s.dur),0)||am;
+ const ss=sessOn(d),mu=ss.filter(s=>s.kind!=='sport'),sp=ss.filter(s=>s.kind==='sport'),wks=H(d).wk||[];
+ const {pair,used}=pairDay(d,mu,sp,wks),att=wks.filter(w=>used.has(w)),ap=wks.filter(w=>!used.has(w));
+ const muAtt=new Set(mu.filter(s=>pair.has(s.id)).map(s=>s.id)),spAtt=new Set(sp.filter(s=>pair.has(s.id)).map(s=>s.id));
+ const mm=mu.reduce((a,s)=>a+(num(s.dur)||num(pair.get(s.id)?.min)),0);
  const min=mm+sp.reduce((a,s)=>a+num(s.min),0)+ap.reduce((a,w)=>a+num(w.min),0);
  const manual=mu.filter(s=>!muAtt.has(s.id)).reduce((a,s)=>a+(num(s.dur)||60)*(num(s.rpe)||7)/3,0)+sp.filter(s=>!spAtt.has(s.id)).reduce((a,s)=>a+num(s.min)*(num(s.rpe)||6)/3,0);
  const wtr=wks.reduce((a,w)=>a+num(w.tr),0);
  const load=wtr+manual+(wks.length?0:0);
- return{mu,sp,ap,att,min,load,manual,wtr}}
+ return{mu,sp,ap,att,pair,min,load,manual,wtr}}
 const dayTrain=memo(dayTrain_);
 function loadOf_(d){const h=H(d),m=dayTrain(d).manual;return has(h.tr)?Math.max(num(h.tr),m):m}
 function effortOf_(d){const h=H(d),t=dayTrain(d);if(!has(h.tr)&&!t.manual&&!t.mu.length&&!t.sp.length)return null;return Math.round(100*(1-Math.exp(-loadOf(d)/110)))}
@@ -515,10 +532,10 @@ function chronoHTML(d){const h=H(d),T=dayTrain(d),D=S.days[d]||{},it=D.items||[]
  if(has(h.sw)&&h.sl)ev(h.sw+720,`${has(h.sb)?hhmm(h.sb)+' – ':''}${hhmm(h.sw)}`,'var(--slp)','<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>','Nuit',`<span>${fmtSl(h.sl)}</span>${sleepScore(d)?`<span><b style="color:var(--slp)">${sleepScore(d).s}</b> sommeil</span>`:''}`,'data-go="sommeil"');
  for(const x of D.br||[]){const m=/^(\d+):(\d+)/.exec(x.at||'');ev(m?+m[1]*60+ +m[2]:600,x.at||'Respiration','var(--rec)','<path d="M6.3 17.7A8 8 0 1 1 17.7 17.7"/><path d="M9.2 14.8A4 4 0 1 1 14.8 14.8"/>','Respiration guidée',`<span>${x.min} min</span>`,'data-act="breath"')}
  for(const w of T.ap)ev(has(w.st)?w.st:900,has(w.st)?hm(w.st):'Montre',isStr(w)?'var(--trn)':'var(--eff)',isStr(w)?IC.lift:IC.run,esc(WT[w.ty]||w.ty),`<span>${esc(w.min)} min</span>${w.km?`<span>${fx(w.km)} km</span>`:''}${w.hr?`<span>${esc(w.hr)} bpm</span>`:''}${tr(w)}`,'data-go="effort"',zbar(w.z));
- for(const s of T.mu){const w=T.att.filter(isStr)[0],vol=(s.ex||[]).reduce((a,x)=>a+x.sets.reduce((b,y)=>b+num(y.w)*num(y.r),0),0);
-  ev(w&&has(w.st)?w.st:s.t?new Date(s.t).getHours()*60+new Date(s.t).getMinutes():1080,w&&has(w.st)?hm(w.st):'Séance','var(--trn)',IC.lift,esc(s.name),`<span>${(s.ex||[]).length} exercices</span>${vol?`<span>${fx(vol/1000)} t</span>`:''}${s.dur?`<span>${esc(s.dur)} min</span>`:''}${tr(w)}`,'data-go="effort"',w?zbar(w.z):'')}
- for(const s of T.sp){const w=T.att.find(x=>(WT[x.ty]||'')===s.type);
-  ev(w&&has(w.st)?w.st:1020,w&&has(w.st)?hm(w.st):'Sport','var(--eff)',IC.run,esc(s.type),`<span>${esc(s.min)} min</span>${s.km?`<span>${fx(s.km)} km</span>`:''}${tr(w)}`,'data-go="effort"',w?zbar(w.z):'')}
+ for(const s of T.mu){const w=T.pair.get(s.id),vol=(s.ex||[]).reduce((a,x)=>a+x.sets.reduce((b,y)=>b+num(y.w)*num(y.r),0),0);
+  ev(w&&has(w.st)?w.st:s.t?new Date(s.t).getHours()*60+new Date(s.t).getMinutes():1080,w&&has(w.st)?hm(w.st):'Séance','var(--trn)',IC.lift,esc(s.name),`<span>${(s.ex||[]).length} exercices</span>${vol?`<span>${fx(vol/1000)} t</span>`:''}${(w&&num(w.min))||s.dur?`<span>${esc((w&&num(w.min))||s.dur)} min</span>`:''}${w&&w.hr?`<span>${esc(w.hr)} bpm</span>`:''}${tr(w)}${w?'<span class="wlk">avec la montre</span>':''}`,'data-go="effort"',w?zbar(w.z):'')}
+ for(const s of T.sp){const w=T.pair.get(s.id);
+  ev(w&&has(w.st)?w.st:1020,w&&has(w.st)?hm(w.st):'Sport','var(--eff)',IC.run,esc(s.type),`<span>${esc(s.min)} min</span>${s.km?`<span>${fx(s.km)} km</span>`:''}${w&&w.hr?`<span>${esc(w.hr)} bpm</span>`:''}${tr(w)}${w?'<span class="wlk">avec la montre</span>':''}`,'data-go="effort"',w?zbar(w.z):'')}
  const meals={};for(const x of it)(meals[x.m||'Repas']=meals[x.m||'Repas']||[]).push(x);
  for(const [m,L] of Object.entries(meals)){const k=L.reduce((a,x)=>a+kcalOf(x),0),p=L.reduce((a,x)=>a+num(x.p),0);
   const t0=L.map(x=>num(x.t)).filter(Boolean).sort()[0],tm=t0?new Date(t0).getHours()*60+new Date(t0).getMinutes():null;
@@ -569,8 +586,8 @@ function coach(d,rc,sl,ef,tg){const h=H(d),out=[];
  return out.join(' ')||''+IMP('Importe tes données Apple Santé et remplis ton check-in','Connecte Apple Santé et remplis ton check-in')+' : le coach interprétera ici ton énergie, ta dépense et ton besoin de sommeil.'}
 function actsHTML(d,T){T=T||dayTrain(d);const L=[];
  for(const x of (S.days[d]||{}).br||[])L.push(`<div class="act" style="--c:var(--rec)"><div class="ic">${ARC}</div><div><div class="t">Respiration guidée</div><div class="m">${x.min} min · ${esc(x.at||'')}</div></div><div class="e"></div></div>`);
- for(const s of T.mu){const w=T.att.filter(isStr)[0];L.push(`<div class="act" style="--c:var(--trn)"><div class="ic"><svg viewBox="0 0 24 24">${IC.lift}</svg></div><div><div class="t">${esc(s.name)}</div><div class="m">${(s.ex||[]).length} exercices · ${fx((s.ex||[]).reduce((a,x)=>a+x.sets.reduce((b,y)=>b+num(y.w)*num(y.r),0),0)/1000)} t${s.dur?' · '+esc(s.dur)+' min':''}${w&&w.hr?' · '+w.hr+' bpm moy.':''}${w&&w.kcal?' · '+w.kcal+' kcal':''}</div>${w?zbar(w.z)+zleg(w.z):''}</div><div class="e">${w&&w.tr?r0(100*(1-Math.exp(-w.tr/110))):''}<small>${w&&w.tr?'dépense':''}</small></div></div>`)}
- for(const s of T.sp){const w=T.att.find(x=>(WT[x.ty]||'')===s.type);L.push(`<div class="act" style="--c:var(--eff)"><div class="ic"><svg viewBox="0 0 24 24">${IC.run}</svg></div><div><div class="t">${esc(s.type)}</div><div class="m">${esc(s.min)} min${s.km?' · '+fx(s.km)+' km':''}${s.rpe?' · ressenti '+esc(s.rpe)+'/10':''}${w&&w.hr?' · '+w.hr+' bpm moy.':''}</div>${w?zbar(w.z)+zleg(w.z):''}</div><div class="e">${w&&w.tr?r0(100*(1-Math.exp(-w.tr/110))):''}<small>${w&&w.tr?'dépense':''}</small></div></div>`)}
+ for(const s of T.mu){const w=T.pair.get(s.id);L.push(`<div class="act" style="--c:var(--trn)"><div class="ic"><svg viewBox="0 0 24 24">${IC.lift}</svg></div><div><div class="t">${esc(s.name)}</div><div class="m">${(s.ex||[]).length} exercices · ${fx((s.ex||[]).reduce((a,x)=>a+x.sets.reduce((b,y)=>b+num(y.w)*num(y.r),0),0)/1000)} t${s.dur?' · '+esc(s.dur)+' min':''}${w&&w.hr?' · '+w.hr+' bpm moy.':''}${w&&w.kcal?' · '+w.kcal+' kcal':''}${w?' · <span class="wlk">avec la montre</span>':''}</div>${w?zbar(w.z)+zleg(w.z):''}</div><div class="e">${w&&w.tr?r0(100*(1-Math.exp(-w.tr/110))):''}<small>${w&&w.tr?'dépense':''}</small></div></div>`)}
+ for(const s of T.sp){const w=T.pair.get(s.id);L.push(`<div class="act" style="--c:var(--eff)"><div class="ic"><svg viewBox="0 0 24 24">${IC.run}</svg></div><div><div class="t">${esc(s.type)}</div><div class="m">${esc(s.min)} min${s.km?' · '+fx(s.km)+' km':''}${s.rpe?' · ressenti '+esc(s.rpe)+'/10':''}${w&&w.hr?' · '+w.hr+' bpm moy.':''}</div>${w?zbar(w.z)+zleg(w.z):''}</div><div class="e">${w&&w.tr?r0(100*(1-Math.exp(-w.tr/110))):''}<small>${w&&w.tr?'dépense':''}</small></div></div>`)}
  for(const w of T.ap)L.push(`<div class="act" style="--c:${isStr(w)?'var(--trn)':'var(--eff)'}"><div class="ic"><svg viewBox="0 0 24 24">${isStr(w)?IC.lift:IC.run}</svg></div><div><div class="t">${esc(WT[w.ty]||w.ty)} <span class="mute small">· montre${has(w.st)?' · '+hm(w.st):''}</span></div><div class="m">${esc(w.min)} min${w.km?' · '+fx(w.km)+' km':''}${w.kcal?' · '+esc(w.kcal)+' kcal':''}${w.hr?' · '+esc(w.hr)+' bpm moy.':''}${w.mx?' · max '+esc(w.mx):''}</div>${zbar(w.z)}${zleg(w.z)}</div><div class="e">${w.tr?r0(100*(1-Math.exp(-w.tr/110))):''}<small>${w.tr?'dépense':''}</small></div></div>`);
  return L.join('')}
 const SCC={mood:'var(--mind)',energy:'var(--nut)',stress:'var(--bad)',sore:'var(--eff)'};
@@ -790,7 +807,7 @@ function renderRecs(){const m=new Map();for(const s of done())if(s.kind!=='sport
  $('#recs').innerHTML=L.length?`<table><thead><tr><th>Exercice</th><th>Série la plus lourde</th><th class="num">Meilleur 1RM est.</th><th class="num">Date</th></tr></thead><tbody>${L.map(o=>`<tr><td>${esc(o.n)}</td><td>${o.hws?esc(setTxt(o.hws)):'–'}</td><td class="num">${o.e1?fx(o.e1)+' kg':o.mr+' reps'}</td><td class="num">${dShort(o.e1d||o.hwd)}</td></tr>`).join('')}</tbody></table>${L.length>6?`<button type="button" class="btn small mall" data-act="showall" data-t="#recs">Afficher les ${L.length} exercices</button>`:''}`:'<p class="mute empty">Tes records apparaîtront après tes premières séances.</p>'}
 function renderHist(){const open=new Set($$('#hist details[open]').map(d=>d.dataset.id)),E=[];
  const dates=new Set(done().map(s=>s.date));for(const d of hKeys().slice(-120))if((H(d).wk||[]).length)dates.add(d);
- for(const d of dates){const t=dayTrain(d);for(const s of t.mu)E.push({d,k:'mu',s,att:t.att.filter(isStr)});for(const s of t.sp)E.push({d,k:'sp',s,att:t.att.filter(w=>(WT[w.ty]||'')===s.type)});t.ap.forEach((w,i)=>E.push({d,k:'ap',w}))}
+ for(const d of dates){const t=dayTrain(d);for(const s of t.mu)E.push({d,k:'mu',s,att:[t.pair.get(s.id)].filter(Boolean)});for(const s of t.sp)E.push({d,k:'sp',s,att:[t.pair.get(s.id)].filter(Boolean)});t.ap.forEach((w,i)=>E.push({d,k:'ap',w}))}
  E.sort((a,b)=>b.d.localeCompare(a.d)||(b.s?.t||0)-(a.s?.t||0));
  if(!E.length){$('#hist').innerHTML='<p class="mute empty">Tes séances et activités apparaîtront ici.</p>';return}
  const watch=a=>a.length?` · montre ${a.map(w=>w.min+' min'+(w.hr?', '+w.hr+' bpm':'')).join(', ')}`:'';
