@@ -23,6 +23,9 @@ https://aurel943.github.io/carnet-de-sante/ : rien ne doit rester seulement en l
   (grands titres, titre du jour, titres de cartes), SF Pro pour l'interface, SF Pro Rounded pour les
   chiffres ; ciel vivant (`#sky`) derrière les grands titres, qui suit l'heure et l'état du jour ;
   puces et icônes tirées de l'arc (bouts ronds, point-curseur au bout).
+- Ce qui défile de côté (`.seg`, `.scroll`, `#favs`, `.chips.scr`) reçoit tout seul un fondu sur le bord où il reste
+  quelque chose à voir (classes `ef-l` / `ef-r` posées par `main.js`) : utiliser ces classes pour tout nouveau menu
+  horizontal plutôt que de laisser des catégories coupées sans indice.
 - Voix : tutoiement, phrases courtes, jamais culpabilisantes. Le Résumé répond dans l'ordre à « comment
   je vais » (titre du jour), « que faire » (jauges + plan), « que noter » (une action principale).
   Chaque carte commence par sa conclusion (`<p class="vd">`) ; les cartes pour experts portent la classe

@@ -161,6 +161,18 @@ try {
       expect(await page.isHidden('#medf'), '« Fermer » ne replie pas le formulaire');
     });
 
+    await step('menus qui défilent de côté : fondu sur le bord où il reste des choix', async () => {
+      await tab(page, 'plus');
+      await page.click('#hub [data-s="dossier"]');
+      await page.waitForSelector('#medflt button');
+      const cls = () => page.$eval('#medflt', (e) => [e.classList.contains('ef-l'), e.classList.contains('ef-r')].join());
+      await page.waitForFunction(() => document.querySelector('#medflt').classList.contains('ef-r'), null, { timeout: 2000 }).catch(() => {});
+      expect(await cls() === 'false,true', 'au départ, fondu à droite seulement : ' + await cls());
+      await page.$eval('#medflt', (e) => { e.scrollLeft = e.scrollWidth; });
+      await page.waitForFunction(() => document.querySelector('#medflt').classList.contains('ef-l'));
+      expect(await cls() === 'true,false', 'à la fin, fondu à gauche seulement : ' + await cls());
+    });
+
     await step('réglages : groupés, un objectif changé est gardé, étiquettes en pastilles', async () => {
       await tab(page, 'plus');
       await page.click('#hub [data-s="reglages"]');

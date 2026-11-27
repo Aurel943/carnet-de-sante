@@ -1140,6 +1140,12 @@ document.addEventListener('keydown',e=>{if(e.metaKey||e.ctrlKey||e.altKey)return
  if(e.key==='n'||e.key==='N'){e.preventDefault();$('.tplus').click();return}
  if(!$('#dn').hidden){if(e.key==='ArrowLeft')goDay(-1);else if(e.key==='ArrowRight')goDay(1)}});
 {const fit=()=>{const r=document.documentElement;r.style.setProperty('--hh',$('.top').offsetHeight+'px');};fit();addEventListener('resize',fit);setTimeout(fit,300)}
+/* Menus et tableaux qui défilent de côté : un fondu sur le bord où il reste quelque chose à voir
+   (à droite au départ, des deux côtés au milieu, à gauche à la fin), comme sur iPhone. */
+{const SEL='.seg,.scroll,#favs,.chips.scr',upd=e=>{const m=e.scrollWidth-e.clientWidth;e.classList.toggle('ef-l',m>2&&e.scrollLeft>2);e.classList.toggle('ef-r',m>2&&e.scrollLeft<m-2)};
+ let q=0;const all=()=>{q=0;$$(SEL).forEach(upd)},later=()=>{if(!q)q=requestAnimationFrame(all)};
+ document.addEventListener('scroll',e=>{const t=e.target;if(t.matches&&t.matches(SEL))upd(t)},{capture:true,passive:true});
+ new MutationObserver(later).observe(document.body,{childList:true,subtree:true,attributeFilter:['hidden']});addEventListener('resize',later);later()}
 {const T=$('#tip'),place=e=>{const w=T.offsetWidth,h=T.offsetHeight,W=document.documentElement.clientWidth;let x=e.pageX+14,y=e.pageY-h-12;if(x+w>W-8)x=e.pageX-w-14;if(y<scrollY+8)y=e.pageY+18;T.style.left=Math.max(8,x)+'px';T.style.top=y+'px'};
  document.addEventListener('pointerover',e=>{const t=e.target.closest&&e.target.closest('[data-tip]');if(!t){T.hidden=true;return}T.textContent=t.dataset.tip;T.hidden=false;place(e)});
  document.addEventListener('pointermove',e=>{if(!T.hidden)place(e)});const hideT=e=>{if(e.pointerType!=='mouse')T.hidden=true};document.addEventListener('pointerup',hideT);document.addEventListener('pointercancel',hideT);document.addEventListener('scroll',()=>{T.hidden=true;$$('.ov').forEach(o=>o.innerHTML='')},{passive:true,capture:true})}

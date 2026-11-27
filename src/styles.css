@@ -1628,3 +1628,8 @@ ul#favs{display:block;margin:0 0 6px;padding:0;overflow:hidden;flex-wrap:nowrap}
 .ob-goals .chip{min-height:40px;padding:8px 14px;font-size:0.9375rem}
 .ob-goals .chip.on{background:var(--tint);color:var(--on-tint)}
 .ob-sub{margin:0 0 6px;font-size:1.0625rem;font-weight:600}
+/* fondu sur les bords de ce qui défile de côté (classes ef-l / ef-r posées par main.js selon la position) */
+:is(.seg,.scroll,#favs,.chips.scr){--efl:0px;--efr:0px}
+:is(.seg,.scroll,#favs,.chips.scr):is(.ef-l,.ef-r){-webkit-mask-image:linear-gradient(to right,transparent,#000 var(--efl),#000 calc(100% - var(--efr)),transparent);mask-image:linear-gradient(to right,transparent,#000 var(--efl),#000 calc(100% - var(--efr)),transparent)}
+:is(.seg,.scroll,#favs,.chips.scr).ef-l{--efl:2.25rem}
+:is(.seg,.scroll,#favs,.chips.scr).ef-r{--efr:2.25rem}
