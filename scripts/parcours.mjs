@@ -101,6 +101,22 @@ try {
       expect((await text(page, '#vd-mk')).length > 10, 'pas de conclusion en tête de carte (#vd-mk)');
     });
 
+    await step('nombres : milliers séparés par une espace visible, sur chaque onglet', async () => {
+      for (const h of ['aujourdhui', 'effort', 'recuperation', 'sommeil']) {
+        await tab(page, h);
+        const bad = await page.evaluate(() => {
+          const out = []; const w = document.createTreeWalker(document.querySelector('main'), NodeFilter.SHOW_TEXT); let n;
+          while ((n = w.nextNode())) {
+            const el = n.parentElement; if (!el || !el.offsetParent && el.tagName !== 'tspan' && el.tagName !== 'text') continue;
+            const t = n.textContent; if (t.includes('\u202F')) out.push('espace fine : ' + t.trim().slice(0, 30));
+            for (const m of t.matchAll(/(?<![\d\/:,.\-])\d{4,}(?![\d\/:])/g)) if (!(+m[0] >= 1900 && +m[0] <= 2100)) out.push(t.trim().slice(0, 40));
+          }
+          return out;
+        });
+        expect(!bad.length, `${h} : ${bad.slice(0, 3).join(' | ')}`);
+      }
+    });
+
     await step('onglet Plus : toujours le menu, même après une sous-page', async () => {
       await tab(page, 'plus');
       await page.click('#hub [data-s="reglages"]');

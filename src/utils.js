@@ -8,11 +8,14 @@ export const addD=(ds,n)=>{const d=new Date(ds+'T12:00');d.setDate(d.getDate()+n
 export const dShort=s=>{const p=String(s||'').split('-');return p.length===3?p[2]+'/'+p[1]:''};
 export const dLong=s=>new Date(s+'T12:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
 export const dWk=s=>new Date(s+'T12:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric'});
-export const num=v=>{const n=parseFloat(String(v??'').replace(',','.'));return isFinite(n)?n:0};
+export const num=v=>{const n=parseFloat(String(v??'').replace(/[\s\u00A0\u202F]/g,'').replace(',','.'));return isFinite(n)?n:0};
 export const has=v=>v!=null&&v!=='';
-export const fx=n=>(Math.round(n*10)/10).toLocaleString('fr-FR');
-export const f2=n=>(Math.round(n*100)/100).toLocaleString('fr-FR');
-export const r0=n=>Math.round(n).toLocaleString('fr-FR');
+/* Séparateur des milliers : l'espace insécable normale, pas l'espace fine (U+202F) que donne fr-FR,
+   qui disparaît à l'œil avec l'interlettrage serré des titres (« 1900 kcal » au lieu de « 1 900 kcal »). */
+const nsp=s=>s.replace(/\u202F/g,'\u00A0');
+export const fx=n=>nsp((Math.round(n*10)/10).toLocaleString('fr-FR'));
+export const f2=n=>nsp((Math.round(n*100)/100).toLocaleString('fr-FR'));
+export const r0=n=>nsp(Math.round(n).toLocaleString('fr-FR'));
 export const sg=n=>(n>0?'+':'')+fx(n);
 export const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const nid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);

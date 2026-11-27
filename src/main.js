@@ -913,7 +913,7 @@ function renderMed(){const t=today(),L=S.med.slice().sort((a,b)=>b.date.localeCo
  const hs=L.filter(m=>m.date<t&&(medFlt==='Tout'||m.type===medFlt));$('#medhist').innerHTML=hs.length?hs.map(m=>li(m)).join(''):'<li class="mute empty" style="display:block">Aucune entrée.</li>'}
 const SK={'s-birth':'birth','s-height':'height','s-prot':'prot','s-kcal':'kcal','s-steps':'steps','s-sleep':'sleep','s-exmin':'exmin','s-water':'water','s-goalw':'goalw','s-rest':'rest','s-rmin':'rmin','s-rmax':'rmax','s-inc':'inc'};
 function renderSettings(){const a=document.activeElement;
- for(const id in SK){const e=$('#'+id);if(a!==e){const raw=S.set[SK[id]];if(!has(raw)){e.value='';continue}const v=SK[id]==='sleep'?num(raw)/60:num(raw);e.value=String(Math.round(v*100)/100).replace('.',',')}}
+ for(const id in SK){const e=$('#'+id);if(a!==e){const raw=S.set[SK[id]];if(!has(raw)){e.value='';continue}const v=SK[id]==='sleep'?num(raw)/60:num(raw);e.value=id==='s-birth'?String(v):f2(v)}}
  $('#s-auto').checked=S.set.auto!==false;$('#s-hvm').value=hvm();$('#s-sex').value=S.set.sex||'';
  const lst=(arr,act)=>arr.length?arr.map((t,k)=>`<span class="schip">${esc(t)}<button type="button" data-act="${act}" data-k="${k}" aria-label="Retirer ${esc(t)}">×</button></span>`).join(''):'<span class="mute small">Aucun pour l\'instant.</span>';
  $('#suplist').innerHTML=lst(S.set.sups,'delSup');$('#taglist').innerHTML=lst(S.set.tags,'delTag');
