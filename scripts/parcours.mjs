@@ -712,6 +712,7 @@ try {
         .catch(() => { throw new Error('la fréquence cardiaque n\'arrive pas'); });
       const z = await text(page, '#lvZ');
       expect(/^Z[1-5] /.test(z), 'zone cardiaque attendue : ' + z);
+      expect(!(await visible(page, '#msr [data-act="finish"]')) && await visible(page, '#wnote'), 'montre qui enregistre : pas de « Terminer », la montre termine');
       await page.evaluate(() => { window.__lv = document.getElementById('live'); });
       await page.waitForTimeout(2500);
       // (l'horloge des tests est figée : le chrono ne peut pas avancer ici)

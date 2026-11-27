@@ -758,7 +758,7 @@ function renderEditor(){const c=S.cur;if(!c)return renderStart();
  $('#editor').innerHTML=`<div class="panel">${c.edit?'':`<div class="live" id="live" aria-live="off"><div class="lvt"><span>Séance</span><b id="lvT">0:00</b></div><div class="lvh" id="lvH" hidden><div class="lvn"><i class="beat" aria-hidden="true"></i><b id="lvHr">–</b><small>bpm</small></div><div class="lvs"><span class="lvz" id="lvZ"></span><small class="lvage" id="lvAge"></small></div></div><div class="lvk" id="lvK" hidden><b id="lvKc">0</b><small>kcal</small></div><p class="lvw mute small" id="lvW" hidden></p></div>`}<div class="edh"><input id="cn" class="tin" value="${esc(c.name)}" aria-label="Nom de la séance">${dateRow('cd',c.date)}${rpeHTML('crpe',c.rpe)}</div>
  <p class="mute small" id="svst">Enregistrement automatique</p><div>${c.ex.map(exHTML).join('')}</div>
  <button class="btn wide" data-act="addEx">+ Ajouter un exercice</button>
- <div class="foot"><button class="btn pri" data-act="finish">Terminer la séance</button><button class="btn ghost" data-act="discard">Abandonner</button></div></div>`;
+ <p class="wnote" id="wnote"><span class="beat" aria-hidden="true"></span>Ta montre enregistre cette séance. Arrête l'entraînement sur ta montre : Arden terminera la séance tout seul.</p><div class="foot"><button class="btn pri" data-act="finish">${c.edit?'Enregistrer':'Terminer la séance'}</button><button class="btn ghost" data-act="discard">${c.edit?'Supprimer la séance':'Abandonner'}</button></div>${c.edit?'':'<button type="button" class="wlater" data-act="finish">Terminer ici sans attendre la montre</button>'}</div>`;
  c.ex.forEach((e,i)=>updateHint(i));if(msKind==='seance'){msBar();liveStart()}liveTick()}
 /* ---------- en direct pendant la séance : chrono, FC et zone, calories actives ----------
    Apple Santé prévient dès qu'une mesure de la montre arrive sur l'iPhone (requête ouverte, pas de relecture en boucle) ;
@@ -792,8 +792,11 @@ function todoSess(){return done().find(s=>s.kind!=='sport'&&!(s.ex||[]).length&&
 function todoHTML(){const s=todoSess();if(!s)return'';const when=s.date===today()?'':s.date===addD(today(),-1)?'hier ':dLong(s.date)+' ';
  const h0=s.t?new Date(s.t).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'';
  return `<div class="panel wkask"><span class="eyebrow">Séance enregistrée</span><b class="rt">${esc(s.name||'Séance')} ${when}${h0?'à '+h0:''}</b><p>${s.dur?esc(s.dur)+' min · ':''}terminée par ta montre. Ajoute tes exercices quand tu veux : Arden suivra ta progression.</p><div class="row"><button type="button" class="btn pri small" data-act="edit" data-id="${esc(s.id)}">Ajouter mes exercices</button><button type="button" class="btn small" data-act="tdis" data-id="${esc(s.id)}">Plus tard</button></div></div>`}
+/* la montre enregistre la séance : c'est elle qui la terminera ; Arden n'affiche plus son propre « Terminer » */
+const watching=()=>!!(S.cur&&!S.cur.edit&&live&&live.last&&Date.now()/1000-live.last<120);
+function watchUI(){const w=watching(),e=$('#editor');if(!e||e.classList.contains('watching')===w)return;e.classList.toggle('watching',w);if(msKind==='seance')msBar()}
 const setTxt2=(id,t)=>{const e=document.getElementById(id);if(e&&e.textContent!==t)e.textContent=t};
-function liveTick(){const c=S.cur;if(!c){liveStop();return}if(!$('#live'))return;const s=Math.max(0,Math.floor((Date.now()-(c.t||Date.now()))/1000));
+function liveTick(){const c=S.cur;if(!c){liveStop();return}watchUI();if(!$('#live'))return;const s=Math.max(0,Math.floor((Date.now()-(c.t||Date.now()))/1000));
  setTxt2('lvT',s>=3600?`${Math.floor(s/3600)}:${String(Math.floor(s/60)%60).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`:`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`);
  const L=live,H=$('#lvH'),K=$('#lvK'),W=$('#lvW');
  if(L&&L.cur!=null){H.hidden=false;W.hidden=true;setTxt2('lvHr',String(L.cur));const z=zoneOf(L.cur);setTxt2('lvZ',ZN[z]);$('#lvZ').style.setProperty('--c',ZC[z]);
@@ -1403,7 +1406,7 @@ function setupHK(){
 let msKind='',foodMeal='';
 const mealNow=()=>{const hr=new Date().getHours();return hr<11?'Petit-déjeuner':hr<15?'Déjeuner':hr<18?'Collation':'Dîner'};
 function msBar(){const t=$('#mstitle'),l=$('#msl'),r=$('#msr');
- if(msKind==='seance'){t.textContent=S.cur?(S.cur.edit?'Modifier la séance':'Séance en cours'):'Nouvelle séance';l.textContent=S.cur?'Fermer':'Annuler';r.innerHTML=S.cur?'<button type="button" class="ms-btn ms-done" data-act="finish">Terminer</button>':''}
+ if(msKind==='seance'){t.textContent=S.cur?(S.cur.edit?'Modifier la séance':'Séance en cours'):'Nouvelle séance';l.textContent=S.cur?'Fermer':'Annuler';r.innerHTML=!S.cur||watching()?'':`<button type="button" class="ms-btn ms-done" data-act="finish">${S.cur.edit?'OK':'Terminer'}</button>`}
  else if(msKind==='food'){t.textContent=pick&&pick.ek!=null?'Modifier':foodMeal;l.textContent='Fermer';r.innerHTML=pick?(pick.ek==null?'<button type="button" class="ms-btn" data-act="pickback">Retour</button>':''):''}
  else if(msKind==='checkin'){t.textContent=S.day===today()?"Check-in du jour":'Check-in du '+dShort(S.day);l.textContent='';r.innerHTML='<button type="button" class="ms-btn ms-done" data-act="msclose">OK</button>'}
  else if(msKind==='metric'){t.textContent=(MET[metK]||{}).t||'';l.textContent='';r.innerHTML='<button type="button" class="ms-btn ms-done" data-act="msclose">OK</button>'}

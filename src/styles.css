@@ -1737,3 +1737,11 @@ ul#favs{display:block;margin:0 0 6px;padding:0;overflow:hidden;flex-wrap:nowrap}
 .btn.pri .beat{background:#ff6b6b}
 @media(prefers-reduced-motion:reduce){.btn .beat,.sessnow b .beat{animation:none}}
 [data-since]{white-space:nowrap}
+/* séance enregistrée par la montre : pas de « Terminer » dans Arden, la montre décide de la fin */
+.wnote{display:none;margin:4px 0 12px;padding:12px 14px;border-radius:var(--r-ctl);background:color-mix(in srgb,var(--rec) 12%,var(--panel));font-size:0.9375rem;line-height:1.4}
+.wnote .beat{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--hrt);margin-right:8px;vertical-align:.08em;animation:beat 1s ease-in-out infinite}
+#editor.watching .wnote{display:block}
+#editor.watching .foot [data-act="finish"]{display:none}
+.wlater{display:none;margin:10px auto 0;border:0;background:none;color:var(--mute);font:inherit;font-size:0.875rem;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+#editor.watching .wlater{display:block}
+@media(prefers-reduced-motion:reduce){.wnote .beat{animation:none}}

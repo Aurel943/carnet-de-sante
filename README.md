@@ -83,8 +83,10 @@ ne le permet qu'à l'appli qui l'a lancé), mais les deux se rejoignent :
   si elle était fermée). Une séance sans exercice est proposée à compléter (« Ajouter mes exercices » sur le Résumé et
   dans Dépense, ou « Modifier » dans le journal) ; la rouvrir n'affiche ni chrono ni FC en direct, et la fermer
   enregistre les modifications ;
-- terminer dans Arden enregistre les séries (sans série, Arden demande confirmation) ; si la montre envoie encore sa FC,
-  Arden rappelle de l'arrêter aussi, et la séance s'y rattache toute seule.
+- tant que la montre envoie sa FC, Arden n'affiche pas son propre « Terminer » : « Ta montre enregistre cette séance.
+  Arrête l'entraînement sur ta montre : Arden terminera la séance tout seul » (un lien discret « Terminer ici sans
+  attendre la montre » reste en bas) ;
+- sans montre, « Terminer » enregistre la séance (sans série, Arden demande confirmation).
 Dans le simulateur (`npm run sim`, appli iOS cochée), le bouton « Montre : terminer l'entraînement » le simule.
 
 **Démo avec une séance de muscu en cours** (pour voir l'éditeur, « Séance en cours », la progression) :
